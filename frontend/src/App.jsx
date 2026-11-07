@@ -2,10 +2,12 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/layout/PublicLayout";
 import RouteShell from "./pages/RouteShell";
 import HomePage from "./pages/HomePage";
+import MarketplacePage from "./pages/marketplace/MarketplacePage";
+import ServiceDetailPage from "./pages/marketplace/ServiceDetailPage";
+import CreatorProfilePage from "./pages/marketplace/CreatorProfilePage";
 import "./App.css";
 
 const pages = [
-  ["/marketplace", "Marketplace", "MARKETPLACE"],
   ["/how-it-works", "Cara Kerja", "HOW IT WORKS"],
   ["/about", "Tentang Digarsa", "ABOUT"],
   ["/login", "Masuk", "LOGIN"],
@@ -19,10 +21,9 @@ export default function App() {
       <Routes>
         <Route element={<PublicLayout />}>
           <Route index element={<HomePage />} />
-          <Route
-            path="/seller/:id"
-            element={<RouteShell title="Profil kreator" label="CREATOR" />}
-          />
+          <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/service/:id" element={<ServiceDetailPage />} />
+          <Route path="/seller/:id" element={<CreatorProfilePage />} />
           {pages.map(([path, title, label]) => (
             <Route
               key={path}

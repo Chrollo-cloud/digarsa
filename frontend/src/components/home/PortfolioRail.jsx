@@ -41,7 +41,7 @@ export default function PortfolioRail() {
         {railProjects.map((project) => (
           <Link
             className="home-rail__card"
-            to={`/marketplace?project=${project.id}`}
+            to={`/service/${project.id}`}
             key={project.id}
           >
             <img
