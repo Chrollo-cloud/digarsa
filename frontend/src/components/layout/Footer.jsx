@@ -1,0 +1,21 @@
+import { Link } from 'react-router-dom'
+import { publicNavigation } from '../../data/navigation'
+import Wordmark from './Wordmark'
+import './Footer.css'
+
+export default function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="site-footer__grid">
+        <div>
+          <Wordmark />
+          <p>Where Ideas Meet Talent.</p>
+        </div>
+        <nav aria-label="Navigasi footer">
+          {publicNavigation.map(({ to, label }) => <Link key={to} to={to}>{label}</Link>)}
+        </nav>
+        <small>© {new Date().getFullYear()} DIGARSA — INDONESIA</small>
+      </div>
+    </footer>
+  )
+}

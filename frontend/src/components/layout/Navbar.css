@@ -1,0 +1,43 @@
+.site-header {
+  position: fixed; inset: 0 0 auto; z-index: 20;
+  background: var(--color-nav); color: var(--color-white);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.navbar { height: var(--nav-height); display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+.wordmark { flex: none; font: 700 32px/1 var(--font-display); letter-spacing: -.06em; }
+.wordmark span { color: var(--color-aqua); }
+.navbar__menu { display: flex; align-items: center; gap: clamp(28px, 5vw, 80px); }
+.navbar__links, .navbar__actions { display: flex; align-items: center; gap: 38px; }
+.navbar__links a { font-size: 14px; font-weight: 700; opacity: .8; transition: opacity .2s; }
+.navbar__links a:hover, .navbar__links a[aria-current='page'] { opacity: 1; }
+.navbar__links a[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; }
+.navbar__actions { gap: 27px; }
+.navbar__login { font-size: 12px; }
+.navbar__cta { border-radius: var(--radius-panel); font-weight: 800; min-height: 42px; padding: 12px 14px; white-space: nowrap; }
+.navbar__cta span { font-size: 18px; line-height: 1; }
+.site-header :focus-visible { outline-color: var(--color-aqua); }
+.navbar__cta:focus-visible { outline-color: white; box-shadow: 0 0 0 5px var(--color-blue); }
+.navbar__toggle { display: none; }
+@media (min-width: 761px) and (max-width: 1050px) {
+  .navbar, .navbar__menu { gap: 24px; }
+  .navbar__links { gap: 20px; }
+  .navbar__actions { gap: 16px; }
+}
+@media (max-width: 760px) {
+  .navbar__toggle {
+    display: grid; place-items: center; margin-left: auto; flex: none;
+    width: 44px; height: 44px; padding: 8px; border: 0; background: transparent; color: inherit;
+  }
+  .navbar__menu {
+    position: absolute; top: var(--nav-height); left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: stretch; gap: 16px;
+    padding: 22px 22px 27px; background: #252A56;
+    max-height: calc(100dvh - var(--nav-height)); overflow-y: auto;
+    visibility: hidden; opacity: 0; transform: translateY(-12px);
+    transition: opacity .25s, transform .25s, visibility .25s;
+  }
+  .navbar__menu.is-open { visibility: visible; opacity: 1; transform: translateY(0); }
+  .navbar__links, .navbar__actions { flex-direction: column; align-items: stretch; gap: 0; }
+  .navbar__links a, .navbar__login { padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.14); }
+  .navbar__cta { margin-top: 16px; justify-content: space-between; }
+}
