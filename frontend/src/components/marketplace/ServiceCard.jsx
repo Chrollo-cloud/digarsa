@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { getCreator, money, rating } from "../../data/marketplace";
 import Availability from "./Availability";
+import ServiceActions from "../../features/customer/ServiceActions";
 
 export default function ServiceCard({ service }) {
   const creator = getCreator(service.creatorId);
@@ -37,6 +38,7 @@ export default function ServiceCard({ service }) {
           <span>Mulai dari</span>
           <strong>{money(service.price)}</strong>
         </div>
+        <ServiceActions service={service} />
       </div>
     </article>
   );

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/layout/PublicLayout";
 import RouteShell from "./pages/RouteShell";
 import HomePage from "./pages/HomePage";
@@ -14,6 +14,12 @@ import {
   RequireSeller,
   RequireAdmin,
 } from "./features/account/Guards";
+import DashboardPage from "./features/customer/DashboardPage";
+import FavoritesPage from "./features/customer/FavoritesPage";
+import CartPage from "./features/customer/CartPage";
+import BookingRequestPage from "./features/customer/BookingRequestPage";
+import OrdersPage from "./features/customer/OrdersPage";
+import BookingDetailPage from "./features/customer/BookingDetailPage";
 import "./App.css";
 
 const pages = [
@@ -35,19 +41,26 @@ export default function App() {
             />
             <Route element={<RequireAccount />}>
               <Route path="/become-a-creator" element={<OnboardingPage />} />
-              <Route
-                path="/dashboard"
-                element={<AccountShell title="Dashboard" />}
-              />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route
                 path="/profile"
                 element={<AccountShell title="Profil Saya" />}
               />
-              <Route path="/saved" element={<AccountShell title="Favorit" />} />
               <Route
-                path="/orders"
-                element={<AccountShell title="Pesanan" />}
+                path="/saved"
+                element={<Navigate to="/favorites" replace />}
               />
+              <Route path="/favorites" element={<FavoritesPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route
+                path="/booking/:serviceId"
+                element={<BookingRequestPage />}
+              />
+              <Route
+                path="/orders/:bookingId"
+                element={<BookingDetailPage />}
+              />
+              <Route path="/orders" element={<OrdersPage />} />
               <Route
                 path="/messages"
                 element={<AccountShell title="Pesan" />}

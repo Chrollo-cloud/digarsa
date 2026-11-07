@@ -5,16 +5,21 @@ import Gallery from "../../components/marketplace/Gallery";
 import Availability from "../../components/marketplace/Availability";
 import Reviews from "../../components/marketplace/Reviews";
 import NotFound from "../../components/marketplace/NotFound";
+import ServiceActions from "../../features/customer/ServiceActions";
+import { bookingRestriction } from "../../features/customer/customerStore";
+import { useAuth } from "../../features/account/authContext";
 import "./marketplace.css";
 
 export default function ServiceDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const service = services.find((item) => item.id === id);
   useEffect(() => {
     document.title = `${service?.title || "Layanan tidak ditemukan"} — Digarsa`;
   }, [service]);
   if (!service) return <NotFound type="Layanan" />;
   const creator = getCreator(service.creatorId);
+  const reason = bookingRestriction(service, user, creator);
   return (
     <div className="market-page market-detail">
       <div className="market-shell">
@@ -45,7 +50,9 @@ export default function ServiceDetailPage() {
                   <strong>{service.delivery}</strong> ·{" "}
                   {service.delivery === "Onsite"
                     ? `Produksi di ${creator.city}; lokasi dibahas bersama kreator.`
-                    : "Kolaborasi dan pengiriman hasil secara daring."}
+                    : service.delivery === "Remote"
+                      ? "Kolaborasi dan pengiriman hasil secara daring."
+                      : "Mode pengerjaan belum didukung."}
                 </p>
                 <p>
                   Estimasi pengerjaan: {service.turnaround} setelah brief
@@ -69,9 +76,25 @@ export default function ServiceDetailPage() {
               <p>
                 {service.delivery} · {service.turnaround}
               </p>
-              <button className="button button--primary market-future" disabled>
-                Booking — segera hadir
-              </button>
+              {reason ? (
+                <>
+                  <button
+                    className="button button--primary market-future"
+                    disabled
+                  >
+                    Booking tidak tersedia
+                  </button>
+                  <p className="market-demo-note">{reason}</p>
+                </>
+              ) : (
+                <Link
+                  className="button button--primary market-future"
+                  to={`/booking/${service.id}`}
+                >
+                  Ajukan permintaan booking ↗
+                </Link>
+              )}
+              <ServiceActions service={service} />
               <button
                 className="button button--secondary market-future"
                 disabled
@@ -82,7 +105,8 @@ export default function ServiceDetailPage() {
                 {service.availability === "Full-book"
                   ? "Jadwal kreator sedang penuh. "
                   : ""}
-                Booking dan percakapan belum tersedia pada tahap ini.
+                Permintaan belum merupakan kesepakatan atau pembayaran.
+                Percakapan belum tersedia.
               </p>
             </div>
             <Link
