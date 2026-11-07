@@ -1,11 +1,15 @@
 import { useId, useState } from "react";
 
-export default function PasswordInput({ autoComplete, ...props }) {
+export default function PasswordInput({
+  autoComplete,
+  label = "Kata sandi",
+  ...props
+}) {
   const [visible, setVisible] = useState(false);
   const id = useId();
   return (
     <div className="field">
-      <label htmlFor={id}>Kata sandi</label>
+      <label htmlFor={id}>{label}</label>
       <div className="account-password">
         <input
           {...props}
@@ -16,9 +20,7 @@ export default function PasswordInput({ autoComplete, ...props }) {
         />
         <button
           type="button"
-          aria-label={
-            visible ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
-          }
+          aria-label={`${visible ? "Sembunyikan" : "Tampilkan"} ${label.toLowerCase()}`}
           aria-pressed={visible}
           onClick={() => setVisible(!visible)}
         >

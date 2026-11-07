@@ -1,3 +1,8 @@
+import {
+  validateProfilePatch,
+  validateNewPassword,
+} from "./profileValidation.js";
+
 export const ACCOUNT_KEY = "digarsa.demo.accounts.v1";
 export const ADMIN_PERMISSION = "admin:access";
 const blank = () => ({ version: 1, accounts: [], profiles: [], session: null });
@@ -41,14 +46,37 @@ const hex = (buffer) =>
 export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
   const listeners = new Set();
   function read() {
-    const raw = storage.getItem(ACCOUNT_KEY);
+    let raw;
+    try {
+      raw = storage.getItem(ACCOUNT_KEY);
+    } catch {
+      throw new Error(
+        "Penyimpanan demo tidak dapat dibaca. Periksa pengaturan penyimpanan browser.",
+      );
+    }
     if (!raw) return blank();
     try {
       const db = JSON.parse(raw);
       if (
         db.version !== 1 ||
         !Array.isArray(db.accounts) ||
-        !Array.isArray(db.profiles)
+        !Array.isArray(db.profiles) ||
+        !db.accounts.every(
+          (account) =>
+            account &&
+            typeof account.id === "string" &&
+            typeof account.name === "string" &&
+            typeof account.email === "string" &&
+            typeof account.salt === "string" &&
+            typeof account.passwordVerifier === "string" &&
+            Array.isArray(account.permissions),
+        ) ||
+        !db.profiles.every(
+          (profile) =>
+            profile &&
+            typeof profile.id === "string" &&
+            typeof profile.ownerUserId === "string",
+        )
       )
         throw new Error();
       return db;
@@ -89,6 +117,15 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       id: account.id,
       name: account.name,
       email: account.email,
+      avatarUrl: typeof account.avatarUrl === "string" ? account.avatarUrl : "",
+      phone: typeof account.phone === "string" ? account.phone : "",
+      birthDate: typeof account.birthDate === "string" ? account.birthDate : "",
+      gender: typeof account.gender === "string" ? account.gender : "",
+      createdAt:
+        typeof account.createdAt === "string" &&
+        Number.isFinite(Date.parse(account.createdAt))
+          ? account.createdAt
+          : null,
       sellerProfileId: seller?.id || null,
       capabilities: ["buyer", ...(seller ? ["seller"] : [])],
       permissions: account.permissions?.includes(ADMIN_PERMISSION)
@@ -154,6 +191,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         passwordVerifier,
         permissions: [],
         sellerProfileId: null,
+        createdAt: new Date().toISOString(),
       };
       db.accounts.push(account);
       db.session = { userId: account.id, token: cryptoApi.randomUUID() };
@@ -181,6 +219,61 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       db.session = { userId: latest.id, token: cryptoApi.randomUUID() };
       write(db);
       return publicUser(db, latest);
+    },
+    updateProfile(input, { expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || account.id !== expectedUserId)
+        throw new Error(
+          "Sesi berubah. Muat ulang profil akun aktif sebelum menyimpan.",
+        );
+      const patch = validateProfilePatch(input);
+      Object.assign(account, patch);
+      write(db);
+      return publicUser(db, account);
+    },
+    async changePassword(
+      { currentPassword, newPassword, confirmation },
+      { expectedUserId } = {},
+    ) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || account.id !== expectedUserId)
+        throw new Error(
+          "Sesi berubah. Masuk kembali untuk mengubah kata sandi.",
+        );
+      const sessionToken = db.session.token;
+      if (
+        typeof currentPassword !== "string" ||
+        !currentPassword ||
+        currentPassword.length > 128
+      )
+        throw new Error("Isi kata sandi saat ini.");
+      validateNewPassword(newPassword, confirmation);
+      if (
+        (await verifier(currentPassword, account.salt)) !==
+        account.passwordVerifier
+      )
+        throw new Error("Kata sandi saat ini tidak cocok.");
+      if (newPassword === currentPassword)
+        throw new Error("Gunakan kata sandi baru yang berbeda.");
+      const salt = hex(cryptoApi.getRandomValues(new Uint8Array(16)));
+      const passwordVerifier = await verifier(newPassword, salt);
+      const latest = read();
+      const owner = accountForSession(latest);
+      if (
+        !owner ||
+        owner.id !== account.id ||
+        latest.session.token !== sessionToken ||
+        owner.passwordVerifier !== account.passwordVerifier
+      )
+        throw new Error(
+          "Sesi atau kata sandi berubah. Masuk kembali dan coba lagi.",
+        );
+      owner.salt = salt;
+      owner.passwordVerifier = passwordVerifier;
+      write(latest);
+      return publicUser(latest, owner);
     },
     logout() {
       const db = read();

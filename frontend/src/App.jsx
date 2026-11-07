@@ -20,6 +20,8 @@ import CartPage from "./features/customer/CartPage";
 import BookingRequestPage from "./features/customer/BookingRequestPage";
 import OrdersPage from "./features/customer/OrdersPage";
 import BookingDetailPage from "./features/customer/BookingDetailPage";
+import ProfilePage from "./features/profile/ProfilePage";
+import SettingsPage from "./features/profile/SettingsPage";
 import "./App.css";
 
 const pages = [
@@ -42,10 +44,8 @@ export default function App() {
             <Route element={<RequireAccount />}>
               <Route path="/become-a-creator" element={<OnboardingPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route
-                path="/profile"
-                element={<AccountShell title="Profil Saya" />}
-              />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route
                 path="/saved"
                 element={<Navigate to="/favorites" replace />}

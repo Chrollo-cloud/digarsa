@@ -7,6 +7,7 @@ import "./account-menu.css";
 const buyerLinks = [
   ["/dashboard", "Dashboard"],
   ["/profile", "Profil Saya"],
+  ["/settings", "Pengaturan"],
   ["/favorites", "Favorit"],
   ["/cart", "Pertimbangan"],
   ["/orders", "Pesanan"],
@@ -107,12 +108,9 @@ export default function AccountMenu({ onNavigate }) {
           {links.map(([to, label]) => (
             <Link key={to} to={to} role="menuitem" onClick={close}>
               {label}
-              {[
-                "/profile",
-                "/messages",
-                "/seller-dashboard",
-                "/admin",
-              ].includes(to) && <small>Segera hadir</small>}
+              {["/messages", "/seller-dashboard", "/admin"].includes(to) && (
+                <small>Segera hadir</small>
+              )}
             </Link>
           ))}
           <button type="button" role="menuitem" onClick={logout}>

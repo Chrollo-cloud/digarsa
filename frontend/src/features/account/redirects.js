@@ -1,5 +1,5 @@
 const destinations =
-  /^(?:\/(?:dashboard|profile|saved|favorites|cart|orders|messages|become-a-creator|seller-dashboard|admin|marketplace|about|how-it-works)?|\/(?:service|seller|booking|orders)\/[a-zA-Z0-9-]+)$/;
+  /^(?:\/(?:dashboard|profile|settings|saved|favorites|cart|orders|messages|become-a-creator|seller-dashboard|admin|marketplace|about|how-it-works)?|\/(?:service|seller|booking|orders)\/[a-zA-Z0-9-]+)$/;
 
 export function safeReturnTo(value, fallback = "/dashboard") {
   if (
