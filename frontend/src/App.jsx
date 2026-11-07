@@ -20,6 +20,9 @@ import CartPage from "./features/customer/CartPage";
 import BookingRequestPage from "./features/customer/BookingRequestPage";
 import OrdersPage from "./features/customer/OrdersPage";
 import BookingDetailPage from "./features/customer/BookingDetailPage";
+import "./features/seller/sellerClient"; // publishes seller services into the shared catalog
+import SellerCenter from "./features/seller/SellerCenter";
+import AdminCenter from "./features/admin/AdminCenter";
 import "./App.css";
 
 const pages = [
@@ -66,16 +69,10 @@ export default function App() {
                 element={<AccountShell title="Pesan" />}
               />
               <Route element={<RequireSeller />}>
-                <Route
-                  path="/seller-dashboard/*"
-                  element={<AccountShell title="Seller Center" seller />}
-                />
+                <Route path="/seller-dashboard/*" element={<SellerCenter />} />
               </Route>
               <Route element={<RequireAdmin />}>
-                <Route
-                  path="/admin"
-                  element={<AccountShell title="Admin Dashboard" />}
-                />
+                <Route path="/admin/*" element={<AdminCenter />} />
               </Route>
             </Route>
             <Route path="/marketplace" element={<MarketplacePage />} />
