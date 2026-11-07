@@ -17,7 +17,7 @@ export default function WorkShowcase() {
           <Link
             key={project.id}
             className="home-work__item"
-            to={`/marketplace?project=${project.id}`}
+            to={`/service/${project.id}`}
           >
             <img
               src={project.image}

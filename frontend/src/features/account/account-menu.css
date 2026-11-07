@@ -1,0 +1,83 @@
+.account-menu {
+  position: relative;
+}
+.account-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  max-width: 170px;
+  padding: 8px 11px;
+  border: 1px solid rgba(242, 242, 237, 0.55);
+  border-radius: 7px;
+  background: rgba(35, 41, 70, 0.14);
+  color: var(--color-paper);
+  font: 700 12px var(--font-body);
+}
+.account-menu__trigger > span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 30;
+  width: min(280px, calc(100vw - 44px));
+  padding: 8px;
+  background: var(--color-paper);
+  color: var(--color-navy);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(16, 21, 44, 0.2);
+}
+.account-menu__panel a,
+.account-menu__panel button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: 700 12px var(--font-body);
+  text-align: left;
+}
+.account-menu__panel small {
+  color: var(--color-muted);
+  font-size: 9px;
+  font-weight: 500;
+}
+.account-menu__panel a:hover,
+.account-menu__panel button:hover {
+  background: rgba(124, 213, 199, 0.35);
+}
+.account-menu__panel :focus-visible {
+  outline-color: var(--color-blue);
+}
+@media (min-width: 761px) and (max-width: 1050px) {
+  .account-menu__trigger {
+    max-width: 90px;
+  }
+}
+@media (max-width: 760px) {
+  .account-menu {
+    margin-top: 10px;
+  }
+  .account-menu__trigger {
+    width: 100%;
+    max-width: none;
+    justify-content: space-between;
+  }
+  .account-menu__panel {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+    box-shadow: none;
+  }
+}
