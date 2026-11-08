@@ -1,4 +1,17 @@
+import { ADMIN_PERMISSION } from "../account/demoStore.js";
+
 export const CUSTOMER_KEY = "digarsa.demo.customer.v1";
+// Phase 7: seller-side transitions on the SAME booking records (no second orders store).
+// Checkout is not implemented. Accepted stays Accepted; only an existing Paid booking can be completed.
+export const sellerActions = {
+  accept: { from: ["Requested"], to: "Accepted", label: "diterima" },
+  decline: { from: ["Requested"], to: "Declined", label: "ditolak" },
+  complete: {
+    from: ["Paid"],
+    to: "Completed",
+    label: "ditandai selesai",
+  },
+};
 export const statuses = [
   "Requested",
   "Accepted",
@@ -133,6 +146,16 @@ export function createCustomerStore({
     const account = currentUser();
     if (!account?.id || !account.capabilities?.includes("buyer"))
       throw new Error("Masuk ke akun Digarsa untuk melanjutkan.");
+    return account;
+  }
+  function sellerAccount() {
+    const account = currentUser();
+    if (
+      !account?.id ||
+      !account.capabilities?.includes("seller") ||
+      !account.sellerProfileId
+    )
+      throw new Error("Seller Center memerlukan Seller Profile aktif.");
     return account;
   }
   function writable() {
@@ -287,6 +310,61 @@ export function createCustomerStore({
       if (!booking)
         throw new Error("Booking tidak ditemukan atau bukan milik akunmu.");
       return booking;
+    },
+    // --- Phase 7: Seller Center / Admin access to the same booking records ---
+    // The seller identity always comes from the Phase 5 session, never from input.
+    sellerView() {
+      const account = sellerAccount();
+      const { data, error } = read();
+      return {
+        bookings: data.bookings
+          .filter((booking) => booking.creatorId === account.sellerProfileId)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        error,
+      };
+    },
+    respondToBooking(bookingId, action, { expectedStatus, reason } = {}) {
+      const account = sellerAccount();
+      const rule = Object.hasOwn(sellerActions, action)
+        ? sellerActions[action]
+        : null;
+      if (!rule) throw new Error("Aksi booking tidak dikenal.");
+      const data = writable();
+      const booking = data.bookings.find(
+        (item) =>
+          item.id === bookingId && item.creatorId === account.sellerProfileId,
+      );
+      if (!booking)
+        throw new Error(
+          "Booking tidak ditemukan atau bukan untuk Seller Profile-mu.",
+        );
+      if (expectedStatus && booking.status !== expectedStatus)
+        throw new Error(
+          "Status booking sudah berubah. Muat ulang dan tinjau kembali.",
+        );
+      if (!rule.from.includes(booking.status))
+        throw new Error(
+          `Booking berstatus ${booking.status} tidak dapat ${rule.label}.`,
+        );
+      const note = typeof reason === "string" ? reason.trim() : "";
+      if (note.length > 500) throw new Error("Alasan maksimal 500 karakter.");
+      booking.status = rule.to;
+      booking.updatedAt = now();
+      if (action === "decline" && note) booking.declineReason = note;
+      write(data);
+      return { ...booking };
+    },
+    adminView() {
+      const account = currentUser();
+      if (!account?.permissions?.includes(ADMIN_PERMISSION))
+        throw new Error("Memerlukan izin admin internal.");
+      const { data, error } = read();
+      return {
+        bookings: [...data.bookings].sort((a, b) =>
+          b.createdAt.localeCompare(a.createdAt),
+        ),
+        error,
+      };
     },
   };
 }

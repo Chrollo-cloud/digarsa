@@ -81,3 +81,58 @@ export const categories = [
   ...new Set(services.map((service) => service.category)),
 ];
 export const locations = [...new Set(creators.map((creator) => creator.city))];
+
+// --- Phase 7 catalog overlay -------------------------------------------------
+// Seller Center publishes seller-owned services/profiles and admin moderation into
+// these SAME exported arrays (mutated in place), so every existing page and the
+// Phase 6 booking store keep reading one catalog. Base demo data is never lost.
+const baseServices = [...services];
+const baseCreators = [...creators];
+const portfolioOf = (creatorId) =>
+  services
+    .filter((service) => service.creatorId === creatorId)
+    .map((service) => ({
+      image: service.image,
+      alt: service.alt,
+      title: service.title,
+      serviceId: service.id,
+    }));
+export function syncCatalog({
+  services: extraServices = [],
+  creators: extraCreators = [],
+  hiddenServiceIds = [],
+} = {}) {
+  const hidden = new Set(hiddenServiceIds);
+  const taken = new Set(baseServices.map((service) => service.id));
+  const knownCreators = new Set(baseCreators.map((creator) => creator.id));
+  const people = extraCreators.filter(
+    (creator) => !knownCreators.has(creator.id),
+  );
+  const personIds = new Set([...knownCreators, ...people.map((p) => p.id)]);
+  const published = extraServices.filter(
+    (service) => !taken.has(service.id) && personIds.has(service.creatorId),
+  );
+  services.splice(
+    0,
+    services.length,
+    ...[...baseServices, ...published].filter(
+      (service) => !hidden.has(service.id),
+    ),
+  );
+  creators.splice(0, creators.length, ...baseCreators, ...people);
+  creators.forEach((creator) => {
+    creator.portfolio = portfolioOf(creator.id);
+  });
+  categories.splice(
+    0,
+    categories.length,
+    ...new Set(services.map((service) => service.category)),
+  );
+  locations.splice(
+    0,
+    locations.length,
+    ...new Set(creators.map((creator) => creator.city)),
+  );
+}
+// Unmoderated base entries, for admin listings of the seeded demo catalog.
+export const getBaseServices = () => [...baseServices];

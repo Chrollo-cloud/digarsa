@@ -5,7 +5,10 @@ import CustomerFrame from "./CustomerFrame";
 import EmptyState from "./EmptyState";
 import { bookingDate } from "./formatters";
 
-const lifecycle = ["Requested", "Accepted", "Paid", "Completed"];
+import {
+  bookingLifecycle as lifecycle,
+  bookingStatusDescription,
+} from "./bookingLifecycle";
 export default function BookingDetailPage() {
   const { bookingId } = useParams();
   const [params] = useSearchParams();
@@ -106,10 +109,7 @@ export default function BookingDetailPage() {
         <h3>Deskripsi proyek</h3>
         <p className="customer-preline">{booking.description}</p>
         <p className="customer-info">
-          {booking.status === "Requested"
-            ? "Menunggu tinjauan kreator. Penerimaan dan kesepakatan harga tersedia pada tahap pengembangan berikutnya."
-            : "Status ditampilkan dari data demo tersimpan. Tidak ada kontrol pelanggan untuk mengubah status."}{" "}
-          Pembayaran belum tersedia.
+          {bookingStatusDescription(booking.status)}
         </p>
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
       </article>

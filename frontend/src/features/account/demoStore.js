@@ -36,6 +36,7 @@ function optionalUrl(value, name) {
     throw new Error(`${name} harus URL http atau https yang valid.`);
   }
 }
+const hasAdmin = (account) => account?.permissions?.includes(ADMIN_PERMISSION);
 const hex = (buffer) =>
   Array.from(new Uint8Array(buffer), (byte) =>
     byte.toString(16).padStart(2, "0"),
@@ -317,6 +318,72 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       if (!profile || profile.id !== profileId)
         throw new Error("Seller Profile ini bukan milik akun aktif.");
       return { ...profile, specialties: [...profile.specialties] };
+    },
+    // --- Phase 7 additions (Seller Center / Admin). Additive only. ---
+    // Owner edits their own Seller Profile. Owner and ID never come from input.
+    updateSellerProfile(input) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account) throw new Error("Masuk sebelum mengubah Seller Profile.");
+      const profile = ownedProfile(db, account);
+      if (!profile) throw new Error("Akun ini belum memiliki Seller Profile.");
+      if (!sellerCategories.includes(input.category))
+        throw new Error("Pilih kategori layanan yang tersedia.");
+      const next = {
+        name: text(input.name, "Nama kreator", 2, 80),
+        category: input.category,
+        city: text(input.city, "Kota", 2, 80),
+        bio: text(input.bio, "Bio", 30, 500),
+        image: optionalUrl(input.image, "Foto profil"),
+        portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
+        specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+      };
+      Object.assign(profile, next);
+      write(db);
+      return { ...profile, specialties: [...profile.specialties] };
+    },
+    // Seller profiles are public marketplace data (no credentials involved).
+    listSellerProfiles() {
+      return read().profiles.map((profile) => ({
+        ...profile,
+        specialties: [...(profile.specialties || [])],
+      }));
+    },
+    // Display names only, for sellers/admins reading booking rows.
+    customerNames(ids) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || !(ownedProfile(db, account) || hasAdmin(account)))
+        throw new Error("Akses ditolak.");
+      const names = {};
+      for (const id of Array.isArray(ids) ? ids : []) {
+        const match = db.accounts.find((item) => item.id === id);
+        if (match) names[id] = match.name;
+      }
+      return names;
+    },
+    // Admin-only. Never returns salts or password verifiers.
+    listAccountsForAdmin() {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || !hasAdmin(account))
+        throw new Error("Memerlukan izin admin internal.");
+      return db.accounts.map((item) => {
+        const profile = ownedProfile(db, item);
+        return {
+          id: item.id,
+          name: item.name,
+          email: item.email,
+          isSeller: Boolean(profile),
+          sellerProfileId: profile?.id || null,
+          sellerName: profile?.name || "",
+          isAdmin: hasAdmin(item),
+          isSelf: item.id === account.id,
+        };
+      });
     },
   };
 }

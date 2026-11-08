@@ -1,23 +1,38 @@
-const destinations =
-  /^(?:\/(?:dashboard|profile|settings|saved|favorites|cart|orders|messages|become-a-creator|seller-dashboard|admin|marketplace|about|how-it-works)?|\/(?:service|seller|booking|orders)\/[a-zA-Z0-9-]+)$/;
+const destinations = [
+  /^\/(?:dashboard|profile|settings|saved|favorites|cart|orders|messages|become-a-creator|marketplace|about|how-it-works)?\/?$/,
+  /^\/(?:service|seller|booking|orders)\/[a-zA-Z0-9][a-zA-Z0-9-]*\/?$/,
+  /^\/seller-dashboard(?:\/(?:profile|earnings|orders(?:\/[a-zA-Z0-9][a-zA-Z0-9-]*)?|services(?:\/new|\/[a-zA-Z0-9][a-zA-Z0-9-]*\/edit)?))?\/?$/,
+  /^\/admin(?:\/(?:accounts|moderation|orders))?\/?$/,
+];
 
+// Syntax validation only: RequireAccount/RequireSeller/RequireAdmin still enforce
+// permissions at the destination. Never normalize an unsafe path into an allowed one.
 export function safeReturnTo(value, fallback = "/dashboard") {
   if (
     typeof value !== "string" ||
-    /[\\\s]/.test(value) ||
-    value.split(/[?#]/, 1)[0].includes("%") ||
-    [...value].some(
-      (char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127,
-    )
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    /[\\\s]/.test(value)
   )
     return fallback;
   try {
+    const decoded = decodeURIComponent(value);
+    if (
+      [...decoded].some(
+        (char) =>
+          char.charCodeAt(0) < 32 ||
+          char.charCodeAt(0) === 127 ||
+          char === "\\",
+      )
+    )
+      return fallback;
+    const pathname = value.split(/[?#]/, 1)[0];
+    if (pathname.includes("%")) return fallback;
     const url = new URL(value, "https://digarsa.invalid");
     if (
-      !value.startsWith("/") ||
-      value.startsWith("//") ||
       url.origin !== "https://digarsa.invalid" ||
-      !destinations.test(url.pathname)
+      url.pathname !== pathname ||
+      !destinations.some((pattern) => pattern.test(pathname))
     )
       return fallback;
     return `${url.pathname}${url.search}${url.hash}`;

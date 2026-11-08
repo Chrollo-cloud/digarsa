@@ -108,9 +108,7 @@ export default function AccountMenu({ onNavigate }) {
           {links.map(([to, label]) => (
             <Link key={to} to={to} role="menuitem" onClick={close}>
               {label}
-              {["/messages", "/seller-dashboard", "/admin"].includes(to) && (
-                <small>Segera hadir</small>
-              )}
+              {to === "/messages" && <small>Segera hadir</small>}
             </Link>
           ))}
           <button type="button" role="menuitem" onClick={logout}>
