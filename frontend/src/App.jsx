@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/layout/PublicLayout";
 import RouteShell from "./pages/RouteShell";
@@ -8,7 +9,6 @@ import CreatorProfilePage from "./pages/marketplace/CreatorProfilePage";
 import AuthProvider from "./features/account/AuthProvider";
 import AuthPage from "./features/account/AuthPage";
 import OnboardingPage from "./features/account/OnboardingPage";
-import AccountShell from "./features/account/AccountShell";
 import {
   RequireAccount,
   RequireSeller,
@@ -26,6 +26,29 @@ import "./features/seller/sellerClient"; // publishes seller services into the s
 import SellerCenter from "./features/seller/SellerCenter";
 import AdminCenter from "./features/admin/AdminCenter";
 import "./App.css";
+import BookingNotifications from "./features/messaging/BookingNotifications";
+
+const InboxPage = lazy(() => import("./features/messaging/InboxPage"));
+const ConversationPage = lazy(
+  () => import("./features/messaging/ConversationPage"),
+);
+const NotificationsPage = lazy(
+  () => import("./features/messaging/NotificationsPage"),
+);
+
+function MessagingLoading({ children }) {
+  return (
+    <Suspense
+      fallback={
+        <p className="container route-shell" role="status">
+          Memuat ruang personal…
+        </p>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
 
 const pages = [
   ["/how-it-works", "Cara Kerja", "HOW IT WORKS"],
@@ -36,6 +59,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <BookingNotifications />
         <Routes>
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
@@ -66,7 +90,27 @@ export default function App() {
               <Route path="/orders" element={<OrdersPage />} />
               <Route
                 path="/messages"
-                element={<AccountShell title="Pesan" />}
+                element={
+                  <MessagingLoading>
+                    <InboxPage />
+                  </MessagingLoading>
+                }
+              />
+              <Route
+                path="/messages/:conversationId"
+                element={
+                  <MessagingLoading>
+                    <ConversationPage />
+                  </MessagingLoading>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <MessagingLoading>
+                    <NotificationsPage />
+                  </MessagingLoading>
+                }
               />
               <Route element={<RequireSeller />}>
                 <Route path="/seller-dashboard/*" element={<SellerCenter />} />

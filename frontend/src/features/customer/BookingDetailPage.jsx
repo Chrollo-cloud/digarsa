@@ -1,4 +1,10 @@
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import ContactCreator from "../messaging/ContactCreator";
 import { money } from "../../data/marketplace";
 import { useCustomer } from "./useCustomer";
 import CustomerFrame from "./CustomerFrame";
@@ -12,6 +18,7 @@ import {
 export default function BookingDetailPage() {
   const { bookingId } = useParams();
   const [params] = useSearchParams();
+  const location = useLocation();
   const { bookings } = useCustomer();
   const booking = bookings.find((item) => item.id === bookingId);
   if (!booking)
@@ -35,6 +42,12 @@ export default function BookingDetailPage() {
       {booking.status === "Requested" && params.has("submitted") && (
         <p role="status" className="customer-success">
           Permintaan tersimpan. Menunggu tinjauan kreator; belum ada pembayaran.
+        </p>
+      )}
+      {location.state?.notificationWarning && (
+        <p className="customer-warning" role="alert">
+          Permintaan tersimpan, tetapi notifikasi belum dapat disimpan. Booking
+          tetap tersedia di pesananmu.
         </p>
       )}
       <article className="customer-tracking">
@@ -112,6 +125,12 @@ export default function BookingDetailPage() {
           {bookingStatusDescription(booking.status)}
         </p>
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
+        <ContactCreator
+          key={booking.id}
+          sellerProfileId={booking.creatorId}
+          serviceId={booking.serviceId}
+          bookingId={booking.id}
+        />
       </article>
     </CustomerFrame>
   );

@@ -7,6 +7,7 @@ import CustomerFrame from "./CustomerFrame";
 import EmptyState from "./EmptyState";
 import BookingSummary from "./BookingSummary";
 import { useCustomer } from "./useCustomer";
+import { customerMessaging } from "../messaging/customerMessagingClient";
 
 function BookingForm({ service, creator }) {
   const { user, store } = useCustomer();
@@ -36,7 +37,16 @@ function BookingForm({ service, creator }) {
         confirmed: true,
         expectedUserId: user.id,
       });
-      navigate(`/orders/${booking.id}?submitted=1`, { replace: true });
+      let notificationWarning = false;
+      try {
+        customerMessaging.notifyRequested(booking.id);
+      } catch {
+        notificationWarning = true;
+      }
+      navigate(`/orders/${booking.id}?submitted=1`, {
+        replace: true,
+        state: { notificationWarning },
+      });
     } catch (failure) {
       locked.current = false;
       setError(failure.message);

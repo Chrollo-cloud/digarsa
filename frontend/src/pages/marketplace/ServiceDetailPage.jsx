@@ -8,6 +8,7 @@ import NotFound from "../../components/marketplace/NotFound";
 import ServiceActions from "../../features/customer/ServiceActions";
 import { bookingRestriction } from "../../features/customer/customerStore";
 import { useAuth } from "../../features/account/authContext";
+import ContactCreator from "../../features/messaging/ContactCreator";
 import "./marketplace.css";
 
 export default function ServiceDetailPage() {
@@ -95,18 +96,16 @@ export default function ServiceDetailPage() {
                 </Link>
               )}
               <ServiceActions service={service} />
-              <button
-                className="button button--secondary market-future"
-                disabled
-              >
-                Pesan kreator — segera hadir
-              </button>
+              <ContactCreator
+                key={`${user?.id || "guest"}-${service.id}`}
+                sellerProfileId={service.creatorId}
+                serviceId={service.id}
+              />
               <p className="market-demo-note">
                 {service.availability === "Full-book"
                   ? "Jadwal kreator sedang penuh. "
                   : ""}
                 Permintaan belum merupakan kesepakatan atau pembayaran.
-                Percakapan belum tersedia.
               </p>
             </div>
             <Link

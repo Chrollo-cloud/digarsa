@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./authContext";
 import { ADMIN_PERMISSION } from "./demoStore";
+import { useMessaging } from "../messaging/useMessaging";
+import { customerMessaging } from "../messaging/customerMessagingClient";
 import "./account-menu.css";
 
 const buyerLinks = [
@@ -12,10 +14,14 @@ const buyerLinks = [
   ["/cart", "Pertimbangan"],
   ["/orders", "Pesanan"],
   ["/messages", "Pesan"],
+  ["/notifications", "Notifikasi"],
 ];
 
 export default function AccountMenu({ onNavigate }) {
   const { user, store } = useAuth();
+  const { data: counts, error: messagingError } = useMessaging(() =>
+    customerMessaging.counts(),
+  );
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const trigger = useRef(null);
@@ -108,7 +114,22 @@ export default function AccountMenu({ onNavigate }) {
           {links.map(([to, label]) => (
             <Link key={to} to={to} role="menuitem" onClick={close}>
               {label}
-              {to === "/messages" && <small>Segera hadir</small>}
+              {to === "/messages" && counts?.messages > 0 && (
+                <small aria-label={`${counts.messages} pesan belum dibaca`}>
+                  {counts.messages}
+                </small>
+              )}
+              {to === "/notifications" && counts?.notifications > 0 && (
+                <small
+                  aria-label={`${counts.notifications} notifikasi belum dibaca`}
+                >
+                  {counts.notifications}
+                </small>
+              )}
+              {messagingError &&
+                ["/messages", "/notifications"].includes(to) && (
+                  <small>Data tidak tersedia</small>
+                )}
             </Link>
           ))}
           <button type="button" role="menuitem" onClick={logout}>

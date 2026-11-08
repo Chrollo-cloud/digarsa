@@ -1,5 +1,6 @@
 const destinations = [
-  /^\/(?:dashboard|profile|settings|saved|favorites|cart|orders|messages|become-a-creator|marketplace|about|how-it-works)?\/?$/,
+  /^\/(?:dashboard|profile|settings|saved|favorites|cart|orders|messages|notifications|become-a-creator|marketplace|about|how-it-works)?\/?$/,
+  /^\/messages\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/(?:service|seller|booking|orders)\/[a-zA-Z0-9][a-zA-Z0-9-]*\/?$/,
   /^\/seller-dashboard(?:\/(?:profile|earnings|orders(?:\/[a-zA-Z0-9][a-zA-Z0-9-]*)?|services(?:\/new|\/[a-zA-Z0-9][a-zA-Z0-9-]*\/edit)?))?\/?$/,
   /^\/admin(?:\/(?:accounts|moderation|orders))?\/?$/,

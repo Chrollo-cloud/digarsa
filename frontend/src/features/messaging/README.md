@@ -1,8 +1,9 @@
 # Shared messaging and notification foundation
 
 Customer and seller consumers use the **same** `messagingStore` exported from
-`messagingClient.js`. This milestone adds no screens, route/provider changes,
-booking hooks, payment actions, or changes to existing stores.
+`messagingClient.js`. The foundation itself adds no payment actions or changes
+to existing stores. For the subsequent customer screens and event integration,
+see [CUSTOMER_UI.md](./CUSTOMER_UI.md).
 
 ## Public records
 
@@ -135,7 +136,8 @@ its customer or Accepted/Declined/Completed from its owning seller, and determin
 the recipient itself. Paid/Cancelled have no supported notification event. No
 generic method accepts arbitrary notification recipients or arbitrary event types.
 Deduplication uses event type + booking/review ID + recipient (message ID for chat).
-These calls are not yet wired into existing booking UI, as this phase is logic only.
+The customer UI milestone wires requested events after submission and observes
+supported seller status changes through a separate bridge; see CUSTOMER_UI.md.
 
 `new_review` is supported by the factory through `resolveReview`; the bound client
 does not provide it because the application has no authoritative review repository.
@@ -188,4 +190,5 @@ delivery guarantee, encryption, or production payment verification.
 - `frontend/tests/messaging.test.js`: unit and real Phase 5/6 adapter integration coverage.
 
 Run `npm run lint`, `npm run build`, and `npm test` from `frontend`.
-No messaging UI exists to browser-test in this phase.
+The foundation's unit tests are supplemented by customer UI browser checks
+documented in CUSTOMER_UI.md.
