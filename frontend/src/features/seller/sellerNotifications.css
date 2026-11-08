@@ -1,0 +1,102 @@
+.seller-notifications {
+  display: grid;
+  gap: 18px;
+}
+.seller-notifications-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+.seller-notifications-heading h2 {
+  margin: 5px 0 0;
+  font: 700 clamp(24px, 3.2vw, 34px)/1.1 var(--font-display);
+}
+.seller-notifications-count {
+  padding: 8px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  background: #fff;
+  color: var(--color-indigo);
+  font-size: 11px;
+  font-weight: 700;
+}
+.seller-notifications-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.seller-notifications-list li {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: #fff;
+}
+.seller-notifications-list li.is-unread {
+  border-left: 3px solid var(--color-blue);
+  background: #f8faff;
+}
+.seller-notifications-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-cyan-pale);
+  color: var(--color-indigo);
+}
+.seller-notifications-copy { min-width: 0; flex: 1; }
+.seller-notifications-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-indigo);
+}
+.seller-notifications-top strong { font-size: 14px; }
+.seller-notifications-unread {
+  padding: 3px 7px;
+  border-radius: 99px;
+  background: var(--color-indigo);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+.seller-notifications-copy p {
+  margin: 6px 0 !important;
+  font-size: 12px !important;
+}
+.seller-notifications-copy time {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+.seller-notifications-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 11px;
+}
+.seller-notifications-actions button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-blue);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seller-notifications-empty { text-align: center; }
+.seller-notifications-empty > span { color: var(--color-blue); font-size: 28px; }
+.seller-notifications-footnote { margin: 0 !important; font-size: 11px !important; }
+.seller-notifications-footnote a { color: var(--color-blue); font-weight: 700; }
+@media (max-width: 600px) {
+  .seller-notifications-heading { align-items: start; flex-direction: column; }
+  .seller-notifications-list li { gap: 10px; padding: 14px; }
+  .seller-notifications-mark { width: 32px; height: 32px; }
+}

@@ -15,7 +15,10 @@ import {
   createSellerStore,
 } from "../src/features/seller/sellerStore.js";
 import { buildOverlay } from "../src/features/seller/sellerCatalog.js";
-import { summarizeEarnings } from "../src/features/seller/earnings.js";
+import {
+  summarizeEarnings,
+  summarizePerformance,
+} from "../src/features/seller/earnings.js";
 
 const pw = "Demo-password-123";
 const brief = {
@@ -192,6 +195,62 @@ test("service input is validated and availability toggles Open/Full-book", async
   assert.equal(f.seller.mine().services.length, 1);
 });
 
+test("service active status controls publication separately from availability", async () => {
+  const f = await fixture();
+  await f.login("a@test.dev");
+  const svc = f.seller.create(serviceInput());
+  f.refresh();
+  const visibleServices = () =>
+    buildOverlay({
+      profiles: f.accounts.listSellerProfiles(),
+      records: f.seller.catalogEntries().services,
+    }).services;
+  assert.ok(visibleServices().some((item) => item.id === svc.id));
+  const inactive = f.seller.setActive(svc.id, false);
+  assert.equal(inactive.active, false);
+  assert.equal(inactive.availability, "Open");
+  f.refresh();
+  assert.ok(!visibleServices().some((item) => item.id === svc.id));
+  await f.login("b@test.dev");
+  assert.deepEqual(f.seller.mine().services, []);
+  await f.login("a@test.dev");
+  assert.equal(f.seller.setActive(svc.id, true).active, true);
+  f.refresh();
+  assert.ok(visibleServices().some((item) => item.id === svc.id));
+});
+
+test("seller availability slots persist, reject overlaps, and enforce ownership", async () => {
+  const f = await fixture();
+  await f.login("a@test.dev");
+  const svc = f.seller.create(serviceInput());
+  const date = new Date();
+  date.setDate(date.getDate() + 3);
+  const day = date.toISOString().slice(0, 10);
+  const first = f.seller.createSchedule(svc.id, {
+    date: day,
+    startTime: "09:00",
+    endTime: "10:00",
+    note: "Konsultasi awal",
+  });
+  f.seller.createSchedule(svc.id, { date: day, startTime: "10:00", endTime: "11:00" });
+  assert.throws(
+    () => f.seller.createSchedule(svc.id, { date: day, startTime: "09:30", endTime: "10:30" }),
+    /bertabrakan/,
+  );
+  assert.throws(
+    () => f.seller.updateSchedule(svc.id, first.id, { date: day, startTime: "10:15", endTime: "10:45" }),
+    /bertabrakan/,
+  );
+  assert.equal(f.seller.schedulesFor(svc.id).schedules.length, 2);
+  assert.equal(JSON.parse(f.values.get(SELLER_KEY)).schedules.length, 2);
+  await f.login("b@test.dev");
+  assert.throws(() => f.seller.schedulesFor(svc.id), /bukan milikmu/);
+  assert.throws(() => f.seller.removeSchedule(svc.id, first.id), /bukan milikmu/);
+  await f.login("a@test.dev");
+  f.seller.removeSchedule(svc.id, first.id);
+  assert.equal(f.seller.schedulesFor(svc.id).schedules.length, 1);
+});
+
 test("customer request -> seller accept -> customer sees the update, all in one booking record", async () => {
   const f = await fixture();
   await f.login("a@test.dev");
@@ -290,6 +349,10 @@ test("only existing paid work can be completed and feeds the earnings estimate",
   assert.equal(totals.pending.count, 0);
   assert.equal(totals.declined, 1);
   assert.equal(totals.months.length, 1);
+  const performance = summarizePerformance(f.orders.sellerView().bookings);
+  assert.equal(performance.responseRate, 100);
+  assert.equal(performance.acceptanceRate, 67);
+  assert.equal(performance.completionRate, 50);
 });
 
 test("a service with active bookings cannot be deleted; finished ones can", async () => {
@@ -338,8 +401,19 @@ test("sellers and buyers cannot use admin operations; admin permission is separa
   const list = f.accounts.listAccountsForAdmin();
   assert.equal(list.length, 4);
   assert.ok(list.every((x) => !("passwordVerifier" in x) && !("salt" in x)));
+  assert.ok(list.every((x) => x.isCustomer === true));
+  assert.ok(list.every((x) => typeof x.createdAt === "string"));
+  const sellerAccount = list.find((x) => x.email === "a@test.dev");
+  assert.equal(sellerAccount.isSeller, true);
+  assert.equal(sellerAccount.sellerProfileId, f.a.sellerProfileId);
+  assert.equal(sellerAccount.sellerCategory, "Branding");
   assert.equal(list.find((x) => x.email === "admin@test.dev").isAdmin, true);
   assert.equal(list.find((x) => x.email === "a@test.dev").isAdmin, false);
+  const serviceView = f.seller.adminList().services.find((x) => x.id === svc.id);
+  assert.equal(serviceView.description, serviceInput().description);
+  assert.equal(serviceView.delivery, serviceInput().delivery);
+  assert.equal(serviceView.turnaround, serviceInput().turnaround);
+  assert.ok(!("passwordVerifier" in serviceView));
 });
 
 test("admin moderation hides a service from the catalog and blocks new bookings; restore reverses it", async () => {
@@ -579,4 +653,55 @@ test("Paid completion enforces seller ownership, valid status, and stale-state c
   );
   await f.login("buyer@test.dev");
   assert.equal(f.orders.getBooking(booking.id).status, "Completed");
+});
+
+test("legacy services retain metadata and schedules while invalid active flags fail closed", async () => {
+  const f = await fixture();
+  await f.login("a@test.dev");
+  const service = f.seller.create(serviceInput());
+  const date = new Date();
+  date.setDate(date.getDate() + 3);
+  const slot = f.seller.createSchedule(service.id, {
+    date: date.toISOString().slice(0, 10),
+    startTime: "09:00",
+    endTime: "10:00",
+    note: "Konsultasi",
+  });
+  const data = JSON.parse(f.values.get(SELLER_KEY));
+  delete data.services[0].active;
+  const legacyRaw = JSON.stringify(data);
+  f.values.set(SELLER_KEY, legacyRaw);
+  const legacy = f.seller.catalogEntries();
+  assert.equal(legacy.error, "");
+  assert.equal(legacy.services[0].active, true);
+  assert.equal(legacy.services[0].ownerUserId, f.a.id);
+  assert.equal(legacy.services[0].description, service.description);
+  assert.equal(f.seller.schedulesFor(service.id).schedules[0].id, slot.id);
+  assert.equal(f.values.get(SELLER_KEY), legacyRaw);
+  for (const active of ["false", null, 0]) {
+    data.services[0].active = active;
+    const damaged = JSON.stringify(data);
+    f.values.set(SELLER_KEY, damaged);
+    assert.ok(f.seller.catalogEntries().error);
+    assert.throws(() => f.seller.setActive(service.id, true), /tidak valid/);
+    assert.equal(f.values.get(SELLER_KEY), damaged);
+  }
+});
+
+test("schedule metadata survives blocked deletion when booking storage is corrupt", async () => {
+  const f = await fixture();
+  await f.login("a@test.dev");
+  const service = f.seller.create(serviceInput());
+  const date = new Date();
+  date.setDate(date.getDate() + 3);
+  f.seller.createSchedule(service.id, {
+    date: date.toISOString().slice(0, 10),
+    startTime: "09:00",
+    endTime: "10:00",
+  });
+  const before = f.values.get(SELLER_KEY);
+  f.values.set(CUSTOMER_KEY, "{damaged");
+  assert.throws(() => f.seller.remove(service.id), /belum dapat diverifikasi/);
+  assert.equal(f.values.get(SELLER_KEY), before);
+  assert.equal(f.values.get(CUSTOMER_KEY), "{damaged");
 });

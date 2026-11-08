@@ -7,8 +7,8 @@ import { createMessagingStore } from "./messagingStore";
 import { MESSAGING_KEY } from "./contracts";
 import { reviewStore } from "../reviews/reviewClient";
 
-// Customer and future seller screens share this instance. Reviews resolve through
-// their authoritative repository; messaging contracts and authorization are unchanged.
+// Customer and Seller Messaging use this single shared instance. Reviews resolve
+// through their authoritative repository; contracts and authorization are unchanged.
 export const messagingStore = createMessagingStore({
   ...createMessagingAdapters({
     accounts: demoStore,

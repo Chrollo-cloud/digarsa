@@ -1,9 +1,11 @@
 # Shared messaging and notification foundation
 
 Customer and seller consumers use the **same** `messagingStore` exported from
-`messagingClient.js`. The foundation itself adds no payment actions or changes
-to existing stores. For the subsequent customer screens and event integration,
-see [CUSTOMER_UI.md](./CUSTOMER_UI.md).
+`messagingClient.js`. Customer Messaging and Seller Messaging use role-scoped facades over this one
+repository; neither creates a second store or account system. Customer screens and
+event integration are documented in [CUSTOMER_UI.md](./CUSTOMER_UI.md); Seller
+Messaging and Notifications are documented in [the Seller README](../seller/README.md).
+No messaging operation performs payment actions or changes booking status.
 
 ## Public records
 
@@ -130,7 +132,7 @@ always labels messages untrusted; its heuristic is not a security guarantee.
 UI consumers must render messages as plain text and present an appropriate advisory.
 Messages and notifications never update booking/payment status.
 
-Future booking consumers should call `notifyBookingEvent(booking.id)` **after** a
+Booking consumers should call `notifyBookingEvent(booking.id)` **after** a
 successful booking write. The method reads the live record, accepts Requested from
 its customer or Accepted/Declined/Completed from its owning seller, and determines
 the recipient itself. Paid/Cancelled have no supported notification event. No
@@ -139,10 +141,14 @@ Deduplication uses event type + booking/review ID + recipient (message ID for ch
 The customer UI milestone wires requested events after submission and observes
 supported seller status changes through a separate bridge; see CUSTOMER_UI.md.
 
-`new_review` is supported by the factory through `resolveReview`; the bound client
-does not provide it because the application has no authoritative review repository.
-It fails with `UNSUPPORTED_EVENT` until that integration exists. Editorial mock
-creators without a persisted, owned Seller Profile cannot receive messages yet.
+`new_review` uses the bound client's `resolveReview` adapter to
+`reviewStore.getNotificationContext(id)`. The shared store verifies the persisted
+review against its matching Completed booking and resolves the actual Seller
+Profile owner as recipient. Review submission calls this API after saving; retries
+reuse the same event, never duplicate the notification or complete a payment.
+Factory consumers without a review resolver still receive `UNSUPPORTED_EVENT`.
+Editorial mock creators without a persisted, owned Seller Profile cannot receive
+messages.
 
 ## Storage and dependency boundary
 
@@ -190,5 +196,24 @@ delivery guarantee, encryption, or production payment verification.
 - `frontend/tests/messaging.test.js`: unit and real Phase 5/6 adapter integration coverage.
 
 Run `npm run lint`, `npm run build`, and `npm test` from `frontend`.
-The foundation's unit tests are supplemented by customer UI browser checks
-documented in CUSTOMER_UI.md.
+The foundation tests retain both customer and owning-seller scenarios.
+`customer-messaging.test.js` covers the customer facade and booking bridge;
+`seller-messaging.test.js` covers the seller facade, identities, replies, notification
+isolation, and buyer/seller account switching. `reviews.test.js` covers verified
+reviews, ratings, and deduplicated review notifications. Customer UI browser checks
+are documented in CUSTOMER_UI.md.
+
+## Current UI integrations
+
+- Customer routes: `/messages`, `/messages/:conversationId`, and `/notifications`.
+  The customer facade only exposes conversations where the account is the customer.
+- Seller routes: `/seller-dashboard/messages`,
+  `/seller-dashboard/messages/:conversationId`, and
+  `/seller-dashboard/notifications`. `sellerMessagingClient.js` imports the same
+  shared singleton; its facade exposes only the account's owned Seller Profile
+  conversations and appropriate seller notifications.
+- Both facades use existing shared methods for sending, marking incoming messages
+  read, and notification ownership. Admin permission grants no private chat bypass.
+- Existing adapters retain their signatures. Real booking-store factory consumers
+  must supply the account-backed `resolveSellerProfile` dependency required by the
+  frontend stability fixes. This does not change messaging record contracts.

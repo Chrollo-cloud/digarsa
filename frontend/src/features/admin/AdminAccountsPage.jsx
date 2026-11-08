@@ -1,41 +1,113 @@
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Empty, StatusBadge } from "../workspace/WorkspaceFrame";
+import { dateTime } from "../workspace/format";
 import AdminFrame from "./AdminFrame";
 import { useAdmin } from "./useAdmin";
 
 export default function AdminAccountsPage() {
-  const { accounts } = useAdmin();
+  const { accounts, error } = useAdmin();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState("");
+  const role = searchParams.get("role") || "all";
+  const rows = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("id-ID");
+    return accounts.filter((account) => {
+      const matchesRole =
+        role === "customer"
+          ? account.isCustomer
+          : role === "seller"
+            ? account.isSeller
+            : role === "admin"
+              ? account.isAdmin
+              : true;
+      const text = [account.name, account.email, account.sellerName, account.sellerProfileId]
+        .join(" ")
+        .toLocaleLowerCase("id-ID");
+      return matchesRole && text.includes(query);
+    });
+  }, [accounts, role, search]);
+
+  function changeRole(value) {
+    const next = new URLSearchParams(searchParams);
+    if (value === "all") next.delete("role");
+    else next.set("role", value);
+    setSearchParams(next, { replace: true });
+  }
+
   return (
     <AdminFrame
-      title="Akun."
-      description="Daftar akun terpadu Phase 5. Peran seller berasal dari Seller Profile yang dimiliki, sedangkan izin admin dibaca terpisah dan tidak bisa diberikan dari halaman ini."
+      title="Manajemen akun."
+      description="Cari dan tinjau akun Customer serta Seller dari model akun terpadu. Informasi kredensial tidak tersedia di tampilan Admin."
     >
-      {accounts.length === 0 ? (
-        <Empty title="Belum ada akun.">Akun muncul setelah ada yang mendaftar.</Empty>
+      <div className="ws-toolbar admin-toolbar">
+        <div className="field">
+          <label htmlFor="admin-account-search">Cari akun</label>
+          <input
+            id="admin-account-search"
+            className="field__control"
+            type="search"
+            placeholder="Nama, email, atau Seller Profile"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="admin-account-role">Peran akun</label>
+          <select id="admin-account-role" className="field__control" value={role} onChange={(event) => changeRole(event.target.value)}>
+            <option value="all">Semua akun</option>
+            <option value="customer">Customer-capable</option>
+            <option value="seller">Seller</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <p>{rows.length} dari {accounts.length} akun</p>
+      </div>
+      <p className="ws-notice admin-capability-note">
+        Akun Digarsa dapat berperan sebagai Customer; Seller adalah kemampuan tambahan melalui Seller Profile. Model demo belum memiliki status suspend akun atau status verifikasi Seller.
+      </p>
+      {error ? (
+        <Empty title="Daftar akun belum tersedia.">Data akun tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
+      ) : rows.length === 0 ? (
+        <Empty title={accounts.length ? "Akun tidak ditemukan." : "Belum ada akun."}>
+          {accounts.length ? "Ubah kata pencarian atau filter peran." : "Akun akan muncul setelah pengguna mendaftar."}
+        </Empty>
       ) : (
         <div className="ws-table-wrap">
-          <table className="ws-table">
+          <table className="ws-table admin-account-table">
             <thead>
               <tr>
-                <th scope="col">Nama</th>
-                <th scope="col">Email</th>
+                <th scope="col">Akun</th>
                 <th scope="col">Peran</th>
                 <th scope="col">Seller Profile</th>
+                <th scope="col">Status data</th>
               </tr>
             </thead>
             <tbody>
-              {accounts.map((account) => (
+              {rows.map((account) => (
                 <tr key={account.id}>
                   <td>
-                    {account.name}
-                    {account.isSelf && <small>Kamu</small>}
+                    <strong>{account.name}</strong>{account.isSelf && <small>Akun Admin aktif</small>}
+                    <small>{account.email}</small>
+                    <details className="admin-account-details">
+                      <summary>Lihat detail akun</summary>
+                      <dl>
+                        <dt>ID akun</dt><dd>{account.id}</dd>
+                        <dt>Tanggal dibuat</dt><dd>{account.createdAt ? dateTime(account.createdAt) : "Tidak tercatat"}</dd>
+                        {account.isSeller && <>
+                          <dt>ID Seller Profile</dt><dd>{account.sellerProfileId}</dd>
+                          <dt>Kategori / kota</dt><dd>{account.sellerCategory || "—"} · {account.sellerCity || "—"}</dd>
+                        </>}
+                      </dl>
+                    </details>
                   </td>
-                  <td>{account.email}</td>
                   <td>
-                    <StatusBadge status="open">Buyer</StatusBadge>{" "}
-                    {account.isSeller && <StatusBadge status="accepted">Seller</StatusBadge>}{" "}
+                    {account.isCustomer && <StatusBadge status="open">Customer</StatusBadge>} {" "}
+                    {account.isSeller && <StatusBadge status="accepted">Seller</StatusBadge>} {" "}
                     {account.isAdmin && <StatusBadge status="requested">Admin</StatusBadge>}
                   </td>
-                  <td>{account.sellerName || "—"}</td>
+                  <td>{account.isSeller ? <><strong>{account.sellerName}</strong><small>Profil aktif · verifikasi tidak tersedia di model demo</small></> : "—"}</td>
+                  <td><StatusBadge status="open">Terdaftar</StatusBadge><small>Kontrol aktivasi tidak tersedia</small></td>
                 </tr>
               ))}
             </tbody>
