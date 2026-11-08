@@ -46,6 +46,7 @@ async function fixture() {
     currentUser: () => accounts.current(),
     catalog,
     creators,
+    resolveSellerProfile: (id) => accounts.getBookableSeller(id),
     randomId: () => `booking-${++sequence}`,
   });
   const sellerStore = createSellerStore({

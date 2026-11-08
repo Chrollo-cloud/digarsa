@@ -442,9 +442,19 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
           id: item.id,
           name: item.name,
           email: item.email,
+          createdAt:
+            typeof item.createdAt === "string" &&
+            Number.isFinite(Date.parse(item.createdAt))
+              ? item.createdAt
+              : null,
+          // The unified account model grants every registered account buyer
+          // capability; seller status is an additional owned profile.
+          isCustomer: true,
           isSeller: Boolean(profile),
           sellerProfileId: profile?.id || null,
           sellerName: profile?.name || "",
+          sellerCategory: profile?.category || "",
+          sellerCity: profile?.city || "",
           isAdmin: hasAdmin(item),
           isSelf: item.id === account.id,
         };

@@ -401,8 +401,19 @@ test("sellers and buyers cannot use admin operations; admin permission is separa
   const list = f.accounts.listAccountsForAdmin();
   assert.equal(list.length, 4);
   assert.ok(list.every((x) => !("passwordVerifier" in x) && !("salt" in x)));
+  assert.ok(list.every((x) => x.isCustomer === true));
+  assert.ok(list.every((x) => typeof x.createdAt === "string"));
+  const sellerAccount = list.find((x) => x.email === "a@test.dev");
+  assert.equal(sellerAccount.isSeller, true);
+  assert.equal(sellerAccount.sellerProfileId, f.a.sellerProfileId);
+  assert.equal(sellerAccount.sellerCategory, "Branding");
   assert.equal(list.find((x) => x.email === "admin@test.dev").isAdmin, true);
   assert.equal(list.find((x) => x.email === "a@test.dev").isAdmin, false);
+  const serviceView = f.seller.adminList().services.find((x) => x.id === svc.id);
+  assert.equal(serviceView.description, serviceInput().description);
+  assert.equal(serviceView.delivery, serviceInput().delivery);
+  assert.equal(serviceView.turnaround, serviceInput().turnaround);
+  assert.ok(!("passwordVerifier" in serviceView));
 });
 
 test("admin moderation hides a service from the catalog and blocks new bookings; restore reverses it", async () => {

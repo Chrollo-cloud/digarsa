@@ -1,5 +1,6 @@
 import WorkspaceFrame from "../workspace/WorkspaceFrame";
 import { useAdmin } from "./useAdmin";
+import "./admin.css";
 
 const nav = [
   ["/admin", "Ringkasan", true],
