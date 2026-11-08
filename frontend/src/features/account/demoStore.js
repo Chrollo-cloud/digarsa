@@ -365,6 +365,35 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       }
       return names;
     },
+    // Minimal public identity data for authorized Seller messaging inboxes.
+    // IDs are supplied from conversations already authorized by messagingStore.
+    customerIdentities(ids) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || !(ownedProfile(db, account) || hasAdmin(account)))
+        throw new Error("Akses ditolak.");
+      const identities = {};
+      for (const id of Array.isArray(ids) ? ids : []) {
+        const match = db.accounts.find((item) => item.id === id);
+        if (!match) continue;
+        let avatarUrl = "";
+        if (typeof match.avatarUrl === "string" && match.avatarUrl) {
+          try {
+            const url = new URL(match.avatarUrl);
+            if (
+              ["http:", "https:"].includes(url.protocol) &&
+              !url.username &&
+              !url.password
+            )
+              avatarUrl = url.href;
+          } catch {
+            // Invalid legacy/demo avatar values use the initials fallback.
+          }
+        }
+        identities[id] = { id: match.id, name: match.name, avatarUrl };
+      }
+      return identities;
+    },
     // Admin-only. Never returns salts or password verifiers.
     listAccountsForAdmin() {
       const db = read();

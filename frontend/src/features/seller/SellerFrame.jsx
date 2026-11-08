@@ -11,6 +11,7 @@ export default function SellerFrame({ title, description, children }) {
       waiting ? `Pesanan masuk (${waiting})` : "Pesanan masuk",
     ],
     ["/seller-dashboard/services", "Layanan saya"],
+    ["/seller-dashboard/messages", "Pesan"],
     ["/seller-dashboard/earnings", "Pendapatan"],
     ["/seller-dashboard/profile", "Profil seller"],
   ];
