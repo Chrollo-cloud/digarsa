@@ -74,7 +74,7 @@ export function createSellerMessaging({
     return accounts.customerIdentities(ids);
   }
 
-  return {
+  const api = {
     listInbox() {
       const user = seller();
       const conversations = messaging
@@ -105,5 +105,63 @@ export function createSellerMessaging({
       authorizedConversation(conversationId);
       return messaging.markConversationRead(conversationId);
     },
+    listNotifications() {
+      const user = seller();
+      const conversations = messaging
+        .listConversations()
+        .filter((item) => item.seller_profile_id === user.sellerProfileId);
+      const conversationByMessage = new Map();
+      for (const conversation of conversations)
+        for (const message of messaging.listMessages(conversation.id))
+          conversationByMessage.set(message.id, conversation);
+
+      const bookingView = customers.sellerView();
+      if (bookingView.error)
+        throw new MessagingError("DEPENDENCY_UNAVAILABLE", bookingView.error);
+      const sellerBookingIds = new Set(
+        bookingView.bookings
+          .filter((booking) => booking.creatorId === user.sellerProfileId)
+          .map((booking) => booking.id),
+      );
+
+      return messaging.listNotifications().flatMap((notice) => {
+        if (notice.type === "new_message") {
+          const conversation = conversationByMessage.get(notice.related_entity_id);
+          if (!conversation) return [];
+          return [{
+            ...notice,
+            to: `/seller-dashboard/messages/${encodeURIComponent(conversation.id)}`,
+          }];
+        }
+        if (notice.type === "booking_requested") {
+          if (!sellerBookingIds.has(notice.related_entity_id)) return [];
+          return [{
+            ...notice,
+            to: `/seller-dashboard/orders/${encodeURIComponent(notice.related_entity_id)}`,
+          }];
+        }
+        if (notice.type === "new_review") {
+          // Foundation only returns notices addressed to this account; a review
+          // event belongs to the owner's Seller Profile, not a buyer-side inbox.
+          return [{
+            ...notice,
+            to: `/seller/${encodeURIComponent(user.sellerProfileId)}`,
+          }];
+        }
+        // Other booking events currently notify the customer participant.
+        return [];
+      });
+    },
+    markNotificationRead(notificationId) {
+      const allowed = api
+        .listNotifications()
+        .some((notice) => notice.id === notificationId);
+      if (!allowed) throw denied();
+      return messaging.markNotificationRead(notificationId);
+    },
+    getUnreadNotificationCount() {
+      return api.listNotifications().filter((notice) => !notice.is_read).length;
+    },
   };
+  return api;
 }

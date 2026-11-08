@@ -1,8 +1,10 @@
 import WorkspaceFrame from "../workspace/WorkspaceFrame";
 import { useSeller } from "./useSeller";
+import { useSellerNotifications } from "./useSellerNotifications";
 
 export default function SellerFrame({ title, description, children }) {
   const { bookings, error } = useSeller();
+  const { unreadCount } = useSellerNotifications();
   const waiting = bookings.filter((item) => item.status === "Requested").length;
   const nav = [
     ["/seller-dashboard", "Ringkasan", true],
@@ -12,6 +14,7 @@ export default function SellerFrame({ title, description, children }) {
     ],
     ["/seller-dashboard/services", "Layanan saya"],
     ["/seller-dashboard/messages", "Pesan"],
+    ["/seller-dashboard/notifications", unreadCount ? `Notifikasi (${unreadCount})` : "Notifikasi"],
     ["/seller-dashboard/earnings", "Pendapatan"],
     ["/seller-dashboard/profile", "Profil seller"],
   ];
