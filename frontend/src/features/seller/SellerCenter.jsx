@@ -8,6 +8,7 @@ import SellerProfilePage from "./SellerProfilePage";
 import EarningsPage from "./EarningsPage";
 import SellerAvailabilityPage from "./SellerAvailabilityPage";
 import SellerMessagingPage from "./SellerMessagingPage";
+import SellerNotificationsPage from "./SellerNotificationsPage";
 
 // Mounted at /seller-dashboard/* behind the Phase 5 RequireSeller guard.
 export default function SellerCenter() {
@@ -24,6 +25,7 @@ export default function SellerCenter() {
       <Route path="profile" element={<SellerProfilePage />} />
       <Route path="messages" element={<SellerMessagingPage />} />
       <Route path="messages/:conversationId" element={<SellerMessagingPage />} />
+      <Route path="notifications" element={<SellerNotificationsPage />} />
       <Route path="*" element={<Navigate to="/seller-dashboard" replace />} />
     </Routes>
   );

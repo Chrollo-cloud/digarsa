@@ -178,3 +178,70 @@ test("Customer avatar lookup is seller-scoped and uses initials when absent", as
   assert.equal(thread.conversation.customer_name, "Dewi Customer");
   assert.equal(thread.conversation.customer_avatar_url, "");
 });
+
+test("Seller receives shared message notifications and can mark them read", async () => {
+  const f = await fixture();
+  const seller = await f.addSeller("Seller", "seller@test.dev");
+  const customer = await f.addCustomer("Rani Customer", "rani@test.dev");
+  const conversation = f.messaging.getOrCreateConversation({
+    seller_profile_id: seller.profile.id,
+    service_id: seller.service.id,
+  });
+  const message = f.messaging.sendMessage(conversation.id, "Saya ingin bertanya.");
+
+  await f.accounts.login("seller@test.dev", password);
+  const [notice] = f.sellerMessaging.listNotifications();
+  assert.equal(notice.type, "new_message");
+  assert.equal(notice.recipient_user_id, seller.user.id);
+  assert.equal(notice.related_entity_id, message.id);
+  assert.equal(notice.to, `/seller-dashboard/messages/${conversation.id}`);
+  assert.equal(f.sellerMessaging.getUnreadNotificationCount(), 1);
+  f.sellerMessaging.markNotificationRead(notice.id);
+  assert.equal(f.sellerMessaging.getUnreadNotificationCount(), 0);
+
+  await f.accounts.login("rani@test.dev", password);
+  assert.equal(f.messaging.listMessages(conversation.id)[0].sender_user_id, customer.id);
+});
+
+test("Seller receives one deduplicated notification for a verified new booking", async () => {
+  const f = await fixture();
+  const seller = await f.addSeller("Seller", "seller@test.dev");
+  const customer = await f.addCustomer("Tara Customer", "tara@test.dev");
+  const booking = f.customers.createBooking(
+    seller.service.id,
+    {
+      requirements: "Saya membutuhkan bantuan branding untuk bisnis baru.",
+      description: "Mohon diskusikan kebutuhan identitas visual untuk usaha saya.",
+    },
+    { confirmed: true, expectedUserId: customer.id },
+  );
+
+  f.messaging.notifyBookingEvent(booking.id);
+  f.messaging.notifyBookingEvent(booking.id);
+  await f.accounts.login("seller@test.dev", password);
+  const notices = f.sellerMessaging.listNotifications();
+  assert.equal(notices.length, 1);
+  assert.equal(notices[0].type, "booking_requested");
+  assert.equal(notices[0].related_entity_id, booking.id);
+  assert.equal(notices[0].to, `/seller-dashboard/orders/${booking.id}`);
+});
+
+test("Seller cannot read or mark another Seller's notifications", async () => {
+  const f = await fixture();
+  const sellerA = await f.addSeller("Seller A", "seller-a@test.dev");
+  const sellerB = await f.addSeller("Seller B", "seller-b@test.dev");
+  await f.addCustomer("Nia Customer", "nia@test.dev");
+  const conversation = f.messaging.getOrCreateConversation({
+    seller_profile_id: sellerB.profile.id,
+    service_id: sellerB.service.id,
+  });
+  f.messaging.sendMessage(conversation.id, "Pesan untuk seller B.");
+
+  await f.accounts.login("seller-a@test.dev", password);
+  assert.equal(f.sellerMessaging.listNotifications().length, 0);
+  assert.throws(
+    () => f.sellerMessaging.markNotificationRead("notification-not-owned"),
+    (error) => error.code === "NOT_FOUND_OR_FORBIDDEN",
+  );
+  assert.equal(sellerA.profile.id === sellerB.profile.id, false);
+});
