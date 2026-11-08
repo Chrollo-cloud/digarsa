@@ -30,6 +30,14 @@ import BookingNotifications from "./features/messaging/BookingNotifications";
 import ReviewsPage from "./features/reviews/ReviewsPage";
 import ReviewFormPage from "./features/reviews/ReviewFormPage";
 
+const AboutPage = lazy(() => import("./pages/marketing/AboutPage"));
+const HowItWorksPage = lazy(() => import("./pages/marketing/HowItWorksPage"));
+const publicPageLoading = (
+  <p className="container route-shell" role="status">
+    Memuat halaman…
+  </p>
+);
+
 const InboxPage = lazy(() => import("./features/messaging/InboxPage"));
 const ConversationPage = lazy(
   () => import("./features/messaging/ConversationPage"),
@@ -51,11 +59,6 @@ function MessagingLoading({ children }) {
     </Suspense>
   );
 }
-
-const pages = [
-  ["/how-it-works", "Cara Kerja", "HOW IT WORKS"],
-  ["/about", "Tentang Digarsa", "ABOUT"],
-];
 
 export default function App() {
   return (
@@ -126,13 +129,22 @@ export default function App() {
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/service/:id" element={<ServiceDetailPage />} />
             <Route path="/seller/:id" element={<CreatorProfilePage />} />
-            {pages.map(([path, title, label]) => (
-              <Route
-                key={path}
-                path={path}
-                element={<RouteShell title={title} label={label} />}
-              />
-            ))}
+            <Route
+              path="/about"
+              element={
+                <Suspense fallback={publicPageLoading}>
+                  <AboutPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/how-it-works"
+              element={
+                <Suspense fallback={publicPageLoading}>
+                  <HowItWorksPage />
+                </Suspense>
+              }
+            />
             <Route
               path="*"
               element={
