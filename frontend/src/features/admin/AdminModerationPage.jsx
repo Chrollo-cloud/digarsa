@@ -7,19 +7,23 @@ import AdminFrame from "./AdminFrame";
 import { useAdmin } from "./useAdmin";
 
 export default function AdminModerationPage() {
-  const { services, catalog, creatorName } = useAdmin();
+  const { services, catalog, creatorName, error: dataError } = useAdmin();
   const [hiding, setHiding] = useState("");
   const [reason, setReason] = useState("");
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
-  const rows = services.filter((item) =>
-    filter === "hidden"
+  const rows = services.filter((item) => {
+    const matchesFilter = filter === "hidden"
       ? item.hidden || !item.active
       : filter === "live"
         ? !item.hidden && item.active
-        : true,
-  );
+        : true;
+    const query = search.trim().toLocaleLowerCase("id-ID");
+    return matchesFilter && [item.title, item.category, creatorName(item.creatorId), item.creatorId]
+      .join(" ").toLocaleLowerCase("id-ID").includes(query);
+  });
 
   function run(action, success) {
     setError("");
@@ -40,6 +44,10 @@ export default function AdminModerationPage() {
     >
       <div className="ws-toolbar">
         <div className="field">
+          <label htmlFor="mod-search">Cari layanan</label>
+          <input id="mod-search" className="field__control" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nama layanan, kategori, seller" />
+        </div>
+        <div className="field">
           <label htmlFor="mod-filter">Tampilkan</label>
           <select id="mod-filter" className="field__control" value={filter} onChange={(event) => setFilter(event.target.value)}>
             <option value="all">Semua layanan</option>
@@ -59,7 +67,9 @@ export default function AdminModerationPage() {
           {error}
         </p>
       )}
-      {rows.length === 0 ? (
+      {dataError ? (
+        <Empty title="Daftar layanan belum tersedia.">Data tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
+      ) : rows.length === 0 ? (
         <Empty title="Tidak ada layanan untuk filter ini.">Ubah filter untuk melihat layanan lain.</Empty>
       ) : (
         <ul className="ws-list">
@@ -72,6 +82,18 @@ export default function AdminModerationPage() {
                   {service.source === "seller" ? "Buatan seller" : "Katalog demo"} ·{" "}
                   {money(service.price)}
                 </p>
+                <details className="admin-service-details">
+                  <summary>Detail layanan</summary>
+                  <dl>
+                    <dt>ID layanan</dt><dd>{service.id}</dd>
+                    <dt>Status publikasi</dt><dd>{service.hidden ? "Disembunyikan Admin" : service.active ? "Tayang" : "Nonaktif oleh Seller"}</dd>
+                    <dt>Ketersediaan</dt><dd>{service.availability || "Tidak tersedia"}</dd>
+                    <dt>Mode pengerjaan</dt><dd>{service.delivery || "Tidak tercatat"}</dd>
+                    <dt>Estimasi pengerjaan</dt><dd>{service.turnaround || "Tidak tercatat"}</dd>
+                    <dt>Deskripsi</dt><dd>{service.description || "Tidak tersedia"}</dd>
+                    <dt>Workflow persetujuan</dt><dd>Tidak tersedia pada model moderasi demo.</dd>
+                  </dl>
+                </details>
                 {service.hidden && (
                   <p>
                     Disembunyikan {dateOnly(service.hiddenAt)}: {service.hiddenReason}

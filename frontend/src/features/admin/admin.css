@@ -1,0 +1,64 @@
+.admin-capability-note {
+  margin-top: -2px !important;
+}
+.admin-toolbar .field,
+.admin-orders-toolbar .field {
+  flex: 1 1 200px;
+}
+.admin-account-table td strong {
+  color: var(--color-indigo);
+}
+.admin-account-details,
+.admin-booking-details,
+.admin-service-details {
+  margin-top: 8px;
+  font-size: 11px;
+}
+.admin-account-details summary,
+.admin-booking-details summary,
+.admin-service-details summary {
+  color: var(--color-blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-account-details dl,
+.admin-booking-details dl,
+.admin-service-details dl {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1fr);
+  gap: 5px 12px;
+  margin: 10px 0 2px;
+}
+.admin-account-details dt,
+.admin-booking-details dt,
+.admin-service-details dt {
+  color: var(--color-muted);
+}
+.admin-account-details dd,
+.admin-booking-details dd,
+.admin-service-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-ink-soft);
+}
+.admin-activity-stats {
+  margin-top: 8px;
+}
+.admin-activity-stats .ws-stat {
+  gap: 10px;
+  padding: 16px;
+}
+@media (max-width: 520px) {
+  .admin-account-details dl,
+  .admin-booking-details dl,
+  .admin-service-details dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .admin-account-details dd,
+  .admin-booking-details dd,
+  .admin-service-details dd {
+    margin-bottom: 8px;
+  }
+}
