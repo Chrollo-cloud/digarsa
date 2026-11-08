@@ -24,7 +24,7 @@ export function buildOverlay({
   }));
   const byId = new Map(creators.map((creator) => [creator.id, creator]));
   const services = records
-    .filter((record) => byId.has(record.creatorId))
+    .filter((record) => record.active !== false && byId.has(record.creatorId))
     .map((record) => {
       const creator = byId.get(record.creatorId);
       const src = record.image || fallbackImage;

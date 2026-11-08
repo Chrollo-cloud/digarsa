@@ -14,7 +14,11 @@ export default function AdminModerationPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
   const rows = services.filter((item) =>
-    filter === "hidden" ? item.hidden : filter === "live" ? !item.hidden : true,
+    filter === "hidden"
+      ? item.hidden || !item.active
+      : filter === "live"
+        ? !item.hidden && item.active
+        : true,
   );
 
   function run(action, success) {
@@ -40,7 +44,7 @@ export default function AdminModerationPage() {
           <select id="mod-filter" className="field__control" value={filter} onChange={(event) => setFilter(event.target.value)}>
             <option value="all">Semua layanan</option>
             <option value="live">Tayang</option>
-            <option value="hidden">Disembunyikan</option>
+            <option value="hidden">Tidak tayang / nonaktif</option>
           </select>
         </div>
         <p>{rows.length} layanan</p>
@@ -104,8 +108,8 @@ export default function AdminModerationPage() {
                 )}
               </div>
               <div className="ws-row__side">
-                <StatusBadge status={service.hidden ? "hidden" : "live"}>
-                  {service.hidden ? "Disembunyikan" : "Tayang"}
+                <StatusBadge status={service.hidden || !service.active ? "hidden" : "live"}>
+                  {service.hidden ? "Disembunyikan admin" : service.active ? "Tayang" : "Nonaktif seller"}
                 </StatusBadge>
                 {service.hidden ? (
                   <button
@@ -120,7 +124,7 @@ export default function AdminModerationPage() {
                   >
                     Pulihkan
                   </button>
-                ) : (
+                ) : service.active ? (
                   <>
                     <Link className="ws-link" to={`/service/${service.id}`}>
                       Lihat ↗
@@ -137,6 +141,8 @@ export default function AdminModerationPage() {
                       Sembunyikan
                     </button>
                   </>
+                ) : (
+                  <span className="ws-note">Seller menonaktifkan layanan ini.</span>
                 )}
               </div>
             </li>
