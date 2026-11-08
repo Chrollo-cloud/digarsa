@@ -45,10 +45,9 @@ Admin (`RequireAdmin`): `/admin`, `/moderation`, `/orders` (read-only), `/accoun
 - `data/marketplace.js`: added `syncCatalog`, `getBaseServices`.
 
 ## Testing an admin
-There is no UI to grant admin (by design). In the browser console after registering:
-```js
-const k="digarsa.demo.accounts.v1",d=JSON.parse(localStorage[k]);
-d.accounts.find(a=>a.email==="EMAIL").permissions=["admin:access"];localStorage[k]=JSON.stringify(d)
-```
+There is no public UI or registration option to grant admin. Use the explicit
+localhost development workflow in [the account README](../account/README.md#local-admin-demo-provisioning).
+The tool targets the signed-in account by ID, never by email, and is excluded
+from production builds.
 
 This is a browser-storage demo, not server authorization.

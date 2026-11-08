@@ -3,13 +3,13 @@ const destinations = [
   /^\/review\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/messages\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/(?:service|seller|booking|orders)\/[a-zA-Z0-9][a-zA-Z0-9-]*\/?$/,
-  /^\/seller-dashboard(?:\/(?:profile|earnings|orders(?:\/[a-zA-Z0-9][a-zA-Z0-9-]*)?|services(?:\/new|\/[a-zA-Z0-9][a-zA-Z0-9-]*\/edit)?))?\/?$/,
+  /^\/seller-dashboard(?:\/(?:profile|earnings|availability|notifications|messages(?:\/[a-zA-Z0-9][a-zA-Z0-9_-]*)?|orders(?:\/[a-zA-Z0-9][a-zA-Z0-9-]*)?|services(?:\/new|\/[a-zA-Z0-9][a-zA-Z0-9-]*\/edit)?))?\/?$/,
   /^\/admin(?:\/(?:accounts|moderation|orders))?\/?$/,
 ];
 
 // Syntax validation only: RequireAccount/RequireSeller/RequireAdmin still enforce
 // permissions at the destination. Never normalize an unsafe path into an allowed one.
-export function safeReturnTo(value, fallback = "/dashboard") {
+export function safeReturnTo(value, fallback = "/") {
   if (
     typeof value !== "string" ||
     !value.startsWith("/") ||

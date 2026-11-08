@@ -369,5 +369,5 @@ test("corrupt/unavailable storage is surfaced without destructive writes", async
 
 test("settings is a safe private return destination", () => {
   assert.equal(safeReturnTo("/settings"), "/settings");
-  assert.equal(safeReturnTo("//evil.example/settings"), "/dashboard");
+  assert.equal(safeReturnTo("//evil.example/settings"), "/");
 });

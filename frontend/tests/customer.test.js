@@ -407,7 +407,7 @@ test("booking, favorites, cart and order details are safe return destinations", 
     "/orders/booking-123",
   ])
     assert.equal(safeReturnTo(path), path);
-  assert.equal(safeReturnTo("//evil.example/cart"), "/dashboard");
+  assert.equal(safeReturnTo("//evil.example/cart"), "/");
 });
 
 test("write failures do not report success or remove cart entries", () => {

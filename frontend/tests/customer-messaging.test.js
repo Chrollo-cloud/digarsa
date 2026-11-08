@@ -302,7 +302,7 @@ test("customer messaging return paths preserve nested IDs, query and hash while 
     "/messages/a\\b",
     "/notifications/https://evil.test",
   ])
-    assert.equal(safeReturnTo(path), "/dashboard");
+    assert.equal(safeReturnTo(path), "/");
 });
 
 test("booking notification bridge emits actual seller decisions once without changing booking states", () => {

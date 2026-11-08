@@ -61,7 +61,7 @@ test("unsafe and malformed paths cannot be normalized into valid destinations", 
     "/login?returnTo=/admin",
     "/register",
   ])
-    assert.equal(safeReturnTo(path), "/dashboard", String(path));
+    assert.equal(safeReturnTo(path), "/", String(path));
 });
 
 test("return syntax does not encode or assign permissions", () => {
@@ -85,4 +85,26 @@ test("status copy keeps acceptance distinct from payment and completion", () => 
   assert.match(bookingStatusDescription("Paid"), /Hanya kreator pemilik/);
   assert.match(bookingStatusDescription("Declined"), /ditolak/);
   assert.match(bookingStatusDescription("Cancelled"), /dibatalkan/);
+});
+
+test("normal login and registration default to the homepage without auth loops", () => {
+  for (const path of [
+    undefined,
+    null,
+    "",
+    "/login",
+    "/register?returnTo=/login",
+    "https://evil.example",
+    "/%252f%252fevil.example",
+  ])
+    assert.equal(safeReturnTo(path), "/");
+  for (const path of [
+    "/booking/service-real?step=brief#form",
+    "/become-a-creator",
+    "/seller-dashboard/availability",
+    "/seller-dashboard/messages/conversation-1?tab=brief#latest",
+    "/seller-dashboard/notifications",
+    "/admin/orders?status=Requested#list",
+  ])
+    assert.equal(safeReturnTo(path), path);
 });

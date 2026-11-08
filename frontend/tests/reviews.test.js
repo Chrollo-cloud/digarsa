@@ -444,7 +444,7 @@ test("review login return URLs are allowed without weakening redirect validation
     "/review/../admin",
     "https://evil.test",
   ])
-    assert.equal(safeReturnTo(path), "/dashboard");
+    assert.equal(safeReturnTo(path), "/");
 });
 
 test("changed persisted booking associations cannot be used for private reads or notifications", () => {

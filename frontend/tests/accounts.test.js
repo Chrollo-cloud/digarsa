@@ -189,7 +189,7 @@ test("return destinations allow supported local pages and reject external, encod
     "/\n/evil.example",
     null,
   ])
-    assert.equal(safeReturnTo(path), "/dashboard");
+    assert.equal(safeReturnTo(path), "/");
 });
 
 test("storage failure does not report successful registration; malformed data is surfaced", async () => {
