@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { services, getCreator, money, rating } from "../../data/marketplace";
+import { services, getCreator, money } from "../../data/marketplace";
+import PublicReviews from "../../features/reviews/PublicReviews";
+import VerifiedRating from "../../features/reviews/VerifiedRating";
 import Gallery from "../../components/marketplace/Gallery";
 import Availability from "../../components/marketplace/Availability";
 import Reviews from "../../components/marketplace/Reviews";
@@ -39,8 +41,7 @@ export default function ServiceDetailPage() {
               <span className="market-kicker">{service.category}</span>
               <h1>{service.title}</h1>
               <p>
-                ★ {rating(service.reviews)} · {service.reviews.length} ulasan
-                demo
+                <VerifiedRating serviceId={service.id} />
               </p>
               <p>{service.description}</p>
             </section>
@@ -65,6 +66,7 @@ export default function ServiceDetailPage() {
                 </p>
               </div>
             </section>
+            <PublicReviews serviceId={service.id} />
             <Reviews reviews={service.reviews} />
           </div>
           <aside className="market-detail-aside" aria-label="Ringkasan layanan">

@@ -27,6 +27,8 @@ import SellerCenter from "./features/seller/SellerCenter";
 import AdminCenter from "./features/admin/AdminCenter";
 import "./App.css";
 import BookingNotifications from "./features/messaging/BookingNotifications";
+import ReviewsPage from "./features/reviews/ReviewsPage";
+import ReviewFormPage from "./features/reviews/ReviewFormPage";
 
 const InboxPage = lazy(() => import("./features/messaging/InboxPage"));
 const ConversationPage = lazy(
@@ -88,6 +90,8 @@ export default function App() {
                 element={<BookingDetailPage />}
               />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/reviews" element={<ReviewsPage />} />
+              <Route path="/review/:bookingId" element={<ReviewFormPage />} />
               <Route
                 path="/messages"
                 element={

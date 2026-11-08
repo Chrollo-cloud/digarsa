@@ -5,15 +5,17 @@ import { services } from "../../data/marketplace";
 import { createMessagingAdapters } from "./adapters";
 import { createMessagingStore } from "./messagingStore";
 import { MESSAGING_KEY } from "./contracts";
+import { reviewStore } from "../reviews/reviewClient";
 
-// Future customer and seller screens import this SAME instance. No UI, automatic
-// booking hooks, review source, payment action, or new account provider is installed.
+// Customer and future seller screens share this instance. Reviews resolve through
+// their authoritative repository; messaging contracts and authorization are unchanged.
 export const messagingStore = createMessagingStore({
   ...createMessagingAdapters({
     accounts: demoStore,
     customers: customerStore,
     getServices: () => services,
   }),
+  resolveReview: (id) => reviewStore.getNotificationContext(id),
   storage: {
     getItem: (key) => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),

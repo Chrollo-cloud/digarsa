@@ -13,6 +13,7 @@ const buyerLinks = [
   ["/favorites", "Favorit"],
   ["/cart", "Pertimbangan"],
   ["/orders", "Pesanan"],
+  ["/reviews", "Ulasan Saya"],
   ["/messages", "Pesan"],
   ["/notifications", "Notifikasi"],
 ];

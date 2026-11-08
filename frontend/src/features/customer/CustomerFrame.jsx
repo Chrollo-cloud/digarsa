@@ -22,6 +22,7 @@ export default function CustomerFrame({ title, description, children }) {
           <Link to="/favorites">Favorit</Link>
           <Link to="/cart">Pertimbangan</Link>
           <Link to="/orders">Pesanan</Link>
+          <Link to="/reviews">Ulasan</Link>
           <Link to="/messages">Pesan</Link>
           <Link to="/notifications">Notifikasi</Link>
         </nav>

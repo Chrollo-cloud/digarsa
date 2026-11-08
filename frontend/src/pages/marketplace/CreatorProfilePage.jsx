@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getCreator, services, rating } from "../../data/marketplace";
+import { getCreator, services } from "../../data/marketplace";
+import PublicReviews from "../../features/reviews/PublicReviews";
+import VerifiedRating from "../../features/reviews/VerifiedRating";
 import ServiceCard from "../../components/marketplace/ServiceCard";
 import Reviews from "../../components/marketplace/Reviews";
 import NotFound from "../../components/marketplace/NotFound";
@@ -40,8 +42,7 @@ export default function CreatorProfilePage() {
             <span className="market-kicker">{creator.role}</span>
             <h1 id="creator-name">{creator.name}</h1>
             <p>
-              {creator.city} · ★ {rating(reviews)} · {reviews.length} ulasan
-              demo
+              {creator.city} · <VerifiedRating sellerProfileId={creator.id} />
             </p>
           </div>
         </section>
@@ -78,6 +79,7 @@ export default function CreatorProfilePage() {
             ))}
           </div>
         </section>
+        <PublicReviews sellerProfileId={creator.id} />
         <Reviews reviews={reviews} />
         <p className="market-demo-note">
           Profil dan karya merupakan ilustrasi layanan kreatif. Semua data pada

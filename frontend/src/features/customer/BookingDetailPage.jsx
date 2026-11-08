@@ -5,6 +5,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import ContactCreator from "../messaging/ContactCreator";
+import BookingReviewAction from "../reviews/BookingReviewAction";
 import { money } from "../../data/marketplace";
 import { useCustomer } from "./useCustomer";
 import CustomerFrame from "./CustomerFrame";
@@ -125,6 +126,9 @@ export default function BookingDetailPage() {
           {bookingStatusDescription(booking.status)}
         </p>
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
+        {booking.status === "Completed" && (
+          <BookingReviewAction bookingId={booking.id} />
+        )}
         <ContactCreator
           key={booking.id}
           sellerProfileId={booking.creatorId}

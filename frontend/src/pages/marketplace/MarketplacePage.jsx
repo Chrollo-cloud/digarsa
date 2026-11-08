@@ -3,15 +3,26 @@ import { useSearchParams } from "react-router-dom";
 import {
   services,
   getCreator,
-  rating,
   categories,
   locations,
 } from "../../data/marketplace";
 import ServiceCard from "../../components/marketplace/ServiceCard";
 import Filters from "../../components/marketplace/Filters";
+import { useReviews } from "../../features/reviews/useReviews";
+import {
+  reviewStore,
+  summarizeReviews,
+} from "../../features/reviews/reviewClient";
 import "./marketplace.css";
 
 export default function MarketplacePage() {
+  const { data: verifiedReviews, error: reviewError } = useReviews(() =>
+    reviewStore.listPublic(),
+  );
+  const reviewAverage = (id) =>
+    summarizeReviews(
+      (verifiedReviews || []).filter((row) => row.service_id === id),
+    ).average ?? -1;
   const [params, setParams] = useSearchParams();
   const values = Object.fromEntries(
     ["q", "category", "city", "min", "max", "availability", "sort"].map(
@@ -77,7 +88,7 @@ export default function MarketplacePage() {
             : values.sort === "price-down"
               ? b.price - a.price
               : values.sort === "rating"
-                ? Number(rating(b.reviews)) - Number(rating(a.reviews))
+                ? reviewAverage(b.id) - reviewAverage(a.id)
                 : 0,
         );
 
@@ -136,10 +147,15 @@ export default function MarketplacePage() {
                 <option value="">Pilihan editor</option>
                 <option value="price-up">Harga terendah</option>
                 <option value="price-down">Harga tertinggi</option>
-                <option value="rating">Rating tertinggi</option>
+                <option value="rating">Rating terverifikasi tertinggi</option>
               </select>
             </label>
           </div>
+          {reviewError && (
+            <p className="market-demo-note" role="alert">
+              Rating terverifikasi belum tersedia. {reviewError}
+            </p>
+          )}
           {invalid ? (
             <div className="market-panel" role="alert">
               <h3>Periksa filter pencarian.</h3>

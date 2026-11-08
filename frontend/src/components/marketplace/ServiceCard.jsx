@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { getCreator, money, rating } from "../../data/marketplace";
+import { getCreator, money } from "../../data/marketplace";
+import VerifiedRating from "../../features/reviews/VerifiedRating";
 import Availability from "./Availability";
 import ServiceActions from "../../features/customer/ServiceActions";
 
@@ -18,10 +19,7 @@ export default function ServiceCard({ service }) {
       <div className="market-card__body">
         <div className="market-card__meta">
           <span className="market-kicker">{service.category}</span>
-          <span aria-label={`Rating ${rating(service.reviews)} dari 5`}>
-            ★ {rating(service.reviews)}{" "}
-            <small>({service.reviews.length})</small>
-          </span>
+          <VerifiedRating serviceId={service.id} compact />
         </div>
         <h3>
           <Link to={`/service/${service.id}`}>{service.title}</Link>

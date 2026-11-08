@@ -1,12 +1,14 @@
-import { rating } from "../../data/marketplace";
-
 export default function Reviews({ reviews }) {
+  if (!reviews.length) return null;
   return (
     <section className="market-section" aria-labelledby="reviews-heading">
       <h2 id="reviews-heading">
-        Cerita kolaborasi <span>({reviews.length})</span>
+        Testimoni demo <span>({reviews.length})</span>
       </h2>
-      <p>★ {rating(reviews)} / 5 · Ulasan ilustratif dari data demo</p>
+      <p>
+        Ilustrasi dari prototipe, bukan ulasan pelanggan terverifikasi. Tidak
+        termasuk rata-rata atau jumlah ulasan terverifikasi.
+      </p>
       <div className="market-review-grid">
         {reviews.map((review) => (
           <article className="market-panel" key={review.id}>
