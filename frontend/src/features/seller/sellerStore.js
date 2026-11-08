@@ -74,21 +74,23 @@ export function createSellerStore({
   storage,
   currentUser,
   baseServices = () => [],
-  activeBookingCount = () => 0,
+  activeBookingCount = () => {
+    throw new Error("Jumlah booking aktif belum dapat diverifikasi.");
+  },
   randomId = () => globalThis.crypto.randomUUID(),
   now = () => new Date().toISOString(),
 }) {
   const listeners = new Set();
   function raw() {
     try {
-      return storage.getItem(SELLER_KEY) || "";
+      return storage.getItem(SELLER_KEY);
     } catch {
       return "storage-unavailable";
     }
   }
   function read() {
     const value = raw();
-    if (!value) return { data: empty(), error: "" };
+    if (value === null) return { data: empty(), error: "" };
     try {
       const parsed = JSON.parse(value);
       if (
@@ -248,7 +250,12 @@ export function createSellerStore({
       const account = seller();
       const data = writable();
       const service = owned(data, account, id);
-      if (activeBookingCount(service.id) > 0)
+      const activeCount = activeBookingCount(service.id);
+      if (!Number.isSafeInteger(activeCount) || activeCount < 0)
+        throw new Error(
+          "Jumlah booking aktif belum dapat diverifikasi. Layanan tidak dihapus.",
+        );
+      if (activeCount > 0)
         throw new Error(
           "Layanan masih punya booking aktif. Selesaikan atau tolak dulu, atau ubah status menjadi Full-book.",
         );

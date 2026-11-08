@@ -2,8 +2,9 @@ import { demoStore } from "../account/demoStore";
 import { customerStore } from "../customer/customerClient";
 import { getBaseServices, syncCatalog } from "../../data/marketplace";
 import workspace from "../../assets/home/workspace.jpg";
-import { activeBookingStatuses, createSellerStore } from "./sellerStore";
+import { createSellerStore } from "./sellerStore";
 import { buildOverlay } from "./sellerCatalog";
+import { catalogStatus, createCatalogSync } from "./catalogSync";
 
 export const sellerStore = createSellerStore({
   storage: {
@@ -14,31 +15,23 @@ export const sellerStore = createSellerStore({
   baseServices: getBaseServices,
   // Orders live in the Phase 6 booking store; this only reads it to protect active work.
   activeBookingCount: (serviceId) =>
-    customerStore
-      .sellerView()
-      .bookings.filter(
-        (booking) =>
-          booking.serviceId === serviceId &&
-          activeBookingStatuses.includes(booking.status),
-      ).length,
+    customerStore.getActiveBookingCount(serviceId),
 });
 
 // Publish seller profiles/services and admin moderation into the shared catalog.
-export function applyCatalog() {
-  try {
-    const entries = sellerStore.catalogEntries();
-    syncCatalog(
-      buildOverlay({
-        profiles: demoStore.listSellerProfiles(),
-        records: entries.services,
-        hiddenServiceIds: entries.hiddenServiceIds,
-        fallbackImage: workspace,
-      }),
-    );
-  } catch {
-    syncCatalog();
-  }
-}
+export const applyCatalog = createCatalogSync({
+  readEntries: () => sellerStore.catalogEntries(),
+  readProfiles: () =>
+    demoStore.listSellerProfiles().map((row) => {
+      const profile = demoStore.getBookableSeller(row.id);
+      if (!profile)
+        throw new Error("Seller Profile atau akun pemiliknya belum valid.");
+      return profile;
+    }),
+  build: (input) => buildOverlay({ ...input, fallbackImage: workspace }),
+  publish: syncCatalog,
+  status: catalogStatus,
+});
 applyCatalog();
 // Registered at import time so the catalog is current before any hook re-renders.
 sellerStore.subscribe(applyCatalog);

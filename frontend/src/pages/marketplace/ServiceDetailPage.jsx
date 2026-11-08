@@ -1,3 +1,4 @@
+import { useCatalog } from "../../features/catalog/useCatalog";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { services, getCreator, money } from "../../data/marketplace";
@@ -8,12 +9,13 @@ import Availability from "../../components/marketplace/Availability";
 import Reviews from "../../components/marketplace/Reviews";
 import NotFound from "../../components/marketplace/NotFound";
 import ServiceActions from "../../features/customer/ServiceActions";
-import { bookingRestriction } from "../../features/customer/customerStore";
+import { customerStore } from "../../features/customer/customerClient";
 import { useAuth } from "../../features/account/authContext";
 import ContactCreator from "../../features/messaging/ContactCreator";
 import "./marketplace.css";
 
 export default function ServiceDetailPage() {
+  useCatalog();
   const { id } = useParams();
   const { user } = useAuth();
   const service = services.find((item) => item.id === id);
@@ -22,7 +24,7 @@ export default function ServiceDetailPage() {
   }, [service]);
   if (!service) return <NotFound type="Layanan" />;
   const creator = getCreator(service.creatorId);
-  const reason = bookingRestriction(service, user, creator);
+  const reason = customerStore.getBookingRestriction(service.id);
   return (
     <div className="market-page market-detail">
       <div className="market-shell">

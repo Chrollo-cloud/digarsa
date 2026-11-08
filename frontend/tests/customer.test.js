@@ -77,14 +77,27 @@ function setup() {
     },
   ];
   const people = [
-    { id: "studio", name: "Studio Kreatif" },
+    { id: "studio", ownerUserId: "seller-account", name: "Studio Kreatif" },
     { id: "profile-b", ownerUserId: second.id, name: "Studio B" },
+  ];
+  const ownerAccounts = [
+    { id: "seller-account", sellerProfileId: "studio" },
+    second,
   ];
   const options = {
     storage,
     currentUser: () => account,
     catalog,
     creators: people,
+    resolveSellerProfile: (id) =>
+      people.find(
+        (profile) =>
+          profile.id === id &&
+          ownerAccounts.some(
+            (owner) =>
+              owner.id === profile.ownerUserId && owner.sellerProfileId === id,
+          ),
+      ),
     randomId: randomUUID,
     today: () => "2026-11-07",
     now: () => "2026-11-07T08:00:00.000Z",
@@ -331,6 +344,23 @@ test("all lifecycle and terminal states can be read without exposing customer tr
 test("Phase 5 sessions and seller activation preserve the same buyer data and ownership", async () => {
   const s = setup();
   const auth = createDemoStore(s.storage, webcrypto);
+  await auth.register({
+    name: "Real Studio",
+    email: "studio@example.test",
+    password: "Demo-password-123",
+  });
+  const seller = auth.activateSeller({
+    name: "Real Studio",
+    category: "Branding",
+    city: "Makassar",
+    bio: "Studio kreatif untuk identitas visual bisnis lokal dan UMKM.",
+  });
+  s.catalog
+    .filter((row) => row.creatorId === "studio")
+    .forEach((row) => {
+      row.creatorId = seller.id;
+    });
+  s.options.creators.push(seller);
   const buyer = await auth.register({
     name: "Demo Buyer",
     email: "buyer@example.test",
@@ -339,6 +369,7 @@ test("Phase 5 sessions and seller activation preserve the same buyer data and ow
   const store = createCustomerStore({
     ...s.options,
     currentUser: () => auth.current(),
+    resolveSellerProfile: (id) => auth.getBookableSeller(id),
   });
   store.addFavorite("remote");
   store.addToCart("remote");

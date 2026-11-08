@@ -70,19 +70,13 @@ async function world() {
     currentUser: () => accounts.current(),
     catalog,
     creators,
+    resolveSellerProfile: (id) => accounts.getBookableSeller(id),
   });
   const seller = createSellerStore({
     storage,
     currentUser: () => accounts.current(),
     baseServices: () => baseServices,
-    activeBookingCount: (id) =>
-      orders
-        .sellerView()
-        .bookings.filter(
-          (b) =>
-            b.serviceId === id &&
-            ["Requested", "Accepted", "Paid"].includes(b.status),
-        ).length,
+    activeBookingCount: (id) => orders.getActiveBookingCount(id),
   });
   function refresh() {
     const entries = seller.catalogEntries();

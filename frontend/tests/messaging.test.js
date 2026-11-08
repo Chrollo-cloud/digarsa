@@ -610,6 +610,7 @@ test("real Phase 5/6 adapters preserve user IDs, booking ownership, account swit
   const customers = createCustomerStore({
     storage,
     currentUser: () => accounts.current(),
+    resolveSellerProfile: (id) => accounts.getBookableSeller(id),
     catalog,
     creators: [
       { id: profile.id, name: profile.name, ownerUserId: sellerUser.id },

@@ -56,6 +56,7 @@ export async function reviewScenario() {
   const orders = createCustomerStore({
     storage,
     currentUser: () => accounts.current(),
+    resolveSellerProfile: (id) => accounts.getBookableSeller(id),
     catalog: overlay.services,
     creators: overlay.creators,
   });

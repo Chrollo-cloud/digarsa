@@ -1,8 +1,9 @@
+import { useCatalog } from "../catalog/useCatalog";
 import { useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { services, getCreator, money } from "../../data/marketplace";
 import Input from "../../components/ui/Input";
-import { bookingRestriction, localToday } from "./customerStore";
+import { localToday } from "./customerStore";
 import CustomerFrame from "./CustomerFrame";
 import EmptyState from "./EmptyState";
 import BookingSummary from "./BookingSummary";
@@ -175,11 +176,12 @@ function BookingForm({ service, creator }) {
   );
 }
 export default function BookingRequestPage() {
+  useCatalog();
   const { serviceId } = useParams();
-  const { user } = useCustomer();
+  const { user, store } = useCustomer();
   const service = services.find((item) => item.id === serviceId);
   const creator = service && getCreator(service.creatorId);
-  const reason = bookingRestriction(service, user, creator);
+  const reason = store.getBookingRestriction(serviceId);
   return (
     <CustomerFrame
       title="Mulai dari brief yang jelas."

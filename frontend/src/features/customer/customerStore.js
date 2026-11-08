@@ -37,7 +37,7 @@ const requiredText = (value, label, min, max) => {
     throw new Error(`${label} harus ${min}–${max} karakter.`);
   return result;
 };
-export function bookingRestriction(service, user, creator) {
+export function bookingRestriction(service, user, creator, sellerProfile) {
   if (!service) return "Layanan tidak ditemukan.";
   if (
     user &&
@@ -49,6 +49,15 @@ export function bookingRestriction(service, user, creator) {
     return "Layanan ini sedang Full-book atau tidak tersedia.";
   if (!["remote", "onsite"].includes(service.delivery?.toLowerCase()))
     return "Mode pengerjaan belum didukung. Booking belum tersedia untuk layanan ini.";
+  if (!creator) return "Informasi layanan belum lengkap.";
+  if (
+    !sellerProfile ||
+    sellerProfile.id !== service.creatorId ||
+    !sellerProfile.ownerUserId
+  )
+    return "Booking belum tersedia: layanan ini belum memiliki Seller Profile dengan akun pemilik yang valid.";
+  if (sellerProfile.ownerUserId === user?.id)
+    return "Kamu tidak dapat memesan layanan sendiri.";
   return "";
 }
 
@@ -57,6 +66,8 @@ export function createCustomerStore({
   currentUser,
   catalog,
   creators: people,
+  resolveSellerProfile = () => null,
+  catalogError = () => "",
   randomId = () => globalThis.crypto.randomUUID(),
   today = localToday,
   now = () => new Date().toISOString(),
@@ -64,14 +75,14 @@ export function createCustomerStore({
   const listeners = new Set();
   function raw() {
     try {
-      return storage.getItem(CUSTOMER_KEY) || "";
+      return storage.getItem(CUSTOMER_KEY);
     } catch {
       return "storage-unavailable";
     }
   }
   function read() {
     const value = raw();
-    if (!value) return { data: empty(), error: "" };
+    if (value === null) return { data: empty(), error: "" };
     try {
       const parsed = JSON.parse(value);
       if (
@@ -192,7 +203,7 @@ export function createCustomerStore({
     const account = user();
     const service = catalog.find((item) => item.id === serviceId);
     const creator = people.find((item) => item.id === service?.creatorId);
-    const reason = bookingRestriction(service, account, creator);
+    const reason = restriction(service, account, creator);
     if (reason) throw new Error(reason);
     if (!creator || !Number.isFinite(service.price) || service.price < 0)
       throw new Error("Informasi layanan belum lengkap.");
@@ -232,7 +243,34 @@ export function createCustomerStore({
       ),
     };
   }
+  function restriction(service, account, creator) {
+    try {
+      const error = catalogError();
+      if (error)
+        return "Booking dinonaktifkan sementara karena katalog belum dapat diverifikasi. Coba muat ulang katalog.";
+      return bookingRestriction(
+        service,
+        account,
+        creator,
+        service ? resolveSellerProfile(service.creatorId) : null,
+      );
+    } catch {
+      return "Data akun pemilik layanan belum dapat diverifikasi. Periksa penyimpanan demo lalu coba lagi.";
+    }
+  }
   return {
+    getBookingRestriction(serviceId) {
+      try {
+        const service = catalog.find((row) => row.id === serviceId);
+        return restriction(
+          service,
+          currentUser(),
+          people.find((row) => row.id === service?.creatorId),
+        );
+      } catch {
+        return "Data akun dan layanan belum dapat diverifikasi.";
+      }
+    },
     snapshot: raw,
     subscribe(listener) {
       listeners.add(listener);
@@ -322,6 +360,30 @@ export function createCustomerStore({
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
         error,
       };
+    },
+    getActiveBookingCount(serviceId) {
+      const account = sellerAccount();
+      const { data, error } = read();
+      if (error)
+        throw new Error(
+          `Jumlah booking aktif belum dapat diverifikasi. ${error}`,
+        );
+      if (
+        data.bookings.some(
+          (row) =>
+            row.serviceId === serviceId &&
+            row.creatorId !== account.sellerProfileId,
+        )
+      )
+        throw new Error(
+          "Asosiasi booking layanan belum dapat diverifikasi. Layanan tidak dihapus.",
+        );
+      return data.bookings.filter(
+        (row) =>
+          row.creatorId === account.sellerProfileId &&
+          row.serviceId === serviceId &&
+          ["Requested", "Accepted", "Paid"].includes(row.status),
+      ).length;
     },
     respondToBooking(bookingId, action, { expectedStatus, reason } = {}) {
       const account = sellerAccount();

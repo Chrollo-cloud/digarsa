@@ -352,6 +352,42 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         specialties: [...(profile.specialties || [])],
       }));
     },
+    // Public eligibility proof: a profile must have one real owner with the same
+    // activation association. Catalog/editorial metadata is not account evidence.
+    getBookableSeller(profileId) {
+      const db = read();
+      const profiles = db.profiles.filter(
+        (profile) => profile.id === profileId,
+      );
+      if (profiles.length !== 1) return null;
+      const profile = profiles[0];
+      if (
+        !profile.id ||
+        !profile.ownerUserId ||
+        !sellerCategories.includes(profile.category) ||
+        [
+          [profile.name, 2, 80],
+          [profile.city, 2, 80],
+          [profile.bio, 30, 500],
+        ].some(
+          ([value, min, max]) =>
+            typeof value !== "string" ||
+            value.trim().length < min ||
+            value.length > max,
+        )
+      )
+        return null;
+      const owners = db.accounts.filter(
+        (account) => account.id === profile.ownerUserId,
+      );
+      if (
+        owners.length !== 1 ||
+        !owners[0].id ||
+        owners[0].sellerProfileId !== profile.id
+      )
+        return null;
+      return { ...profile, specialties: [...(profile.specialties || [])] };
+    },
     // Display names only, for sellers/admins reading booking rows.
     customerNames(ids) {
       const db = read();

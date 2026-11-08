@@ -1,3 +1,4 @@
+import { useCatalog } from "../../features/catalog/useCatalog";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCreator, services } from "../../data/marketplace";
@@ -9,6 +10,7 @@ import NotFound from "../../components/marketplace/NotFound";
 import "./marketplace.css";
 
 export default function CreatorProfilePage() {
+  useCatalog();
   const { id } = useParams();
   const creator = getCreator(id);
   useEffect(() => {

@@ -193,6 +193,17 @@ test("incorrect current passwords, short passwords, reused passwords, and confir
 
 test("profile/password updates preserve owned Seller Profile, internal permissions, and existing bookings", async () => {
   const { store, storage } = setup();
+  await store.register({
+    ...credentials,
+    name: "Studio Lain",
+    email: "external-owner@example.test",
+  });
+  const external = store.activateSeller({
+    name: "Studio Lain",
+    category: "Branding",
+    city: "Makassar",
+    bio: "Studio lain untuk proyek identitas visual bisnis lokal.",
+  });
   const user = await store.register(credentials);
   const seller = store.activateSeller({
     name: "Studio Akun",
@@ -201,22 +212,25 @@ test("profile/password updates preserve owned Seller Profile, internal permissio
     bio: "Studio untuk membangun identitas visual bisnis lokal.",
   });
   const db = JSON.parse(storage.getItem(ACCOUNT_KEY));
-  db.accounts[0].permissions = [ADMIN_PERMISSION];
+  db.accounts.find((account) => account.id === user.id).permissions = [
+    ADMIN_PERMISSION,
+  ];
   storage.setItem(ACCOUNT_KEY, JSON.stringify(db));
   const customer = createCustomerStore({
     storage,
     currentUser: () => store.current(),
+    resolveSellerProfile: (id) => store.getBookableSeller(id),
     catalog: [
       {
         id: "service-a",
-        creatorId: "external",
+        creatorId: external.id,
         title: "Branding",
         price: 1200000,
         availability: "Open",
         delivery: "Remote",
       },
     ],
-    creators: [{ id: "external", name: "Studio Lain" }],
+    creators: [external],
     randomId: randomUUID,
   });
   customer.addFavorite("service-a");

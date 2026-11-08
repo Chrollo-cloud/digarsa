@@ -1,14 +1,15 @@
+import { useCatalog } from "../catalog/useCatalog";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { services, getCreator, money } from "../../data/marketplace";
 import Availability from "../../components/marketplace/Availability";
-import { bookingRestriction } from "./customerStore";
 import CustomerFrame from "./CustomerFrame";
 import EmptyState from "./EmptyState";
 import { useCustomer } from "./useCustomer";
 
 export default function CartPage() {
-  const { user, cart, store } = useCustomer();
+  useCatalog();
+  const { cart, store } = useCustomer();
   const [error, setError] = useState("");
   function remove(id) {
     try {
@@ -34,7 +35,7 @@ export default function CartPage() {
             {cart.map((id) => {
               const service = services.find((item) => item.id === id);
               const creator = service && getCreator(service.creatorId);
-              const reason = bookingRestriction(service, user, creator);
+              const reason = store.getBookingRestriction(id);
               return (
                 <article className="customer-cart-item" key={id}>
                   {service ? (

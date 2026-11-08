@@ -1,3 +1,4 @@
+import { useCatalog } from "../../features/catalog/useCatalog";
 import { useDeferredValue, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -16,6 +17,7 @@ import {
 import "./marketplace.css";
 
 export default function MarketplacePage() {
+  useCatalog();
   const { data: verifiedReviews, error: reviewError } = useReviews(() =>
     reviewStore.listPublic(),
   );
