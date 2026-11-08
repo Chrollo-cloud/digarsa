@@ -4,78 +4,102 @@ import { Empty, Stat, StatusBadge } from "../workspace/WorkspaceFrame";
 import { dateOnly } from "../workspace/format";
 import SellerFrame from "./SellerFrame";
 import { useSeller } from "./useSeller";
-import { summarizeEarnings, summarizePerformance } from "./earnings";
+import { summarizePerformance } from "./earnings";
+import { summarizeSellerDashboard } from "./sellerAnalytics";
+import BookingTrend from "./BookingTrend";
 
 export default function SellerOverviewPage() {
   const { profile, bookings, services, customers } = useSeller();
-  const totals = summarizeEarnings(bookings);
   const performance = summarizePerformance(bookings);
   const live = services.filter(
     (item) => item.active && item.availability === "Open" && !item.hidden,
   ).length;
-  const waiting = totals.pending.rows.slice(0, 5);
+  const kpis = summarizeSellerDashboard(bookings, services);
+  const recent = [...bookings]
+    .sort((a, b) =>
+      (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt),
+    )
+    .slice(0, 5);
   return (
     <SellerFrame
       title={profile ? `Halo, ${profile.name}.` : "Seller Center."}
       description="Pantau permintaan masuk, kelola layanan, dan lihat estimasi pendapatanmu di satu tempat."
     >
-      <div className="ws-stats">
-        <Stat
-          to="/seller-dashboard/services"
-          label="Jumlah layanan"
-          value={services.length}
-          note={`${services.filter((item) => item.active).length} aktif`}
-        />
+      <div className="ws-stats seller-kpis" aria-label="Statistik Seller">
         <Stat
           to="/seller-dashboard/orders?status=Requested"
-          label="Menunggu respons"
-          value={totals.pending.count}
-          note="Perlu diterima atau ditolak"
+          label="Permintaan masuk"
+          value={kpis.requested}
+          note="Menunggu keputusanmu"
+        />
+        <Stat
+          to="/seller-dashboard/services"
+          label="Layanan aktif"
+          value={kpis.activeServices}
+          note={`${live} Open · Full-book tetap aktif`}
+        />
+        <Stat
+          to="/seller-dashboard/orders?status=Accepted"
+          label="Booking diterima"
+          value={kpis.accepted}
+          note="Accepted · belum dibayar"
+        />
+        <Stat
+          to="/seller-dashboard/orders?status=Completed"
+          label="Booking selesai"
+          value={kpis.completed}
+          note="Status Completed"
         />
         <Stat
           to="/seller-dashboard/orders"
-          label="Sedang dikerjakan"
-          value={totals.inProgress.count}
-          note="Diterima / dibayar"
+          label="Total booking"
+          value={kpis.total}
+          note="Seluruh status permintaan"
         />
         <Stat
           to="/seller-dashboard/earnings"
-          label="Selesai"
-          value={totals.completed.count}
-          note="pesanan selesai"
-        />
-        <Stat
-          to="/seller-dashboard/earnings"
-          label="Pendapatan estimasi"
-          value={money(totals.completed.total)}
-          note="dari booking selesai"
-        />
-        <Stat
-          to="/seller-dashboard/services"
-          label="Layanan menerima booking"
-          value={live}
-          note="aktif, Open, dan tidak dimoderasi"
+          label="Estimasi booking selesai"
+          value={money(kpis.estimatedCompleted)}
+          note="Harga awal · bukan pembayaran diterima"
         />
       </div>
+      <BookingTrend bookings={bookings} />
 
       <section className="ws-section" aria-labelledby="performance-heading">
-        <header><h2 id="performance-heading">Performa seller.</h2></header>
+        <header>
+          <h2 id="performance-heading">Performa seller.</h2>
+        </header>
         <div className="ws-stats">
-          <Stat label="Respons pesanan" value={`${performance.responseRate}%`} note="pesanan yang sudah diputuskan" />
-          <Stat label="Permintaan diterima" value={`${performance.acceptanceRate}%`} note="dari pesanan yang diputuskan" />
-          <Stat label="Penyelesaian" value={`${performance.completionRate}%`} note="dari pesanan yang diterima" />
+          <Stat
+            label="Respons pesanan"
+            value={`${performance.responseRate}%`}
+            note="pesanan yang sudah diputuskan"
+          />
+          <Stat
+            label="Permintaan diterima"
+            value={`${performance.acceptanceRate}%`}
+            note="dari pesanan yang diputuskan"
+          />
+          <Stat
+            label="Penyelesaian"
+            value={`${performance.completionRate}%`}
+            note="dari pesanan yang diterima"
+          />
         </div>
-        <p className="ws-note">Statistik dihitung dari status booking yang tersedia; belum mencakup ulasan atau pembayaran.</p>
+        <p className="ws-note">
+          Statistik dihitung dari status booking yang tersedia; belum mencakup
+          ulasan atau pembayaran.
+        </p>
       </section>
 
       <section className="ws-section" aria-labelledby="waiting-heading">
         <header>
-          <h2 id="waiting-heading">Menunggu keputusanmu.</h2>
+          <h2 id="waiting-heading">Aktivitas booking terbaru.</h2>
           <Link to="/seller-dashboard/orders">Semua pesanan →</Link>
         </header>
-        {waiting.length ? (
+        {recent.length ? (
           <ul className="ws-list">
-            {waiting.map((booking) => (
+            {recent.map((booking) => (
               <li className="ws-row" key={booking.id}>
                 <div>
                   <h3>{booking.serviceTitle}</h3>
@@ -86,17 +110,19 @@ export default function SellerOverviewPage() {
                   </p>
                 </div>
                 <div className="ws-row__side">
-                  <span className="ws-price">{money(booking.estimatedPrice)}</span>
+                  <span className="ws-price">
+                    {money(booking.estimatedPrice)}
+                  </span>
                   <StatusBadge status={booking.status} />
                   <Link to={`/seller-dashboard/orders/${booking.id}`}>
-                    Tinjau →
+                    {booking.status === "Requested" ? "Tinjau →" : "Detail →"}
                   </Link>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <Empty title="Belum ada permintaan baru.">
+          <Empty title="Belum ada aktivitas booking.">
             Permintaan dari pelanggan muncul di sini begitu mereka mengirim
             booking untuk layananmu.
           </Empty>
@@ -128,6 +154,20 @@ export default function SellerOverviewPage() {
             </div>
           </div>
         )}
+        <div className="seller-quick-links">
+          <Link
+            className="button button--secondary"
+            to="/seller-dashboard/services"
+          >
+            Kelola layanan ↗
+          </Link>
+          <Link
+            className="button button--secondary"
+            to="/seller-dashboard/services/new"
+          >
+            Tambah layanan +
+          </Link>
+        </div>
         {services.length === 0 && (
           <p className="ws-notice">
             Kamu belum punya layanan. Pelanggan baru bisa memesan setelah kamu{" "}
