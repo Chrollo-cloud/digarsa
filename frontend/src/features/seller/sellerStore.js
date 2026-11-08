@@ -5,9 +5,20 @@ export const availabilityValues = ["Open", "Full-book"];
 export const deliveryValues = ["Remote", "Onsite"];
 export const activeBookingStatuses = ["Requested", "Accepted", "Paid"];
 
-const empty = () => ({ version: 1, services: [], moderation: {} });
+const empty = () => ({ version: 1, services: [], schedules: [], moderation: {} });
 const isText = (value, max) =>
   typeof value === "string" && value.length > 0 && value.length <= max;
+const isDate = (value) =>
+  typeof value === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  Number.isFinite(Date.parse(`${value}T00:00:00Z`)) &&
+  new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+const isTime = (value) =>
+  typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+const localToday = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
 function text(value, label, min, max) {
   const result = typeof value === "string" ? value.trim() : "";
   if (result.length < min || result.length > max)
@@ -64,7 +75,24 @@ function validService(row) {
     Number.isInteger(row.price) &&
     row.price >= 0 &&
     typeof row.image === "string" &&
+    typeof row.active === "boolean" &&
     isText(row.createdAt, 40)
+  );
+}
+function validSchedule(row) {
+  return (
+    row &&
+    ["id", "serviceId", "ownerUserId", "creatorId"].every((key) =>
+      isText(row[key], 200),
+    ) &&
+    isDate(row.date) &&
+    isTime(row.startTime) &&
+    isTime(row.endTime) &&
+    row.startTime < row.endTime &&
+    typeof row.note === "string" &&
+    row.note.length <= 160 &&
+    isText(row.createdAt, 40) &&
+    isText(row.updatedAt, 40)
   );
 }
 
@@ -79,6 +107,7 @@ export function createSellerStore({
   },
   randomId = () => globalThis.crypto.randomUUID(),
   now = () => new Date().toISOString(),
+  today = localToday,
 }) {
   const listeners = new Set();
   function raw() {
@@ -96,6 +125,7 @@ export function createSellerStore({
       if (
         parsed.version !== 1 ||
         !Array.isArray(parsed.services) ||
+        (parsed.schedules !== undefined && !Array.isArray(parsed.schedules)) ||
         !parsed.moderation ||
         typeof parsed.moderation !== "object" ||
         Array.isArray(parsed.moderation)
@@ -103,10 +133,38 @@ export function createSellerStore({
         throw new Error();
       const ids = new Set();
       let bad = false;
-      const services = parsed.services.filter((row) => {
+      // Backward-compatible normalization for services saved before active status existed.
+      const services = parsed.services
+        .map((row) =>
+          row && typeof row.active !== "boolean" ? { ...row, active: true } : row,
+        )
+        .filter((row) => {
         const ok = validService(row) && !ids.has(row.id);
         if (ok) ids.add(row.id);
         else bad = true;
+        return ok;
+      });
+      const serviceById = new Map(services.map((service) => [service.id, service]));
+      const scheduleIds = new Set();
+      const occupied = [];
+      const schedules = (parsed.schedules || []).filter((row) => {
+        const ok =
+          validSchedule(row) &&
+          !scheduleIds.has(row.id) &&
+          serviceById.has(row.serviceId) &&
+          serviceById.get(row.serviceId).ownerUserId === row.ownerUserId &&
+          serviceById.get(row.serviceId).creatorId === row.creatorId &&
+          !occupied.some(
+            (other) =>
+              other.serviceId === row.serviceId &&
+              other.date === row.date &&
+              row.startTime < other.endTime &&
+              other.startTime < row.endTime,
+          );
+        if (ok) {
+          scheduleIds.add(row.id);
+          occupied.push(row);
+        } else bad = true;
         return ok;
       });
       const moderation = {};
@@ -116,7 +174,7 @@ export function createSellerStore({
         else bad = true;
       }
       return {
-        data: { version: 1, services, moderation },
+        data: { version: 1, services, schedules, moderation },
         error: bad
           ? "Sebagian data layanan demo tidak valid dan tidak ditampilkan. Perubahan dinonaktifkan agar data lama tidak tertimpa."
           : "",
@@ -212,6 +270,7 @@ export function createSellerStore({
       const timestamp = now();
       const service = {
         ...fields(input),
+        active: true,
         id: `service-${randomId()}`,
         ownerUserId: account.id,
         creatorId: account.sellerProfileId,
@@ -246,6 +305,122 @@ export function createSellerStore({
       write(data);
       return { ...service };
     },
+    setActive(id, active) {
+      const account = seller();
+      if (typeof active !== "boolean")
+        throw new Error("Pilih status layanan aktif atau nonaktif.");
+      const data = writable();
+      const service = owned(data, account, id);
+      service.active = active;
+      service.updatedAt = now();
+      write(data);
+      return { ...service };
+    },
+    schedulesFor(id) {
+      const account = seller();
+      const { data, error } = read();
+      owned(data, account, id);
+      return {
+        schedules: data.schedules
+          .filter(
+            (schedule) =>
+              schedule.serviceId === id &&
+              schedule.ownerUserId === account.id &&
+              schedule.creatorId === account.sellerProfileId,
+          )
+          .sort((a, b) =>
+            `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`),
+          ),
+        error,
+      };
+    },
+    createSchedule(serviceId, input) {
+      const account = seller();
+      const data = writable();
+      owned(data, account, serviceId);
+      const date = typeof input.date === "string" ? input.date.trim() : "";
+      const startTime = typeof input.startTime === "string" ? input.startTime : "";
+      const endTime = typeof input.endTime === "string" ? input.endTime : "";
+      const note = typeof input.note === "string" ? input.note.trim() : "";
+      if (!isDate(date) || date < today())
+        throw new Error("Pilih tanggal yang valid dan tidak di masa lalu.");
+      if (!isTime(startTime) || !isTime(endTime) || startTime >= endTime)
+        throw new Error("Waktu selesai harus setelah waktu mulai.");
+      if (note.length > 160) throw new Error("Catatan maksimal 160 karakter.");
+      const conflicts = data.schedules.some(
+        (item) =>
+          item.serviceId === serviceId &&
+          item.date === date &&
+          startTime < item.endTime &&
+          item.startTime < endTime,
+      );
+      if (conflicts) throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+      const timestamp = now();
+      const schedule = {
+        id: `availability-${randomId()}`,
+        serviceId,
+        ownerUserId: account.id,
+        creatorId: account.sellerProfileId,
+        date,
+        startTime,
+        endTime,
+        note,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+      data.schedules.push(schedule);
+      write(data);
+      return { ...schedule };
+    },
+    updateSchedule(serviceId, scheduleId, input) {
+      const account = seller();
+      const data = writable();
+      owned(data, account, serviceId);
+      const schedule = data.schedules.find(
+        (item) =>
+          item.id === scheduleId &&
+          item.serviceId === serviceId &&
+          item.ownerUserId === account.id &&
+          item.creatorId === account.sellerProfileId,
+      );
+      if (!schedule) throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+      const date = typeof input.date === "string" ? input.date.trim() : "";
+      const startTime = typeof input.startTime === "string" ? input.startTime : "";
+      const endTime = typeof input.endTime === "string" ? input.endTime : "";
+      const note = typeof input.note === "string" ? input.note.trim() : "";
+      if (!isDate(date) || date < today())
+        throw new Error("Pilih tanggal yang valid dan tidak di masa lalu.");
+      if (!isTime(startTime) || !isTime(endTime) || startTime >= endTime)
+        throw new Error("Waktu selesai harus setelah waktu mulai.");
+      if (note.length > 160) throw new Error("Catatan maksimal 160 karakter.");
+      const conflicts = data.schedules.some(
+        (item) =>
+          item.id !== scheduleId &&
+          item.serviceId === serviceId &&
+          item.date === date &&
+          startTime < item.endTime &&
+          item.startTime < endTime,
+      );
+      if (conflicts) throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+      Object.assign(schedule, { date, startTime, endTime, note, updatedAt: now() });
+      write(data);
+      return { ...schedule };
+    },
+    removeSchedule(serviceId, scheduleId) {
+      const account = seller();
+      const data = writable();
+      owned(data, account, serviceId);
+      const schedule = data.schedules.find(
+        (item) =>
+          item.id === scheduleId &&
+          item.serviceId === serviceId &&
+          item.ownerUserId === account.id &&
+          item.creatorId === account.sellerProfileId,
+      );
+      if (!schedule) throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+      data.schedules = data.schedules.filter((item) => item.id !== scheduleId);
+      write(data);
+    },
     remove(id) {
       const account = seller();
       const data = writable();
@@ -260,6 +435,7 @@ export function createSellerStore({
           "Layanan masih punya booking aktif. Selesaikan atau tolak dulu, atau ubah status menjadi Full-book.",
         );
       data.services = data.services.filter((item) => item.id !== id);
+      data.schedules = data.schedules.filter((item) => item.serviceId !== id);
       delete data.moderation[id];
       write(data);
     },
@@ -274,6 +450,7 @@ export function createSellerStore({
         category: item.category,
         price: item.price,
         availability: item.availability,
+        active: item.active !== false,
         source: "demo",
         hidden: Boolean(data.moderation[item.id]),
         hiddenReason: data.moderation[item.id]?.reason || "",
@@ -286,6 +463,7 @@ export function createSellerStore({
         category: item.category,
         price: item.price,
         availability: item.availability,
+        active: item.active !== false,
         source: "seller",
         hidden: Boolean(data.moderation[item.id]),
         hiddenReason: data.moderation[item.id]?.reason || "",

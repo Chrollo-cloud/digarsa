@@ -30,3 +30,18 @@ export function summarizeEarnings(bookings) {
     months: [...months.values()].sort((a, b) => b.month.localeCompare(a.month)),
   };
 }
+
+export function summarizePerformance(bookings) {
+  const decided = bookings.filter((booking) => booking.status !== "Requested");
+  const accepted = bookings.filter((booking) =>
+    ["Accepted", "Paid", "Completed"].includes(booking.status),
+  );
+  const completed = bookings.filter((booking) => booking.status === "Completed");
+  const percent = (value, total) =>
+    total ? Math.round((value / total) * 100) : 0;
+  return {
+    responseRate: percent(decided.length, bookings.length),
+    acceptanceRate: percent(accepted.length, decided.length),
+    completionRate: percent(completed.length, accepted.length),
+  };
+}

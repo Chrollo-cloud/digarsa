@@ -65,12 +65,17 @@ export default function SellerServicesPage() {
                 </p>
                 <div className="ws-service__meta">
                   <span className="ws-price">{money(service.price)}</span>
+                  <StatusBadge status={service.active ? "live" : "hidden"}>
+                    {service.active ? "Aktif" : "Nonaktif"}
+                  </StatusBadge>
                   <StatusBadge
                     status={service.availability === "Open" ? "Open" : "Full-book"}
                   >
                     {service.availability === "Open" ? "Open" : "Full-book"}
                   </StatusBadge>
-                  {service.hidden ? (
+                  {!service.active ? (
+                    <StatusBadge status="hidden">Tidak tayang</StatusBadge>
+                  ) : service.hidden ? (
                     <StatusBadge status="hidden">Disembunyikan admin</StatusBadge>
                   ) : (
                     <StatusBadge status="live">Tayang</StatusBadge>
@@ -81,6 +86,24 @@ export default function SellerServicesPage() {
                 )}
               </div>
               <div className="ws-service__actions">
+                <div className="ws-switch" role="group" aria-label={`Status layanan ${service.title}`}>
+                  {[true, false].map((active) => (
+                    <button
+                      key={String(active)}
+                      type="button"
+                      aria-pressed={service.active === active}
+                      onClick={() =>
+                        service.active !== active &&
+                        run(
+                          () => catalog.setActive(service.id, active),
+                          `Layanan ${active ? "diaktifkan" : "dinonaktifkan"}.`,
+                        )
+                      }
+                    >
+                      {active ? "Aktif" : "Nonaktif"}
+                    </button>
+                  ))}
+                </div>
                 <div className="ws-switch" role="group" aria-label={`Ketersediaan ${service.title}`}>
                   {["Open", "Full-book"].map((value) => (
                     <button
@@ -102,11 +125,17 @@ export default function SellerServicesPage() {
                 <div>
                   <Link
                     className="ws-link"
+                    to={`/seller-dashboard/services/${service.id}/availability`}
+                  >
+                    Jadwal
+                  </Link>
+                  <Link
+                    className="ws-link"
                     to={`/seller-dashboard/services/${service.id}/edit`}
                   >
                     Ubah
                   </Link>
-                  {!service.hidden && (
+                  {service.active && !service.hidden && (
                     <Link className="ws-link" to={`/service/${service.id}`}>
                       Lihat ↗
                     </Link>

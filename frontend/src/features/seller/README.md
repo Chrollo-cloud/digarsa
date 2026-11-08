@@ -1,7 +1,7 @@
 # Phase 7: Seller Center + Admin Dashboard
 
-Branch: `feature/seller-center`, built on `8fb827c` (Phase 6). No new auth system and
-no separate orders store.
+Integrated on `integration/customer-seller` at baseline `32bde5e`. No new auth
+system and no separate orders store.
 
 ## Reuse rules (agreed with the Customer owner)
 - Auth/roles: Phase 5 `demoStore` only. Seller = owns a Seller Profile
@@ -15,16 +15,26 @@ no separate orders store.
 
 ## Routes
 Seller (`RequireSeller`): `/seller-dashboard`, `/orders`, `/orders/:id`, `/services`,
-`/services/new`, `/services/:id/edit`, `/earnings`, `/profile`.
+`/services/new`, `/services/:id/edit`, `/services/:id/availability`, `/earnings`,
+`/profile`.
 Admin (`RequireAdmin`): `/admin`, `/moderation`, `/orders` (read-only), `/accounts` (read-only).
 
 ## Data
-- `digarsa.demo.seller.v1`: seller-created services + admin moderation flags.
+- `digarsa.demo.seller.v1`: seller-created services, availability slots + admin
+  moderation flags. Services have an `active` publication flag separate from
+  `Open` / `Full-book`; older records default to active when read.
+- Availability slots are owner-scoped date/time ranges and reject overlaps for
+  the same service. Customer bookings currently record a requested date, not a
+  time, so seller slots are planning data and do not claim a booking time.
 - `data/marketplace.js#syncCatalog` publishes seller profiles/services into the same
   `services`/`creators` arrays (in place) so marketplace, booking and cart read one catalog.
-  Hidden services leave the catalog, so new bookings are refused; existing bookings continue.
+  Inactive or moderated services leave the catalog, so new bookings are refused;
+  existing bookings continue.
 - Deleting a service with Requested/Accepted/Paid bookings is refused.
-- Earnings are estimates from booking `estimatedPrice`; no payment/payout exists.
+- Earnings and performance are estimates from shared booking statuses and
+  `estimatedPrice`; there are no transaction, payment, or payout records.
+- Seller email is read-only. Seller phone edits use the existing shared account
+  profile model and its validation.
 
 ## Shared files touched (additive; please review)
 - `App.jsx`: two routes now mount `SellerCenter` / `AdminCenter`; one side-effect import.
