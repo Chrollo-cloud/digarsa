@@ -6,3 +6,6 @@
 .DS_Store
 /backend/src/generated/prisma/
 /backend/coverage/
+/backend/*.log
+/backend/Thumbs.db
+/backend/backup/

@@ -1,19 +1,13 @@
 import { z } from "zod";
 
 export const createServiceSchema = z.object({
-  categoryId: z.string().uuid("Category ID must be a valid UUID"),
+  categoryId: z.number().int().positive(),
 
   title: z
     .string()
     .trim()
     .min(3, "Title must be at least 3 characters")
     .max(150, "Title cannot exceed 150 characters"),
-
-  slug: z
-    .string()
-    .trim()
-    .min(3, "Slug must be at least 3 characters")
-    .max(180, "Slug cannot exceed 180 characters"),
 
   description: z
     .string()
@@ -44,13 +38,6 @@ export const createServiceSchema = z.object({
 
   lng: z.number().min(-180).max(180).optional().nullable(),
 
-  estimatedDays: z
-    .number()
-    .int()
-    .positive()
-    .optional()
-    .nullable(),
-
   maxBookingsPerDay: z
     .number()
     .int()
@@ -61,7 +48,6 @@ export const createServiceSchema = z.object({
 export const updateServiceSchema = createServiceSchema
   .omit({
     categoryId: true,
-    slug: true,
   })
   .partial();
 

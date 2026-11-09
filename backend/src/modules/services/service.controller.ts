@@ -67,14 +67,12 @@ export async function createService(req: Request, res: Response) {
         sellerId: sellerProfile.id,
         categoryId: input.categoryId,
         title: input.title,
-        slug: input.slug,
         description: input.description,
         price: input.price,
         dpPercent: input.dpPercent ?? null,
         region: input.region,
         lat: input.lat ?? null,
         lng: input.lng ?? null,
-        estimatedDays: input.estimatedDays ?? null,
         maxBookingsPerDay: input.maxBookingsPerDay,
       },
       include: {
@@ -179,7 +177,7 @@ export async function getServiceById(req: Request, res: Response) {
       include: {
         category: true,
         seller: true,
-        images: true,
+        serviceImages: true,
       },
     });
 

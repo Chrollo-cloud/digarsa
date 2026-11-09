@@ -4,6 +4,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./modules/auth/auth.routes.js";
 import sellerRoutes from "./modules/sellers/seller.routes.js";
+import { errorHandler, notFoundHandler } from "./lib/http.js";
 
 const app = express();
 
@@ -56,5 +57,8 @@ app.get("/health", (_req, res) => {
     },
   });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

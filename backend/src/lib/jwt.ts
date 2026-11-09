@@ -4,7 +4,8 @@ type AppRole = "USER" | "ADMIN";
 
 export function createAccessToken(
   userId: string,
-  role: AppRole
+  role: AppRole,
+  tokenVersion = 0,
 ): string {
   const secret = process.env.JWT_SECRET;
 
@@ -13,7 +14,7 @@ export function createAccessToken(
   }
 
   return jwt.sign(
-    { role },
+    { role, tokenVersion },
     secret,
     {
       subject: userId,
