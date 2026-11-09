@@ -22,7 +22,7 @@ export default function CartPage() {
   return (
     <CustomerFrame
       title="Keranjang layananmu."
-      description="Layanan yang kamu pilih untuk booking. Setiap layanan diajukan sebagai permintaan terpisah."
+      description="Layanan yang kamu pilih untuk pemesanan. Setiap layanan diajukan sebagai permintaan terpisah."
     >
       {error && (
         <p role="alert" className="customer-warning">
@@ -48,7 +48,7 @@ export default function CartPage() {
                         </h2>
                         {creator ? <Link to={`/seller/${creator.id}`}>{creator.name}</Link> : <span>Kreator tidak tersedia</span>}
                         <p>
-                          {service.delivery}{creator?.city ? ` · ${creator.city}` : ""}
+                          {service.delivery === "Onsite" ? "Di lokasi" : "Daring"}{creator?.city ? ` · ${creator.city}` : ""}
                         </p>
                         <strong>{money(service.price)}</strong>
                       </div>
@@ -90,7 +90,7 @@ export default function CartPage() {
         </div>
       ) : (
         <EmptyState title="Belum ada layanan yang dipilih.">
-          Tambahkan layanan dari marketplace, lalu ajukan brief satu per satu.
+          Tambahkan layanan dari marketplace, lalu ajukan kebutuhan satu per satu.
         </EmptyState>
       )}
     </CustomerFrame>

@@ -11,6 +11,8 @@ export default function LocationMap({
   selectedId = "",
   onSelect,
   onPick,
+  selection = null,
+  selectionLabel = "Titik draf layanan publik",
 }) {
   const host = useRef(null),
     instance = useRef(null),
@@ -91,6 +93,29 @@ export default function LocationMap({
       if (selected) marker.openPopup();
     });
   }, [points, selectedId]);
+  const selectionLat = selection?.lat, selectionLng = selection?.lng;
+  useEffect(() => {
+    if (selectionLat === undefined || selectionLng === undefined) return;
+    const marker = L.marker([selectionLat, selectionLng], {
+      draggable: true,
+      keyboard: true,
+      title: `${selectionLabel}; geser atau ubah koordinat pada formulir`,
+      alt: selectionLabel,
+      icon: L.divIcon({
+        className: "location-selection-pin",
+        html: '<span aria-hidden="true">⌖</span>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+      }),
+    }).addTo(instance.current);
+    marker.on("dragend", () => {
+      const value = marker.getLatLng().wrap();
+      handlers.current.onPick?.({
+        lat: Number(value.lat.toFixed(6)), lng: Number(value.lng.toFixed(6)),
+      });
+    });
+    return () => marker.remove();
+  }, [selectionLat, selectionLng, selectionLabel]);
   const viewKey = JSON.stringify({ center, bounds: points.map(point => [point.coordinates.lat, point.coordinates.lng]) });
   useEffect(() => {
     const map = instance.current;

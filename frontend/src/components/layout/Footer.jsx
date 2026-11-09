@@ -10,6 +10,7 @@ export default function Footer() {
         <div>
           <Wordmark />
           <p>Where Ideas Meet Talent.</p>
+          <p><a href="mailto:digarsaofficial@gmail.com">digarsaofficial@gmail.com</a></p>
         </div>
         <nav aria-label="Navigasi footer">
           {publicNavigation.map(({ to, label }) => <Link key={to} to={to}>{label}</Link>)}

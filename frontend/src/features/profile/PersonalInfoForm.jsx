@@ -1,3 +1,4 @@
+import PhotoEditor from "../media/PhotoEditor";
 import { useRef, useState } from "react";
 import Input from "../../components/ui/Input";
 import { useAuth } from "../account/authContext";
@@ -39,7 +40,7 @@ export default function PersonalInfoForm({ user }) {
   }
   function save() {
     try {
-      const updated = store.updateProfile(draft, { expectedUserId: user.id });
+      const updated = store.updateProfile({ ...draft, ...(draft.avatarUrl ? { avatarMediaId: "" } : {}) }, { expectedUserId: user.id });
       setValues(fieldsFor(updated));
       setSuccess("Data diri berhasil disimpan!");
       setError("");
@@ -59,6 +60,12 @@ export default function PersonalInfoForm({ user }) {
           <p>Informasi untuk kebutuhan akun dan komunikasi pesanan.</p>
         </div>
       </div>
+      <PhotoEditor key={user.id} ownerUserId={user.id} scope="account"
+        mediaId={user.avatarMediaId} url={user.avatarUrl} currentOwner={() => store.current()?.id}
+        onCommit={(avatarMediaId) => {
+          store.updateProfile({ avatarMediaId, avatarUrl: "" }, { expectedUserId: user.id });
+          setValues(previous => ({ ...previous, avatarUrl: "" }));
+        }} />
       <form onSubmit={review}>
         <div className="personal-fields">
           <Input

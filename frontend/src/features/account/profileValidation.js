@@ -1,5 +1,6 @@
+import { isMediaId } from "../media/mediaStore.js";
 export function validateProfilePatch(input) {
-  const allowed = ["name", "avatarUrl", "phone", "birthDate", "gender"];
+  const allowed = ["name", "avatarUrl", "phone", "birthDate", "gender", "avatarMediaId"];
   if (
     !input ||
     typeof input !== "object" ||
@@ -16,6 +17,7 @@ export function validateProfilePatch(input) {
   }
   if ("name" in result && (result.name.length < 2 || result.name.length > 80))
     throw new Error("Nama harus 2–80 karakter.");
+  if (result.avatarMediaId && !isMediaId(result.avatarMediaId)) throw new Error("Referensi foto lokal tidak valid.");
   if (result.avatarUrl) {
     try {
       const url = new URL(result.avatarUrl);

@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "../customer/bookingLifecycle";
 import { Link, useSearchParams } from "react-router-dom";
 import { money } from "../../data/marketplace";
 import { statuses } from "../customer/customerStore";
@@ -32,7 +33,7 @@ export default function SellerOrdersPage() {
           >
             <option value="">Semua status</option>
             {statuses.map((item) => (
-              <option key={item}>{item}</option>
+              <option key={item} value={item}>{bookingStatusLabel(item)}</option>
             ))}
           </select>
         </div>
@@ -49,7 +50,7 @@ export default function SellerOrdersPage() {
                 <p>
                   {customers[booking.customerId] || "Pelanggan"} · diajukan{" "}
                   {dateOnly(booking.createdAt)} ·{" "}
-                  {booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}
+                  {booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}
                 </p>
               </div>
               <div className="ws-row__side">
@@ -63,7 +64,7 @@ export default function SellerOrdersPage() {
           ))}
         </ul>
       ) : (
-        <Empty title={status ? `Tidak ada pesanan ${status}.` : "Belum ada pesanan."}>
+        <Empty title={status ? `Tidak ada pesanan ${bookingStatusLabel(status)}.` : "Belum ada pesanan."}>
           {status
             ? "Ubah filter untuk melihat status lain."
             : "Pesanan akan muncul saat pelanggan mengajukan booking untuk layananmu."}

@@ -144,7 +144,12 @@ export function haversineKm(first, second) {
       Math.sin(radians(b.lng - a.lng) / 2) ** 2;
   return 6371.0088 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, term))));
 }
-export function requestBrowserLocation(geolocation) {
+export function readingFromPosition(position) {
+  const point = validateCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
+  const accuracy = position.coords.accuracy;
+  return { point, accuracy: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null };
+}
+export function requestBrowserLocation(geolocation, { withAccuracy = false } = {}) {
   return new Promise((resolve, reject) => {
     if (!geolocation?.getCurrentPosition) {
       reject(
@@ -157,12 +162,8 @@ export function requestBrowserLocation(geolocation) {
     geolocation.getCurrentPosition(
       (position) => {
         try {
-          resolve(
-            validateCoordinates({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            }),
-          );
+          const reading = readingFromPosition(position);
+          resolve(withAccuracy ? reading : reading.point);
         } catch (error) {
           reject(error);
         }

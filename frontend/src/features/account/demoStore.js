@@ -1,3 +1,4 @@
+import { isMediaId } from "../media/mediaStore.js";
 import {
   validateBuyerLocation,
   validatePublicLocation,
@@ -123,6 +124,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       id: account.id,
       name: account.name,
       email: account.email,
+      avatarMediaId: isMediaId(account.avatarMediaId) ? account.avatarMediaId : "",
       avatarUrl: typeof account.avatarUrl === "string" ? account.avatarUrl : "",
       phone: typeof account.phone === "string" ? account.phone : "",
       birthDate: typeof account.birthDate === "string" ? account.birthDate : "",
@@ -375,7 +377,9 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       if (!profile) throw new Error("Akun ini belum memiliki Seller Profile.");
       if (!sellerCategories.includes(input.category))
         throw new Error("Pilih kategori layanan yang tersedia.");
+      if (input.imageMediaId && !isMediaId(input.imageMediaId)) throw new Error("Referensi foto lokal tidak valid.");
       const next = {
+        ...(Object.hasOwn(input, "imageMediaId") ? { imageMediaId: input.imageMediaId || "" } : {}),
         ...(Object.hasOwn(input, "publicLocation")
           ? { publicLocation: validatePublicLocation(input.publicLocation) }
           : {}),

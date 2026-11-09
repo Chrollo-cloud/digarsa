@@ -61,7 +61,7 @@ function BookingForm({ service, creator }) {
             Ceritakan rencanamu.
           </h2>
           <p>
-            Lengkapi brief untuk membantu kreator memahami kebutuhan proyekmu.
+            Lengkapi ringkasan kebutuhan untuk membantu kreator memahami kebutuhan proyekmu.
           </p>
           <label className="field">
             Kebutuhan proyek
@@ -138,7 +138,7 @@ function BookingForm({ service, creator }) {
             </dl>
             <p>
               Dengan konfirmasi ini kamu mengirim permintaan berstatus
-              Requested. Kreator belum menerima proyek dan tidak ada biaya yang
+              Menunggu Persetujuan. Seller belum menerima proyek dan tidak ada biaya yang
               ditagihkan.
             </p>
             <div className="customer-confirm-actions">
@@ -153,7 +153,7 @@ function BookingForm({ service, creator }) {
                   );
                 }}
               >
-                Ubah brief
+                Ubah kebutuhan
               </button>
               <button
                 type="button"
@@ -184,7 +184,7 @@ export default function BookingRequestPage() {
   const reason = store.getBookingRestriction(serviceId);
   return (
     <CustomerFrame
-      title="Mulai dari brief yang jelas."
+      title="Mulai dari kebutuhan yang jelas."
       description="Ajukan satu layanan, lalu tunggu tinjauan kreator."
     >
       <Link

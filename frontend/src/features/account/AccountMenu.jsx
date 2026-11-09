@@ -5,6 +5,7 @@ import { useMessaging } from "../messaging/useMessaging";
 import { customerMessaging } from "../messaging/customerMessagingClient";
 import { createMenuInteraction } from "./menuInteraction";
 import { accountLinks, accountLinkActive } from "./accountNavigation";
+import Avatar from "../profile/Avatar";
 import "./account-menu.css";
 
 export default function AccountMenu({ onNavigate }) {
@@ -115,9 +116,7 @@ export default function AccountMenu({ onNavigate }) {
           ref={menu}
         >
           <div className="account-menu__identity" role="presentation">
-            <span className="account-menu__avatar" aria-hidden="true">
-              {user.name.slice(0, 1).toUpperCase()}
-            </span>
+            <Avatar user={user} className="account-menu__avatar" />
             <div>
               <strong>{user.name}</strong>
               <small>{user.email}</small>

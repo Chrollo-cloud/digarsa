@@ -21,6 +21,7 @@ export default function BuyerLocationForm() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [accuracy, setAccuracy] = useState(null);
   const active = useRef(true);
   const request = useRef(0);
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function BuyerLocationForm() {
     setLat(String(point.lat));
     setLng(String(point.lng));
     setSource("manual");
+    setAccuracy(null);
     setConsent(false);
   }
   async function locate() {
@@ -43,7 +45,8 @@ export default function BuyerLocationForm() {
     setError("");
     setMessage("");
     try {
-      const point = await requestBrowserLocation(navigator.geolocation);
+      const reading = await requestBrowserLocation(navigator.geolocation, { withAccuracy: true });
+      const point = reading.point;
       if (
         !active.current ||
         ticket !== request.current ||
@@ -53,6 +56,7 @@ export default function BuyerLocationForm() {
       setLat(String(point.lat));
       setLng(String(point.lng));
       setSource("geolocation");
+      setAccuracy(reading.accuracy);
       setConsent(false);
       setMessage(
         "Titik diperoleh. Belum disimpan; periksa dan setujui penyimpanan jika ingin menggunakannya.",
@@ -98,11 +102,14 @@ export default function BuyerLocationForm() {
       setLat("");
       setLng("");
       setConsent(false);
+      setAccuracy(null);
       setMessage("Lokasi tersimpan dihapus dari akun ini.");
     } catch (failure) {
       setError(failure.message);
     }
   }
+  let draftPoint = null;
+  try { draftPoint = parseCoordinates(lat, lng); } catch { /* Editable draft. */ }
   return (
     <section className="buyer-location" aria-label="Lokasi privat akun">
       <h2>Lokasi pencarianmu.</h2>
@@ -134,6 +141,7 @@ export default function BuyerLocationForm() {
                 setBusy(false);
                 setLat(event.target.value);
                 setSource("manual");
+    setAccuracy(null);
                 setConsent(false);
               }}
             />
@@ -149,6 +157,7 @@ export default function BuyerLocationForm() {
                 setBusy(false);
                 setLng(event.target.value);
                 setSource("manual");
+    setAccuracy(null);
                 setConsent(false);
               }}
             />
@@ -172,6 +181,7 @@ export default function BuyerLocationForm() {
             Pilih titik manual di peta
           </button>
         </div>
+        {accuracy !== null && <p role="status">Akurasi perkiraan ±{Math.round(accuracy).toLocaleString("id-ID")} meter. Posisi Wi-Fi desktop dapat meleset; koreksi titik sebelum menyimpan.</p>}
         <p className="location-caption">
           Tombol lokasi perangkat pada formulir ini meminta izin melalui browser.
           Jika ditolak, kota dan koordinat manual tetap dapat digunakan. Titik
@@ -185,7 +195,7 @@ export default function BuyerLocationForm() {
               Peta memakai layanan tile OpenStreetMap.
             </p>
             <Suspense fallback={<p role="status">Memuat peta…</p>}>
-              <LocationMap onPick={manualPoint} />
+              <LocationMap onPick={manualPoint} center={draftPoint} selection={draftPoint} selectionLabel="Titik privat pilihan (bukan pin layanan publik)" />
             </Suspense>
           </div>
         )}

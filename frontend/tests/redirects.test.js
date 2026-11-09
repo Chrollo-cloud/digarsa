@@ -81,7 +81,7 @@ test("status copy keeps acceptance distinct from payment and completion", () => 
     "Completed",
   ]);
   assert.match(bookingStatusDescription("Accepted"), /Belum dibayar/);
-  assert.match(bookingStatusDescription("Accepted"), /status tetap Accepted/);
+  assert.match(bookingStatusDescription("Accepted"), /status tetap diterima/);
   assert.match(bookingStatusDescription("Paid"), /Hanya kreator pemilik/);
   assert.match(bookingStatusDescription("Declined"), /ditolak/);
   assert.match(bookingStatusDescription("Cancelled"), /dibatalkan/);

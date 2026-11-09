@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "./bookingLifecycle";
 import { useSearchParams } from "react-router-dom";
 import { statuses } from "./customerStore";
 import { useCustomer } from "./useCustomer";
@@ -22,7 +23,7 @@ function OrderList({ bookings }) {
       description="Pantau permintaan dan riwayat kolaborasimu."
     >
       <div className="customer-order-tabs" role="group" aria-label="Status pesanan">
-        {[["", "Semua"], ...statuses.map((value) => [value, value])].map(([value, label]) => (
+        {[["", "Semua"], ...statuses.map((value) => [value, bookingStatusLabel(value)])].map(([value, label]) => (
           <button key={label} type="button" aria-pressed={status === value} onClick={() => setStatus(value)}>
             {label} <span>{value ? bookings.filter((row) => row.status === value).length : bookings.length}</span>
           </button>
@@ -39,10 +40,10 @@ function OrderList({ bookings }) {
           title={
             bookings.length
               ? "Tidak ada pesanan pada status ini."
-              : "Belum ada permintaan booking."
+              : "Belum ada permintaan pesanan."
           }
         >
-          Setelah mengirim brief, kamu dapat mengikuti prosesnya di sini.
+          Setelah mengirim ringkasan kebutuhan, kamu dapat mengikuti prosesnya di sini.
         </EmptyState>
       )}
     </CustomerFrame>

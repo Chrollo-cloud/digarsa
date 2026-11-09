@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "./bookingLifecycle";
 import { Link } from "react-router-dom";
 import { services } from "../../data/marketplace";
 import { useCatalog } from "../catalog/useCatalog";
@@ -62,7 +63,7 @@ export default function DashboardPage() {
               <div className="customer-status-overview">
                 {overview.statuses.map(({ status, count }) => (
                   <Link key={status} to={`/orders?status=${status}`}>
-                    <span>{status}</span>
+                    <span>{bookingStatusLabel(status)}</span>
                     <strong>{count}</strong>
                     <span className="customer-status-meter" aria-hidden="true">
                       <i style={{ width: `${count / bookings.length * 100}%` }} />
@@ -71,7 +72,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p>Belum ada data booking. Statistik akan muncul setelah kamu mengirim brief pertama.</p>
+              <p>Belum ada data pesanan. Statistik akan muncul setelah kamu mengirim kebutuhan pertama.</p>
             )}
             <p className="customer-list-caption">
               Dihitung dari status booking saat ini · bukan data pembayaran.
@@ -90,7 +91,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <EmptyState title="Mulai cerita kolaborasimu.">
-                Kirim brief untuk layanan yang sesuai dengan kebutuhanmu.
+                Kirim kebutuhan untuk layanan yang sesuai dengan kebutuhanmu.
               </EmptyState>
             )}
           </section>

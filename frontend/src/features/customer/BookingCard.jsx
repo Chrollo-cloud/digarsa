@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "./bookingLifecycle";
 import { Link } from "react-router-dom";
 import { useAuth } from "../account/authContext";
 import { money } from "../../data/marketplace";
@@ -11,7 +12,7 @@ export default function BookingCard({ booking }) {
         <span
           className={`customer-status status-${booking.status.toLowerCase()}`}
         >
-          {booking.status}
+          {bookingStatusLabel(booking.status)}
         </span>
         <small>{new Date(booking.createdAt).toLocaleDateString("id-ID")}</small>
       </header>
@@ -20,7 +21,7 @@ export default function BookingCard({ booking }) {
       </h3>
       <p>
         {booking.creatorName} ·{" "}
-        {booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}
+        {booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}
       </p>
       <p>{bookingDate(booking.requestedDate)}</p>
       {declineReason && <p className="customer-order-decline"><strong>Alasan ditolak:</strong> {declineReason}</p>}

@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "../customer/bookingLifecycle";
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import "./workspace.css";
@@ -5,7 +6,7 @@ import "./workspace.css";
 export function StatusBadge({ status, children }) {
   return (
     <span className={`ws-status is-${String(status).toLowerCase()}`}>
-      {children || status}
+      {children || bookingStatusLabel(status)}
     </span>
   );
 }

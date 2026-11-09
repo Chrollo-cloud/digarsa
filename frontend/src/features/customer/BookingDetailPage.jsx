@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from "./bookingLifecycle";
 import {
   Link,
   useLocation,
@@ -24,9 +25,9 @@ export default function BookingDetailPage() {
   const booking = bookings.find((item) => item.id === bookingId);
   if (!booking)
     return (
-      <CustomerFrame title="Booking tidak ditemukan.">
+      <CustomerFrame title="Pesanan tidak ditemukan.">
         <EmptyState
-          title="Booking ini tidak tersedia untuk akunmu."
+          title="Pesanan ini tidak tersedia untuk akunmu."
           to="/orders"
           label="Lihat pesanan saya"
         >
@@ -48,7 +49,7 @@ export default function BookingDetailPage() {
       )}
       {location.state?.notificationWarning && (
         <p className="customer-warning" role="alert">
-          Permintaan tersimpan, tetapi notifikasi belum dapat disimpan. Booking
+          Permintaan tersimpan, tetapi notifikasi belum dapat disimpan. Pesanan
           tetap tersedia di pesananmu.
         </p>
       )}
@@ -57,14 +58,14 @@ export default function BookingDetailPage() {
           <span
             className={`customer-status status-${booking.status.toLowerCase()}`}
           >
-            {booking.status}
+            {bookingStatusLabel(booking.status)}
           </span>
           <h2>{booking.serviceTitle}</h2>
           <p>
             {booking.creatorName} · ID {booking.id}
           </p>
         </header>
-        <ol className="customer-timeline" aria-label="Tahapan booking">
+        <ol className="customer-timeline" aria-label="Tahapan pesanan">
           {lifecycle.map((step, index) => (
             <li
               key={step}
@@ -76,7 +77,7 @@ export default function BookingDetailPage() {
               aria-current={booking.status === step ? "step" : undefined}
             >
               <span>{index + 1}</span>
-              <strong>{step}</strong>
+              <strong>{bookingStatusLabel(step)}</strong>
             </li>
           ))}
         </ol>
@@ -107,7 +108,7 @@ export default function BookingDetailPage() {
           </div>
           <div>
             <dt>Mode pengerjaan</dt>
-            <dd>{booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}</dd>
+            <dd>{booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}</dd>
           </div>
           <div>
             <dt>Tanggal diminta</dt>

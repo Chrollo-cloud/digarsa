@@ -1,3 +1,4 @@
+import PhotoEditor from "../media/PhotoEditor";
 import PublicLocationFields from "../location/PublicLocationFields";
 import { publicLocationFromForm } from "../location/locationModel";
 import { useState } from "react";
@@ -50,6 +51,12 @@ export default function SellerProfilePage() {
       title="Profil seller."
       description="Ini profil publik yang dilihat pelanggan di marketplace. Pesanan lama tetap menyimpan nama kreator saat booking dibuat."
     >
+      <PhotoEditor key={user.id} ownerUserId={user.id} scope="seller" mediaId={profile.imageMediaId}
+        url={profile.image} currentOwner={() => accounts.current()?.id}
+        onCommit={(imageMediaId) => {
+          const current = accounts.getOwnedSeller(profile.id);
+          accounts.updateSellerProfile({ ...current, specialties: current.specialties.join(", "), image: "", imageMediaId });
+        }} />
       <form
         key={profile.id}
         className="ws-panel ws-form"

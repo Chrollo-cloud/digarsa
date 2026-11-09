@@ -11,21 +11,22 @@ import { useSeller } from "./useSeller";
 import {
   bookingLifecycle as lifecycle,
   bookingStatusDescription,
+  bookingStatusLabel,
 } from "../customer/bookingLifecycle";
 const copy = {
   accept: {
     title: "Terima permintaan ini?",
-    body: "Pelanggan akan melihat status Accepted. Detail harga akhir dan jadwal dibahas bersama pelanggan; belum ada pembayaran di sistem ini.",
+    body: "Pelanggan akan melihat status Diterima Seller. Detail harga akhir dan jadwal dibahas bersama pelanggan; belum ada pembayaran di sistem ini.",
     confirm: "Ya, terima permintaan",
   },
   decline: {
     title: "Tolak permintaan ini?",
-    body: "Pelanggan akan melihat status Declined. Alur booking berhenti dan tidak bisa dibuka lagi.",
+    body: "Pelanggan akan melihat status Ditolak Seller. Alur booking berhenti dan tidak bisa dibuka lagi.",
     confirm: "Ya, tolak permintaan",
   },
   complete: {
     title: "Tandai pekerjaan selesai?",
-    body: "Pelanggan akan melihat status Completed. Pastikan hasil kerja sudah diserahkan.",
+    body: "Pelanggan akan melihat status Selesai. Pastikan hasil kerja sudah diserahkan.",
     confirm: "Ya, tandai selesai",
   },
 };
@@ -76,7 +77,7 @@ export default function SellerOrderDetailPage() {
   return (
     <SellerFrame
       title="Tinjau pesanan."
-      description="Baca brief pelanggan, lalu putuskan. Status yang kamu ubah di sini adalah status yang dilihat pelanggan."
+      description="Baca kebutuhan pelanggan, lalu putuskan. Status yang kamu ubah di sini adalah status yang dilihat pelanggan."
     >
       <Link className="ws-back" to="/seller-dashboard/orders">
         ← Pesanan masuk
@@ -91,7 +92,7 @@ export default function SellerOrderDetailPage() {
           <StatusBadge status={booking.status} />
           <h2>{booking.serviceTitle}</h2>
           <p>ID {booking.id}</p>
-          <ol className="ws-timeline" aria-label="Tahapan booking">
+          <ol className="ws-timeline" aria-label="Tahapan pesanan">
             {lifecycle.map((step, index) => (
               <li
                 key={step}
@@ -103,7 +104,7 @@ export default function SellerOrderDetailPage() {
                 aria-current={booking.status === step ? "step" : undefined}
               >
                 <span>{index + 1}</span>
-                <strong>{step}</strong>
+                <strong>{bookingStatusLabel(step)}</strong>
               </li>
             ))}
           </ol>
@@ -126,7 +127,7 @@ export default function SellerOrderDetailPage() {
             </div>
             <div>
               <dt>Mode pengerjaan</dt>
-              <dd>{booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}</dd>
+              <dd>{booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}</dd>
             </div>
             <div>
               <dt>Tanggal diminta</dt>

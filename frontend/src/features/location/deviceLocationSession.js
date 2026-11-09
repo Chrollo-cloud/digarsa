@@ -1,4 +1,4 @@
-import { validateCoordinates } from "./locationModel.js";
+import { validateCoordinates, readingFromPosition } from "./locationModel.js";
 
 export const LOCATION_ATTEMPT_KEY = "digarsa.demo.nearby.location-attempted.v1";
 
@@ -12,7 +12,7 @@ export function createDeviceLocationSession({
   clearTimer = clearTimeout,
   defer = queueMicrotask,
 }) {
-  let state = { status: "idle", point: null, source: null, owner: null };
+  let state = { status: "idle", point: null, source: null, accuracy: null, owner: null };
   let scope = null;
   let leases = 0;
   let generation = 0;
@@ -97,7 +97,7 @@ export function createDeviceLocationSession({
           try {
             finish({
               status: "ready",
-              point: validateCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude }),
+              ...readingFromPosition(position),
               source: "geolocation",
             });
           } catch {
@@ -133,7 +133,7 @@ export function createDeviceLocationSession({
       if (scope !== owner) {
         cancel();
         scope = owner;
-        publish({ status: "idle", point: null, source: null, owner });
+        publish({ status: "idle", point: null, source: null, accuracy: null, owner });
       }
       leases++;
       if (!state.point && state.status === "idle") void request(false);
@@ -155,11 +155,11 @@ export function createDeviceLocationSession({
     useManual(point) {
       const validated = validateCoordinates(point);
       cancel();
-      publish({ status: "ready", point: validated, source: "manual" });
+      publish({ status: "ready", point: validated, source: "manual", accuracy: null });
     },
     clear() {
       cancel();
-      publish({ status: "cleared", point: null, source: null });
+      publish({ status: "cleared", point: null, source: null, accuracy: null });
     },
   };
 }

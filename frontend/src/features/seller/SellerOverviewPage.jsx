@@ -42,13 +42,13 @@ export default function SellerOverviewPage() {
           to="/seller-dashboard/orders?status=Accepted"
           label="Booking diterima"
           value={kpis.accepted}
-          note="Accepted · belum dibayar"
+          note="Diterima Seller · belum dibayar"
         />
         <Stat
           to="/seller-dashboard/orders?status=Completed"
           label="Booking selesai"
           value={kpis.completed}
-          note="Status Completed"
+          note="Status Selesai"
         />
         <Stat
           to="/seller-dashboard/orders"

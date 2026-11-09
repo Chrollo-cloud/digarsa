@@ -17,8 +17,6 @@ const descriptions = {
 
 export default function DeviceLocationPanel({ device, onPickToggle, picking, onClear }) {
   const { user, store } = useAuth();
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
   const busy = ["checking", "loading"].includes(device.status);
@@ -33,7 +31,8 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
     setError("");
     setFeedback("");
     try {
-      const point = parseCoordinates(lat, lng);
+      const form = new FormData(event.currentTarget);
+      const point = parseCoordinates(form.get("lat"), form.get("lng"));
       if (!point) throw new Error("Isi kedua koordinat untuk memilih titik.");
       device.controller.useManual(point);
     } catch (failure) {
@@ -72,9 +71,15 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
       <div>
         <span className="market-kicker">LOKASI PENCARIAN</span>
         <p role="status">{status}</p>
+        {device.point && <p>Koordinat pilihan sesi: {device.point.lat.toFixed(6)}, {device.point.lng.toFixed(6)}. Belum disimpan kecuali melalui tombol simpan.</p>}
         {device.point && device.status !== "ready" && (
           <p>Titik sesi sebelumnya tetap digunakan sampai diganti atau dihapus.</p>
         )}
+        {device.point && device.source === "geolocation" && <p role="status">
+          {device.accuracy === null ? "Akurasi perangkat tidak dilaporkan." : `Akurasi perkiraan ±${Math.round(device.accuracy).toLocaleString("id-ID")} meter.`}
+          {device.accuracy > 100 && " Titik ini masih kasar; koreksi manual sebelum menyimpan."}
+        </p>}
+        <small>Posisi desktop melalui Wi-Fi dapat meleset. Titik bukan alamat pasti; kamu dapat mencoba lagi atau mengoreksinya di peta.</small>
         <small>
           Lokasi tepat tidak disimpan otomatis. Peta berpusat pada titik pencarian;
           penyedia tile menerima wilayah tampilan, tanpa pin publik lokasi pembeli.
@@ -83,7 +88,7 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
       <div className="location-form-actions">
         <button type="button" className="button button--aqua" disabled={busy}
           onClick={() => { setFeedback(""); void device.controller.retry(); }}>
-          {busy ? "Mencari lokasi…" : "Gunakan lokasi saya"}
+          {busy ? "Mencari lokasi…" : (device.point ? "Coba lagi lokasi saya" : "Gunakan lokasi saya")}
         </button>
         <button type="button" className="location-link" onClick={clear}>Hapus lokasi</button>
         {device.point && (user ? (
@@ -99,12 +104,10 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
         <form onSubmit={manual} noValidate>
           <div className="location-coordinate-fields">
             <label>Lintang sesi
-              <input className="field__control" value={lat}
-                onChange={event => setLat(event.target.value)} inputMode="decimal" />
+              <input className="field__control" name="lat" key={`lat-${device.point?.lat}-${device.point?.lng}`} defaultValue={device.point?.lat ?? ""} inputMode="decimal" />
             </label>
             <label>Bujur sesi
-              <input className="field__control" value={lng}
-                onChange={event => setLng(event.target.value)} inputMode="decimal" />
+              <input className="field__control" name="lng" key={`lng-${device.point?.lat}-${device.point?.lng}`} defaultValue={device.point?.lng ?? ""} inputMode="decimal" />
             </label>
           </div>
           <div className="location-form-actions">

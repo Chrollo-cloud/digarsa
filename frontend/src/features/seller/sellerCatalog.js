@@ -17,6 +17,7 @@ export function buildOverlay({
     role: profile.category,
     city: profile.city,
     image: profile.image || fallbackImage,
+    imageMediaId: profile.imageMediaId || "",
     description: clip(profile.bio, 120),
     bio: profile.bio,
     skills: profile.specialties?.length

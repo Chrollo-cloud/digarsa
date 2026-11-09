@@ -301,8 +301,10 @@ function NearbyWorkspace() {
             <Suspense fallback={<p role="status">Memuat peta interaktif…</p>}>
               <LocationMap
                 center={origin}
+                selection={picking ? origin : null}
+                selectionLabel="Titik privat pencarian (bukan pin layanan publik)"
                 focusId={selected}
-                onPick={picking ? (point) => { device.controller.useManual(point); setPicking(false); } : undefined}
+                onPick={picking ? (point) => { device.controller.useManual(point); } : undefined}
                 points={pins}
                 selectedId={selectedId}
                 onSelect={setSelected}

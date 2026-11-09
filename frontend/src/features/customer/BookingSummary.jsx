@@ -9,7 +9,7 @@ export default function BookingSummary({ service, creator }) {
       <h2>{service.title}</h2>
       <Link to={`/seller/${creator.id}`}>{creator.name} ↗</Link>
       <p>
-        {service.delivery} · {service.turnaround}
+        {service.delivery === "Onsite" ? "Di lokasi" : "Daring"} · {service.turnaround}
       </p>
       <Availability value={service.availability} />
       <p>Estimasi harga mulai dari</p>

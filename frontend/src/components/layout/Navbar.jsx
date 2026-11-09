@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 import logo from "../../assets/brand/digarsa-logo-trimmed.png";
 import { useAuth } from "../../features/account/authContext";
 import NotificationBell from "../../features/messaging/NotificationBell";
+import CartLink from "./CartLink";
 import AccountMenu from "../../features/account/AccountMenu";
 import "./Navbar.css";
 
@@ -29,7 +30,7 @@ export default function Navbar() {
       }
     }
     function onResize() {
-      if (window.innerWidth > 760) setOpenPath(null);
+      if (window.innerWidth > 900) setOpenPath(null);
     }
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -57,6 +58,10 @@ export default function Navbar() {
             height="153"
           />
         </Link>
+        <div className="navbar__utilities">
+          {user && <NotificationBell key={`notifications-${user.id}-${pathname}`} onNavigate={close} />}
+          <CartLink key={user?.id || "guest"} onNavigate={close} />
+        </div>
         <button
           className="navbar__toggle"
           ref={trigger}
@@ -95,7 +100,6 @@ export default function Navbar() {
             <>
               {user ? (
                 <>
-                  <NotificationBell key={`notifications-${user.id}-${pathname}`} onNavigate={close} />
                   <AccountMenu key={pathname} onNavigate={close} />
                 </>
               ) : (
@@ -115,7 +119,7 @@ export default function Navbar() {
               onClick={close}
             >
               {user?.sellerProfileId ? "Seller Center" : "Jadi Kreator"}{" "}
-              <span aria-hidden="true">↗</span>
+              {!user?.sellerProfileId && <span aria-hidden="true">↗</span>}
             </Button>
           </div>
         </div>

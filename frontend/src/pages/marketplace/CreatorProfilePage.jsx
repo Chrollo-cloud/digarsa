@@ -1,3 +1,4 @@
+import LocalImage from "../../features/media/LocalImage";
 import { useCatalog } from "../../features/catalog/useCatalog";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -5,6 +6,7 @@ import { getCreator, services } from "../../data/marketplace";
 import PublicReviews from "../../features/reviews/PublicReviews";
 import VerifiedRating from "../../features/reviews/VerifiedRating";
 import ServiceCard from "../../components/marketplace/ServiceCard";
+import PortfolioLink from "../../components/marketplace/PortfolioLink";
 import Reviews from "../../components/marketplace/Reviews";
 import NotFound from "../../components/marketplace/NotFound";
 import "./marketplace.css";
@@ -29,15 +31,15 @@ export default function CreatorProfilePage() {
           <span>/ Profil kreator</span>
         </nav>
         <div className="market-profile-cover">
-          <img src={creator.image} alt="" />
+          <LocalImage url={creator.image} mediaId={creator.imageMediaId} ownerUserId={creator.ownerUserId} alt="" />
         </div>
         <section
           className="market-profile-intro"
           aria-labelledby="creator-name"
         >
-          <img
+          <LocalImage
             className="market-profile-avatar"
-            src={creator.image}
+            url={creator.image} mediaId={creator.imageMediaId} ownerUserId={creator.ownerUserId}
             alt={`Visual studio ${creator.name}`}
           />
           <div>
@@ -49,6 +51,7 @@ export default function CreatorProfilePage() {
           </div>
         </section>
         <p className="market-profile-bio">{creator.bio}</p>
+        <PortfolioLink url={creator.portfolioLink} />
         {creator.publicLocation?.area && (
           <p>Wilayah layanan publik: {creator.publicLocation.area}</p>
         )}
