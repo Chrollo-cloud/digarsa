@@ -10,7 +10,6 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL belum ditemukan di .env");
 }
 
-// Hapus parameter SSL dari URL agar tidak menimpa konfigurasi SSL.
 const connectionUrl = new URL(databaseUrl);
 
 for (const parameter of [
