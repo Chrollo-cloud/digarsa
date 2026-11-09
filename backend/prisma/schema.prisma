@@ -1,0 +1,477 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────── ENUMS ─────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// ketersediaan jasa (terpisah dari moderasi)
+enum ServiceStatus {
+  OPEN
+  FULL_BOOK
+}
+
+enum BookingStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  PAID
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  NONE
+  HELD
+  RELEASED
+}
+
+enum FlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NotificationType {
+  BOOKING_UPDATE
+  NEW_MESSAGE
+  PAYMENT
+  SERVICE_REOPENED
+  SELLER_VERIFICATION
+  SERVICE_MODERATION
+  COMPLAINT
+}
+
+enum ReportTarget {
+  SERVICE
+  USER
+  MESSAGE
+  REVIEW
+  BOOKING
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ───────────── AKUN ─────────────
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  role          Role          @default(USER)
+  accountStatus AccountStatus @default(ACTIVE)
+  region        String?
+  lat           Float?
+  lng           Float?
+  avatarUrl     String?
+  tokenVersion  Int           @default(0) // naikkan untuk membatalkan semua token lama
+  lastLoginAt   DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  sellerProfile SellerProfile?
+
+  // relasi balik
+  passwordResets PasswordReset[]
+  verificationsReviewed SellerVerification[] @relation("VerificationReviewer")
+  servicesModerated Service[] @relation("ServiceModerator")
+  favorites Favorite[]
+  cartItems CartItem[]
+  serviceViews ServiceView[]
+  bookingsAsCustomer Booking[] @relation("BookingCustomer")
+  reviewsWritten Review[] @relation("ReviewAuthor")
+  conversationsAsCustomer Conversation[] @relation("ConversationCustomer")
+  messagesSent Message[] @relation("MessageSender")
+  notifications Notification[]
+  reportsFiled Report[] @relation("ReportReporter")
+  reportsResolved Report[] @relation("ReportResolver")
+  feedbacks Feedback[]
+  activityLogs ActivityLog[]
+}
+
+model PasswordReset {
+  id                   String    @id @default(uuid())
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash              String
+  attempts             Int       @default(0)
+  expiresAt            DateTime
+  verifiedAt           DateTime?
+  resetTokenHash       String?
+  resetTokenExpiresAt  DateTime?
+  usedAt               DateTime?
+  requestIp            String?
+  createdAt            DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ───────────── SELLER ─────────────
+
+model SellerProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id])
+  displayName        String // = store_name di frontend
+  bio                String? // = description di frontend
+  phone              String?
+  address            String?
+  region             String
+  lat                Float?
+  lng                Float?
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // relasi balik
+  sellerVerifications SellerVerification[]
+  sellerUnavailableDates SellerUnavailableDate[]
+  portfolioItems PortfolioItem[]
+  services Service[]
+  bookings Booking[]
+  reviews Review[]
+  conversations Conversation[]
+}
+
+model SellerVerification {
+  id              String             @id @default(uuid())
+  sellerId        String
+  seller          SellerProfile      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  nikEncrypted    String // NIK dienkripsi di aplikasi, jangan simpan polos
+  nikLast4        String?
+  ktpDocumentPath String // path di bucket PRIVAT, bukan URL publik
+  status          VerificationStatus @default(PENDING)
+  rejectionReason String?
+  reviewedById    String?
+  reviewedBy      User?              @relation("VerificationReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  submittedAt     DateTime           @default(now())
+
+  @@index([sellerId, status])
+  @@index([status, submittedAt])
+}
+
+model SellerUnavailableDate {
+  id       String        @id @default(uuid())
+  sellerId String
+  seller   SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  date     DateTime      @db.Date
+  reason   String?
+
+  @@unique([sellerId, date])
+}
+
+model PortfolioItem {
+  id          String        @id @default(uuid())
+  sellerId    String
+  seller      SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  title       String?
+  description String?
+  imageUrl    String
+  createdAt   DateTime      @default(now())
+}
+
+// ───────────── KATALOG ─────────────
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  iconUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // relasi balik
+  services Service[]
+}
+
+model Service {
+  id                String           @id @default(uuid())
+  sellerId          String
+  seller            SellerProfile    @relation(fields: [sellerId], references: [id])
+  categoryId        Int
+  category          Category         @relation(fields: [categoryId], references: [id])
+  title             String
+  description       String
+  price             Int
+  dpPercent         Int? // disiapkan untuk fase DP
+  maxBookingsPerDay Int              @default(1)
+  region            String
+  lat               Float?
+  lng               Float?
+  status            ServiceStatus    @default(OPEN) // availability_status
+  isHidden          Boolean          @default(false) // hide/unhide oleh seller
+  moderationStatus  ModerationStatus @default(PENDING)
+  moderationNote    String?
+  moderatedById     String?
+  moderatedBy       User?            @relation("ServiceModerator", fields: [moderatedById], references: [id])
+  moderatedAt       DateTime?
+  avgRating         Float            @default(0)
+  reviewCount       Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([status, categoryId, region])
+  @@index([moderationStatus, isHidden])
+  @@index([price])
+
+  // relasi balik
+  serviceImages ServiceImage[]
+  favorites Favorite[]
+  cartItems CartItem[]
+  serviceViews ServiceView[]
+  bookings Booking[]
+  reviews Review[]
+  conversations Conversation[]
+}
+
+model ServiceImage {
+  id        String  @id @default(uuid())
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  url       String
+  position  Int     @default(0)
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, serviceId])
+}
+
+model CartItem {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  @@unique([userId, serviceId])
+}
+
+model ServiceView {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  categoryId Int
+  viewedAt   DateTime @default(now())
+
+  @@index([userId, viewedAt])
+}
+
+// ───────────── TRANSAKSI ─────────────
+
+model Booking {
+  id            String        @id @default(uuid())
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  customerId    String
+  customer      User          @relation("BookingCustomer", fields: [customerId], references: [id])
+  sellerId      String // SellerProfile.id
+  seller        SellerProfile @relation(fields: [sellerId], references: [id])
+  scheduledDate DateTime
+  notes         String?
+  status        BookingStatus @default(REQUESTED)
+  declineReason String?
+  price         Int
+  fee           Int
+  total         Int
+  deliveredAt   DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([sellerId, status])
+
+  // relasi balik
+  payment Payment?
+  review Review?
+  reports Report[]
+}
+
+// = transactions di frontend; terpisah dari status booking
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  orderId         String        @unique
+  gatewayRef      String?
+  method          String? // QRIS, GOPAY, dll
+  status          PaymentStatus @default(PENDING)
+  payoutStatus    PayoutStatus  @default(NONE)
+  amount          Int
+  paidAt          DateTime?
+  rawNotification Json?
+  createdAt       DateTime      @default(now())
+}
+
+model Review {
+  id         String        @id @default(uuid())
+  bookingId  String        @unique
+  booking    Booking       @relation(fields: [bookingId], references: [id])
+  serviceId  String
+  service    Service       @relation(fields: [serviceId], references: [id])
+  sellerId   String
+  seller     SellerProfile @relation(fields: [sellerId], references: [id])
+  reviewerId String
+  reviewer   User          @relation("ReviewAuthor", fields: [reviewerId], references: [id])
+  rating     Int
+  comment    String?
+  createdAt  DateTime      @default(now())
+
+  @@index([serviceId])
+  @@index([sellerId])
+}
+
+// ───────────── CHAT & NOTIFIKASI ─────────────
+
+model Conversation {
+  id         String        @id @default(uuid())
+  serviceId  String
+  service    Service       @relation(fields: [serviceId], references: [id])
+  customerId String
+  customer   User          @relation("ConversationCustomer", fields: [customerId], references: [id])
+  sellerId   String // SellerProfile.id
+  seller     SellerProfile @relation(fields: [sellerId], references: [id])
+  createdAt  DateTime      @default(now())
+
+  @@unique([serviceId, customerId])
+
+  // relasi balik
+  messages Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+  body           String
+  isFlagged      Boolean      @default(false)
+  flagReasons    String[]
+  flagSeverity   FlagSeverity?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String? // = message di frontend
+  refId     String?
+  readAt    DateTime? // is_read = readAt != null
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+// ───────────── MODERASI, KOMPLAIN, AUDIT ─────────────
+
+// = complaints + laporan umum. Komplain booking: targetType BOOKING + bookingId
+model Report {
+  id           String       @id @default(uuid())
+  reporterId   String
+  reporter     User         @relation("ReportReporter", fields: [reporterId], references: [id])
+  targetType   ReportTarget
+  targetId     String
+  bookingId    String?
+  booking      Booking?     @relation(fields: [bookingId], references: [id])
+  reason       String
+  detail       String?
+  status       ReportStatus @default(OPEN)
+  adminNote    String?
+  resolvedById String?
+  resolvedBy   User?        @relation("ReportResolver", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+// = audit_logs di frontend; userId adalah pelaku (actor)
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  targetType String?
+  targetId   String?
+  ip         String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+}
