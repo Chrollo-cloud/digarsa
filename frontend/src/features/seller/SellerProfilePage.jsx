@@ -1,3 +1,5 @@
+import PublicLocationFields from "../location/PublicLocationFields";
+import { publicLocationFromForm } from "../location/locationModel";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Input from "../../components/ui/Input";
@@ -17,9 +19,12 @@ export default function SellerProfilePage() {
     setError("");
     setSaved(false);
     try {
-      accounts.updateSellerProfile(
-        Object.fromEntries(new FormData(event.currentTarget)),
-      );
+      accounts.updateSellerProfile({
+        ...Object.fromEntries(new FormData(event.currentTarget)),
+        publicLocation: publicLocationFromForm(
+          new FormData(event.currentTarget),
+        ),
+      });
       setSaved(true);
     } catch (failure) {
       setError(failure.message);
@@ -31,7 +36,10 @@ export default function SellerProfilePage() {
     setContactSaved(false);
     try {
       const values = Object.fromEntries(new FormData(event.currentTarget));
-      accounts.updateProfile({ phone: values.phone }, { expectedUserId: user.id });
+      accounts.updateProfile(
+        { phone: values.phone },
+        { expectedUserId: user.id },
+      );
       setContactSaved(true);
     } catch (failure) {
       setContactError(failure.message);
@@ -42,27 +50,72 @@ export default function SellerProfilePage() {
       title="Profil seller."
       description="Ini profil publik yang dilihat pelanggan di marketplace. Pesanan lama tetap menyimpan nama kreator saat booking dibuat."
     >
-      <form className="ws-panel ws-form" onSubmit={submit} noValidate>
-        <Input label="Nama kreator / studio" name="name" defaultValue={profile.name} maxLength={80} required />
+      <form
+        key={profile.id}
+        className="ws-panel ws-form"
+        onSubmit={submit}
+        noValidate
+      >
+        <Input
+          label="Nama kreator / studio"
+          name="name"
+          defaultValue={profile.name}
+          maxLength={80}
+          required
+        />
         <div className="field-pair">
           <div className="field">
             <label htmlFor="profile-category">Kategori</label>
-            <select id="profile-category" name="category" className="field__control" defaultValue={profile.category}>
+            <select
+              id="profile-category"
+              name="category"
+              className="field__control"
+              defaultValue={profile.category}
+            >
               {sellerCategories.map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
           </div>
-          <Input label="Kota" name="city" defaultValue={profile.city} maxLength={80} required />
+          <Input
+            label="Kota"
+            name="city"
+            defaultValue={profile.city}
+            maxLength={80}
+            required
+          />
         </div>
         <div className="field">
           <label htmlFor="profile-bio">Bio</label>
-          <textarea id="profile-bio" name="bio" className="field__control" defaultValue={profile.bio} maxLength={500} required />
+          <textarea
+            id="profile-bio"
+            name="bio"
+            className="field__control"
+            defaultValue={profile.bio}
+            maxLength={500}
+            required
+          />
           <span className="field__hint">30–500 karakter.</span>
         </div>
-        <Input label="Spesialisasi" name="specialties" defaultValue={profile.specialties.join(", ")} hint="Pisahkan dengan koma." />
-        <Input label="Foto profil (URL, opsional)" name="image" type="url" defaultValue={profile.image} />
-        <Input label="Tautan portofolio (opsional)" name="portfolioLink" type="url" defaultValue={profile.portfolioLink} />
+        <Input
+          label="Spesialisasi"
+          name="specialties"
+          defaultValue={profile.specialties.join(", ")}
+          hint="Pisahkan dengan koma."
+        />
+        <Input
+          label="Foto profil (URL, opsional)"
+          name="image"
+          type="url"
+          defaultValue={profile.image}
+        />
+        <Input
+          label="Tautan portofolio (opsional)"
+          name="portfolioLink"
+          type="url"
+          defaultValue={profile.portfolioLink}
+        />
+        <PublicLocationFields initial={profile.publicLocation} />
         {saved && (
           <p className="ws-success" role="status">
             Profil tersimpan.{" "}
@@ -87,7 +140,13 @@ export default function SellerProfilePage() {
           <h2 id="seller-contact-heading">Kontak akun.</h2>
         </header>
         <form className="ws-panel ws-form" onSubmit={saveContact} noValidate>
-          <Input label="Email akun" value={user.email} disabled readOnly hint="Email adalah identitas akun dan belum dapat diubah." />
+          <Input
+            label="Email akun"
+            value={user.email}
+            disabled
+            readOnly
+            hint="Email adalah identitas akun dan belum dapat diubah."
+          />
           <Input
             label="Nomor telepon (opsional)"
             name="phone"
@@ -97,10 +156,20 @@ export default function SellerProfilePage() {
             autoComplete="tel"
             hint="Nomor ini disimpan pada profil akun bersama dan mengikuti validasi yang sudah digunakan Customer Profile."
           />
-          {contactSaved && <p className="ws-success" role="status">Kontak akun berhasil disimpan.</p>}
-          {contactError && <p className="ws-alert" role="alert">{contactError}</p>}
+          {contactSaved && (
+            <p className="ws-success" role="status">
+              Kontak akun berhasil disimpan.
+            </p>
+          )}
+          {contactError && (
+            <p className="ws-alert" role="alert">
+              {contactError}
+            </p>
+          )}
           <div className="ws-actions">
-            <button className="button button--primary" type="submit">Simpan kontak</button>
+            <button className="button button--primary" type="submit">
+              Simpan kontak
+            </button>
           </div>
         </form>
       </section>

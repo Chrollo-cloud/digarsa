@@ -1,3 +1,5 @@
+import PublicLocationFields from "../location/PublicLocationFields";
+import { publicLocationFromForm } from "../location/locationModel";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Input from "../../components/ui/Input";
@@ -23,8 +25,12 @@ function ServiceForm({ initial, serviceId, catalog }) {
   function submit(event) {
     event.preventDefault();
     setError("");
-    const input = Object.fromEntries(new FormData(event.currentTarget));
+    const form = new FormData(event.currentTarget);
     try {
+      const input = {
+        ...Object.fromEntries(form),
+        serviceLocation: publicLocationFromForm(form),
+      };
       if (serviceId) catalog.update(serviceId, input);
       else catalog.create(input);
       navigate("/seller-dashboard/services");
@@ -123,6 +129,7 @@ function ServiceForm({ initial, serviceId, catalog }) {
           <option value="Full-book">Full-book — jadwal penuh</option>
         </select>
       </div>
+      <PublicLocationFields initial={initial.serviceLocation} inherit />
       {error && (
         <p className="ws-alert" role="alert">
           {error}
@@ -132,7 +139,10 @@ function ServiceForm({ initial, serviceId, catalog }) {
         <button className="button button--primary" type="submit">
           {serviceId ? "Simpan perubahan" : "Terbitkan layanan"}
         </button>
-        <Link className="button button--secondary" to="/seller-dashboard/services">
+        <Link
+          className="button button--secondary"
+          to="/seller-dashboard/services"
+        >
           Batal
         </Link>
       </div>
@@ -142,7 +152,7 @@ function ServiceForm({ initial, serviceId, catalog }) {
 
 export default function ServiceFormPage() {
   const { serviceId } = useParams();
-  const { services, catalog } = useSeller();
+  const { services, catalog, user } = useSeller();
   const existing = serviceId
     ? services.find((item) => item.id === serviceId)
     : null;
@@ -166,7 +176,7 @@ export default function ServiceFormPage() {
         ← Layanan saya
       </Link>
       <ServiceForm
-        key={serviceId || "new"}
+        key={`${user.id}-${serviceId || "new"}`}
         initial={existing || blank}
         serviceId={serviceId}
         catalog={catalog}

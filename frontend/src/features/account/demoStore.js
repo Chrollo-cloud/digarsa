@@ -1,4 +1,9 @@
 import {
+  validateBuyerLocation,
+  validatePublicLocation,
+  publicLocation,
+} from "../location/locationModel.js";
+import {
   validateProfilePatch,
   validateNewPassword,
 } from "./profileValidation.js";
@@ -233,6 +238,44 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       write(db);
       return publicUser(db, account);
     },
+    // Private buyer location: resolved from the session, never a caller's account ID.
+    getBuyerLocation() {
+      const db = read();
+      const account = accountForSession(db);
+      if (
+        !account ||
+        db.accounts.filter((row) => row.id === account.id).length !== 1
+      )
+        throw new Error(
+          "Masuk untuk membaca lokasi akunmu dengan asosiasi yang valid.",
+        );
+      return validateBuyerLocation(account.discoveryLocation);
+    },
+    updateBuyerLocation(input, { expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (
+        !account ||
+        account.id !== expectedUserId ||
+        db.accounts.filter((row) => row.id === account.id).length !== 1
+      )
+        throw new Error("Sesi berubah. Lokasi akun lain tidak dapat diubah.");
+      account.discoveryLocation = validateBuyerLocation(input);
+      write(db);
+      return validateBuyerLocation(account.discoveryLocation);
+    },
+    clearBuyerLocation({ expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (
+        !account ||
+        account.id !== expectedUserId ||
+        db.accounts.filter((row) => row.id === account.id).length !== 1
+      )
+        throw new Error("Sesi berubah. Lokasi akun lain tidak dapat diubah.");
+      delete account.discoveryLocation;
+      write(db);
+    },
     async changePassword(
       { currentPassword, newPassword, confirmation },
       { expectedUserId } = {},
@@ -296,6 +339,9 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const profile = {
         id: `creator-${cryptoApi.randomUUID()}`,
         ownerUserId: account.id,
+        ...(Object.hasOwn(input, "publicLocation")
+          ? { publicLocation: validatePublicLocation(input.publicLocation) }
+          : {}),
         name: text(input.name, "Nama kreator", 2, 80),
         category: input.category,
         city: text(input.city, "Kota", 2, 80),
@@ -330,6 +376,9 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       if (!sellerCategories.includes(input.category))
         throw new Error("Pilih kategori layanan yang tersedia.");
       const next = {
+        ...(Object.hasOwn(input, "publicLocation")
+          ? { publicLocation: validatePublicLocation(input.publicLocation) }
+          : {}),
         name: text(input.name, "Nama kreator", 2, 80),
         category: input.category,
         city: text(input.city, "Kota", 2, 80),
@@ -350,6 +399,9 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       return read().profiles.map((profile) => ({
         ...profile,
         specialties: [...(profile.specialties || [])],
+        ...(Object.hasOwn(profile, "publicLocation")
+          ? { publicLocation: publicLocation(profile.publicLocation) }
+          : {}),
       }));
     },
     // Public eligibility proof: a profile must have one real owner with the same
@@ -386,7 +438,13 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         owners[0].sellerProfileId !== profile.id
       )
         return null;
-      return { ...profile, specialties: [...(profile.specialties || [])] };
+      return {
+        ...profile,
+        specialties: [...(profile.specialties || [])],
+        ...(Object.hasOwn(profile, "publicLocation")
+          ? { publicLocation: publicLocation(profile.publicLocation) }
+          : {}),
+      };
     },
     // Display names only, for sellers/admins reading booking rows.
     customerNames(ids) {

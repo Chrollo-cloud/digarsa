@@ -53,7 +53,7 @@ export default function ServiceDetailPage() {
                 <p>
                   <strong>{service.delivery}</strong> ·{" "}
                   {service.delivery === "Onsite"
-                    ? `Produksi di ${creator.city}; lokasi dibahas bersama kreator.`
+                    ? `Produksi di ${service.publicLocation?.area || creator.city}; lokasi dibahas bersama kreator.`
                     : service.delivery === "Remote"
                       ? "Kolaborasi dan pengiriman hasil secara daring."
                       : "Mode pengerjaan belum didukung."}

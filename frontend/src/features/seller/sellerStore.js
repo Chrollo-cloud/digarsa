@@ -1,3 +1,7 @@
+import {
+  validatePublicLocation,
+  validStoredPublicLocation,
+} from "../location/locationModel.js";
 import { ADMIN_PERMISSION, sellerCategories } from "../account/demoStore.js";
 
 export const SELLER_KEY = "digarsa.demo.seller.v1";
@@ -5,7 +9,12 @@ export const availabilityValues = ["Open", "Full-book"];
 export const deliveryValues = ["Remote", "Onsite"];
 export const activeBookingStatuses = ["Requested", "Accepted", "Paid"];
 
-const empty = () => ({ version: 1, services: [], schedules: [], moderation: {} });
+const empty = () => ({
+  version: 1,
+  services: [],
+  schedules: [],
+  moderation: {},
+});
 const isText = (value, max) =>
   typeof value === "string" && value.length > 0 && value.length <= max;
 const isDate = (value) =>
@@ -60,6 +69,9 @@ function fields(input) {
     turnaround: text(input.turnaround, "Estimasi pengerjaan", 2, 60),
     availability: input.availability,
     image: optionalUrl(input.image, "Gambar layanan"),
+    ...(Object.hasOwn(input, "serviceLocation")
+      ? { serviceLocation: validatePublicLocation(input.serviceLocation) }
+      : {}),
   };
 }
 function validService(row) {
@@ -76,6 +88,7 @@ function validService(row) {
     row.price >= 0 &&
     typeof row.image === "string" &&
     typeof row.active === "boolean" &&
+    validStoredPublicLocation(row.serviceLocation) &&
     isText(row.createdAt, 40)
   );
 }
@@ -144,7 +157,9 @@ export function createSellerStore({
           else bad = true;
           return ok;
         });
-      const serviceById = new Map(services.map((service) => [service.id, service]));
+      const serviceById = new Map(
+        services.map((service) => [service.id, service]),
+      );
       const scheduleIds = new Set();
       const occupied = [];
       const schedules = (parsed.schedules || []).filter((row) => {
@@ -329,7 +344,9 @@ export function createSellerStore({
               schedule.creatorId === account.sellerProfileId,
           )
           .sort((a, b) =>
-            `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`),
+            `${a.date}T${a.startTime}`.localeCompare(
+              `${b.date}T${b.startTime}`,
+            ),
           ),
         error,
       };
@@ -339,7 +356,8 @@ export function createSellerStore({
       const data = writable();
       owned(data, account, serviceId);
       const date = typeof input.date === "string" ? input.date.trim() : "";
-      const startTime = typeof input.startTime === "string" ? input.startTime : "";
+      const startTime =
+        typeof input.startTime === "string" ? input.startTime : "";
       const endTime = typeof input.endTime === "string" ? input.endTime : "";
       const note = typeof input.note === "string" ? input.note.trim() : "";
       if (!isDate(date) || date < today())
@@ -354,7 +372,8 @@ export function createSellerStore({
           startTime < item.endTime &&
           item.startTime < endTime,
       );
-      if (conflicts) throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+      if (conflicts)
+        throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
       const timestamp = now();
       const schedule = {
         id: `availability-${randomId()}`,
@@ -383,9 +402,11 @@ export function createSellerStore({
           item.ownerUserId === account.id &&
           item.creatorId === account.sellerProfileId,
       );
-      if (!schedule) throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+      if (!schedule)
+        throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
       const date = typeof input.date === "string" ? input.date.trim() : "";
-      const startTime = typeof input.startTime === "string" ? input.startTime : "";
+      const startTime =
+        typeof input.startTime === "string" ? input.startTime : "";
       const endTime = typeof input.endTime === "string" ? input.endTime : "";
       const note = typeof input.note === "string" ? input.note.trim() : "";
       if (!isDate(date) || date < today())
@@ -401,8 +422,15 @@ export function createSellerStore({
           startTime < item.endTime &&
           item.startTime < endTime,
       );
-      if (conflicts) throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
-      Object.assign(schedule, { date, startTime, endTime, note, updatedAt: now() });
+      if (conflicts)
+        throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+      Object.assign(schedule, {
+        date,
+        startTime,
+        endTime,
+        note,
+        updatedAt: now(),
+      });
       write(data);
       return { ...schedule };
     },
@@ -417,7 +445,8 @@ export function createSellerStore({
           item.ownerUserId === account.id &&
           item.creatorId === account.sellerProfileId,
       );
-      if (!schedule) throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+      if (!schedule)
+        throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
       data.schedules = data.schedules.filter((item) => item.id !== scheduleId);
       write(data);
     },

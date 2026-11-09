@@ -1,3 +1,4 @@
+import { publicLocation } from "../location/locationModel.js";
 // Pure mapping from seller records (Phase 5 profiles + Phase 7 services) to the
 // public shapes that data/marketplace.js already uses. No browser APIs here.
 const clip = (value, max) =>
@@ -18,9 +19,12 @@ export function buildOverlay({
     image: profile.image || fallbackImage,
     description: clip(profile.bio, 120),
     bio: profile.bio,
-    skills: profile.specialties?.length ? profile.specialties : [profile.category],
+    skills: profile.specialties?.length
+      ? profile.specialties
+      : [profile.category],
     portfolioLink: profile.portfolioLink || "",
     portfolio: [],
+    publicLocation: publicLocation(profile.publicLocation),
   }));
   const byId = new Map(creators.map((creator) => [creator.id, creator]));
   const services = records
@@ -38,6 +42,14 @@ export function buildOverlay({
         price: record.price,
         availability: record.availability,
         delivery: record.delivery,
+        publicLocation:
+          record.delivery === "Onsite"
+            ? publicLocation(
+                record.serviceLocation ??
+                  creators.find((row) => row.id === record.creatorId)
+                    ?.publicLocation,
+              )
+            : null,
         turnaround: record.turnaround,
         description: record.description,
         image: src,

@@ -1,3 +1,4 @@
+import BuyerLocationForm from "../location/BuyerLocationForm";
 import { useAuth } from "../account/authContext";
 import ProfileLayout from "./ProfileLayout";
 import PersonalInfoForm from "./PersonalInfoForm";
@@ -9,6 +10,7 @@ export default function SettingsPage() {
   return (
     <ProfileLayout settings>
       <PersonalInfoForm key={`info-${user.id}`} user={user} />
+      <BuyerLocationForm key={`location-${user.id}`} />
       <PasswordChangeForm key={`password-${user.id}`} user={user} />
       <LogoutButton />
     </ProfileLayout>

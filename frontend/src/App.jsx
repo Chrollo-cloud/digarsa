@@ -30,6 +30,9 @@ import BookingNotifications from "./features/messaging/BookingNotifications";
 import ReviewsPage from "./features/reviews/ReviewsPage";
 import ReviewFormPage from "./features/reviews/ReviewFormPage";
 
+const NearbyServicesPage = lazy(
+  () => import("./features/location/NearbyServicesPage"),
+);
 const AboutPage = lazy(() => import("./pages/marketing/AboutPage"));
 const HowItWorksPage = lazy(() => import("./pages/marketing/HowItWorksPage"));
 const publicPageLoading = (
@@ -126,6 +129,14 @@ export default function App() {
                 <Route path="/admin/*" element={<AdminCenter />} />
               </Route>
             </Route>
+            <Route
+              path="/nearby"
+              element={
+                <Suspense fallback={publicPageLoading}>
+                  <NearbyServicesPage />
+                </Suspense>
+              }
+            />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/service/:id" element={<ServiceDetailPage />} />
             <Route path="/seller/:id" element={<CreatorProfilePage />} />

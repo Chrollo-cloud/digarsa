@@ -1,3 +1,4 @@
+import BuyerLocationForm from "../location/BuyerLocationForm";
 import { useAuth } from "../account/authContext";
 import ProfileLayout from "./ProfileLayout";
 import PersonalInfoForm from "./PersonalInfoForm";
@@ -21,6 +22,7 @@ export default function ProfilePage() {
         </p>
       </section>
       <PersonalInfoForm key={user.id} user={user} />
+      <BuyerLocationForm key={`location-${user.id}`} />
     </ProfileLayout>
   );
 }

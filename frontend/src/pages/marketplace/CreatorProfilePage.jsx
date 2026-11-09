@@ -49,6 +49,9 @@ export default function CreatorProfilePage() {
           </div>
         </section>
         <p className="market-profile-bio">{creator.bio}</p>
+        {creator.publicLocation?.area && (
+          <p>Wilayah layanan publik: {creator.publicLocation.area}</p>
+        )}
         <ul className="market-skills">
           {creator.skills.map((skill) => (
             <li key={skill}>{skill}</li>
