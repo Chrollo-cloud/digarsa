@@ -4,12 +4,16 @@ import { customerMessaging } from "./customerMessagingClient";
 import { useMessaging } from "./useMessaging";
 import MessagingFrame from "./MessagingFrame";
 import MessagingState from "./MessagingState";
+import { notificationItems, unreadNotifications } from "./notificationPresentation";
+import "./notification-bell.css";
 
 export default function NotificationsPage() {
   const { data, error } = useMessaging(() =>
     customerMessaging.listNotifications(),
   );
   const [failure, setFailure] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const rows = notificationItems(data || [], { unreadOnly });
   function read(id) {
     try {
       customerMessaging.markNotificationRead(id);
@@ -21,7 +25,14 @@ export default function NotificationsPage() {
     }
   }
   return (
-    <MessagingFrame title="Kabar untukmu">
+    <MessagingFrame title="Notifikasi Saya">
+      <div className="customer-notification-summary">
+        <p>{error ? "Data notifikasi belum tersedia." : `${unreadNotifications(data || [])} belum dibaca`}</p>
+        <div className="notification-filters" role="group" aria-label="Filter notifikasi">
+          <button type="button" aria-pressed={!unreadOnly} onClick={() => setUnreadOnly(false)}>Semua</button>
+          <button type="button" aria-pressed={unreadOnly} onClick={() => setUnreadOnly(true)}>Belum dibaca</button>
+        </div>
+      </div>
       {failure && (
         <p className="messaging-error" role="alert">
           {failure}
@@ -29,13 +40,13 @@ export default function NotificationsPage() {
       )}
       {error ? (
         <MessagingState error={error} />
-      ) : !data?.length ? (
-        <MessagingState title="Belum ada notifikasi.">
+      ) : !rows.length ? (
+        <MessagingState title={unreadOnly ? "Semua kabar sudah kamu baca." : "Belum ada notifikasi."}>
           Kabar pesan dan perkembangan booking akan muncul di sini.
         </MessagingState>
       ) : (
         <div className="messaging-list" aria-label="Daftar notifikasi">
-          {data.map((notice) => (
+          {rows.map((notice) => (
             <article
               className={`messaging-notification ${notice.is_read ? "" : "is-unread"}`}
               key={notice.id}

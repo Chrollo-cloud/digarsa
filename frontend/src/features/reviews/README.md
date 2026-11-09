@@ -35,7 +35,7 @@ Missing storage starts empty. Unavailable/quota-limited storage surfaces an erro
 Public publication omits `booking_id` and `customer_user_id`, adds `verified: true`,
 and contains no account contact details, brief, password or permissions. It includes
 only the public review ID, service/profile IDs, name/title snapshots, rating,
-comment and creation timestamp. The verified label means that the demo submission
+comment, creation timestamp and optional updated_at. The verified label means that the demo submission
 passed Completed-booking and owner checks; it is not server verification.
 
 ## API
@@ -52,7 +52,8 @@ and catalog entities without changing those sources.
 | `listOwn()`                                            | Current customer's full reviews, rechecked against their Completed bookings.                                                          |
 | `listCompletedBookings()`                              | Current customer's Completed contexts as `{ booking, eligible, reason, review }`.                                                     |
 | `getEligibility(booking_id)`                           | Same eligibility result for an owned booking; other customers' IDs return a generic not-found/forbidden error.                        |
-| `submit(input, { expected_user_id })`                  | Saves one immutable Review. Input is exactly `{ booking_id, service_id, seller_profile_id, rating, comment }`.                        |
+| `submit(input, { expected_user_id })`                  | Saves one Review with stable identity and associations. Input is exactly `{ booking_id, service_id, seller_profile_id, rating, comment }`.                        |
+| `update(review_id, { rating, comment }, { expected_user_id })` | Edits only an owned verified review; preserves identifiers/snapshots and adds optional updated_at. |
 | `getNotificationContext(review_id)`                    | Current author's verified `{ id, customer_user_id, seller_profile_id, booking_id }` for the shared notification resolver.             |
 | `subscribe(listener)`                                  | Unsubscribe function; committed review writes only.                                                                                   |
 | `summarizeReviews(validReviews)`                       | Pure statistics helper, also exported by the client. Never mixes catalog testimonials.                                                |
@@ -65,6 +66,8 @@ Resolver data uses snake_case; the source account remains the existing Phase 5 u
 
 - `submit(input, options)` returns `{ review, notification_error }`. A saved review
   remains successful if the separate notification write fails; the UI offers retry.
+- `update(review_id, input, options)` returns the same result contract without sending
+  another new_review event.
 - `retryNotification(review_id)` validates author ownership and invokes the existing
   `messagingStore.notifyReviewEvent`. The shared event index prevents duplicates.
 
@@ -88,8 +91,9 @@ still be reviewed through its historical Completed booking if its Seller Profile
 owner can be verified. Historical public review cards label removed services as
 archives. Editorial creators without an owned profile do not gain verified reviews.
 
-Published reviews are an immutable public record after successful submission;
-anonymous reads recheck public seller/service identity and never fetch or expose
+Published review identity and associations remain stable after submission; authors can
+update rating/comment after the same ownership and Completed checks.
+Anonymous reads recheck public seller/service identity and never fetch or expose
 private bookings. Self-authored seller records or mismatching live service owners
 in stored data are rejected. Own/notification reads
 recheck the account-scoped association. Public names/titles remain snapshots after
@@ -97,8 +101,9 @@ profile edits. Normal booking lifecycle has no reversal from Completed.
 
 ## UI
 
-- `/reviews` requires login: own written reviews, real average/distribution, eligible
-  Completed bookings, star filtering, newest/oldest/highest sorting and zero states.
+- `/reviews` requires login: Belum Dinilai queue and Penilaian Saya history, with
+  owned Completed contexts, edit links and honest zero states. Filtering, sorting
+  and aggregate panels remain available on public service/creator review sections.
 - `/review/:bookingId` requires login and ownership. Native radio inputs support
   arrow-key star selection; text length, errors, saving and confirmation are exposed.
 - Completed order details link to the form or the already-written review page.
@@ -130,7 +135,7 @@ Added tests:
 Existing files modified:
 
 - `frontend/src/App.jsx`: the two authenticated routes.
-- `frontend/src/features/account/AccountMenu.jsx`: Ulasan Saya navigation.
+- `frontend/src/features/account/AccountMenu.jsx`: Beri Penilaian navigation.
 - `frontend/src/features/account/redirects.js`: safe review return paths.
 - `frontend/src/features/customer/CustomerFrame.jsx`: review navigation.
 - `frontend/src/features/customer/BookingDetailPage.jsx`: Completed review action.
@@ -172,6 +177,21 @@ production authorization nor cross-device synchronization. Public publication tr
 the validated demo submission boundary, not an external oracle proving stored data
 hasn't been tampered with. A backend must authenticate and verify all associations.
 Concurrent tabs retain last-writer-wins behavior; there is no transactional outbox
-for review/notification writes, server moderation, review editing/deletion, pagination,
+for review/notification writes, server moderation, review deletion, pagination,
 or payment integration. Until checkout exists, the app cannot advance Accepted to
 Paid; reviews require legitimate existing Completed records or explicit QA fixtures.
+
+## Personal review queue and editing
+
+`/reviews` provides Belum Dinilai (only eligible own Completed bookings without a
+review) and Penilaian Saya (verified own history). `/review/:bookingId?edit=1`
+reuses the form for editing. `reviewStore.update(id, {rating, comment},
+{expected_user_id})` revalidates session, ownership, Completed booking and seller
+association. It changes only rating/comment and optional canonical `updated_at`;
+all IDs, snapshots and `created_at` remain stable. Legacy v1 rows without
+`updated_at` remain valid and are not migrated on read. Invalid timestamps, unknown
+fields, corrupt storage and failed writes fail closed. Public projections include
+`updated_at` when present but never booking/customer IDs. Store subscriptions refresh
+service/creator aggregates after edits. `reviewActions.update` emits no new_review
+notification; original submission/retry deduplication is unchanged. Completion dates
+are shown only when the booking adapter has an actual Completed update timestamp.

@@ -47,7 +47,7 @@ function InboxPanel({ conversations, error, activeId }) {
         <div>
           <span className="workspace-eyebrow">RUANG KOLABORASI</span>
           <h1>
-            Pesan<span>.</span>
+            Pesan Saya<span>.</span>
           </h1>
         </div>
         {unread > 0 && (
@@ -169,7 +169,7 @@ export default function MessagingWorkspace({ activeId }) {
     customerMessaging.listInbox(),
   );
   useEffect(() => {
-    document.title = `${activeId ? "Percakapan" : "Pesan"} — Digarsa`;
+    document.title = `${activeId ? "Percakapan" : "Pesan Saya"} — Digarsa`;
   }, [activeId]);
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -185,10 +185,6 @@ export default function MessagingWorkspace({ activeId }) {
             <span className="workspace-eyebrow">DIGARSA / RUANG PERSONAL</span>
             <p>Setiap karya dimulai dari percakapan.</p>
           </div>
-          <nav aria-label="Navigasi ruang personal">
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/notifications">Notifikasi ↗</Link>
-          </nav>
         </header>
         <div className="workspace-panels">
           <InboxPanel

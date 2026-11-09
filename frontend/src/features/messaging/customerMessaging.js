@@ -113,7 +113,7 @@ export function createCustomerMessaging({
     listNotifications() {
       const notifications = messaging.listNotifications();
       // Related IDs never become URLs without verifying the current account's
-      // customer context. Seller-side notices stay visible, without a chat link.
+      // customer context. Seller notifications belong in Seller Center.
       const conversations = inbox();
       const view = customers.view();
       if (view.error)
@@ -137,15 +137,16 @@ export function createCustomerMessaging({
           if (booking) to = `/orders/${encodeURIComponent(booking.id)}`;
         }
         return { ...notice, to };
-      });
+      }).filter((notice) => notice.to !== null);
     },
     markNotificationRead(id) {
+      if (!api.listNotifications().some((notice) => notice.id === id)) denied();
       return messaging.markNotificationRead(id);
     },
     counts() {
       return {
         messages: inbox().reduce((total, row) => total + row.unread_count, 0),
-        notifications: messaging.getUnreadNotificationCount(),
+        notifications: api.listNotifications().filter((notice) => !notice.is_read).length,
       };
     },
     notifyRequested(booking_id) {

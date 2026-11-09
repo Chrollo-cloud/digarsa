@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect } from "react";
-import { NavLink } from "react-router-dom";
 import "./messaging.css";
 
 export default function MessagingFrame({ title, children, thread = false }) {
@@ -24,11 +23,6 @@ export default function MessagingFrame({ title, children, thread = false }) {
             <p>Percakapan dan kabar kolaborasimu, dalam satu ruang.</p>
           </header>
         )}
-        <nav className="messaging-nav" aria-label="Navigasi pesan pelanggan">
-          <NavLink to="/dashboard">← Dashboard</NavLink>
-          <NavLink to="/messages">Pesan</NavLink>
-          <NavLink to="/notifications">Notifikasi</NavLink>
-        </nav>
         {children}
         <p className="messaging-demo">
           Demo lokal · Data di browser ini, bukan sinkronisasi lintas perangkat

@@ -7,6 +7,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   return (
     <ProfileLayout>
+      <div className="personal-profile-grid">
       <section className="personal-account-info" aria-label="Informasi akun">
         <strong>{user.name}</strong>
         <span>{user.email}</span>
@@ -21,8 +22,11 @@ export default function ProfilePage() {
             : "Akun Digarsa reguler. Kamu dapat mencari layanan dan mengaktifkan Seller Profile dari akun yang sama."}
         </p>
       </section>
+      <div className="personal-profile-content">
       <PersonalInfoForm key={user.id} user={user} />
       <BuyerLocationForm key={`location-${user.id}`} />
+      </div>
+      </div>
     </ProfileLayout>
   );
 }

@@ -108,3 +108,65 @@ guards continue checking account, Seller Profile ownership, and `admin:access`.
 A browser-specific dropdown issue remains possible outside the tested in-app
 browser. If it recurs, capture the browser/version and failed interaction rather
 than changing routes or weakening focus/authorization checks without evidence.
+
+## Pre-backend account refinements
+
+Native Safari reproduced a failed Profil Saya click: focus left the menu with a
+null relatedTarget before click and synchronous blur dismissal removed the anchor.
+Internal pointerdown now keeps the menu mounted through activation. Keyboard blur,
+outside pointer and Escape still dismiss, without cancelling native link clicks.
+The grouped menu retains customer links, explicit seller/admin guards and logout.
+Customer Pesan Saya / Notifikasi Saya now count only buyer contexts; Seller Center
+keeps its independent role-scoped view over the same shared repository. Keranjang
+reuses the unchanged /cart store and individual booking links (no migration/payment).
+
+### Dedicated local Admin account using an ignored environment file
+
+1. Edit `frontend/.env.demo-admin.local` privately and set
+   `DIGARSA_DEMO_ADMIN_PASSWORD` to your chosen demo-only password. This file is
+   ignored by Git. Never prefix the variable with VITE_; never commit the password.
+   If the local file is absent, create it with that one variable.
+2. Run `npm run dev -- --host 127.0.0.1` from frontend. Open
+   `http://127.0.0.1:5173/__demo/admin` (use Vite's actual port).
+3. Explicitly create the dedicated srikandi@gmail.com demo account, or choose login
+   if it already exists. Existing credentials are never overwritten. A wrong
+   password fails normally. The password is read by the dev server only, sent over
+   loopback only after your explicit same-origin setup action, and used by the
+   existing demoStore register/login methods; it is never a client env constant.
+4. Inspect the shown account ID/email, type that exact ID, then explicitly activate
+   Admin. Email selects this setup's dedicated account, never grants permission.
+   The existing localhost development provisioner verifies the signed-in ID before
+   adding admin:access. Reload the app; visit /admin. Ordinary users remain denied.
+5. To revoke, log in through the same setup page, inspect/type the ID and choose
+   Cabut Admin. Reload. Logout clears only the session. Delete/empty the local env
+   file when finished (revocation is a separate explicit action).
+
+The setup endpoint requires a loopback connection and Host, matching Origin, POST and custom
+same-origin header. Responses use no-store. It exists only in Vite configureServer,
+not preview or production. Setup source is outside the production import graph.
+This is an explicit development convenience, not secure production provisioning:
+localStorage and localhost demo credentials are accessible to the local user.
+The requested real account cannot be provisioned until its password is supplied
+privately in the ignored file. Never reuse a production password for this demo.
+
+### Customer account UI refinement
+
+The global account dropdown is the account navigation source; repeated page-wide
+navigation rows are removed. Seller Center remains only in the main navbar for
+activated sellers. `accountLinkActive` mirrors App routes: Dashboard/Profile/Settings
+match exactly; Orders and Messages include their existing detail routes; Reviews
+also matches `/review/:bookingId`. Pointer opening does not autofocus Dashboard.
+Keyboard opening still focuses the menu. Both account and notification overlays
+handle Escape at document capture while open so native Safari's pointer-focus
+behavior cannot leave Escape inactive. The existing internal-pointer blur guard
+remains intact. No permissions, providers, account stores or route guards changed.
+
+The customer-only notification bell uses the existing customerMessaging facade and
+shared repository, with All/Unread filters, a maximum of eight recent items, mark
+read, authorized destinations and View All. Mobile links to the full notifications
+page, which uses the same read states. No email/push preferences are simulated.
+Dashboard metrics count current owned bookings by real lifecycle status; recent
+orders use createdAt. Status bars show categorical counts, not trends or payment
+history. Settings contains security/session controls and privacy information;
+personal identity fields and private location remain on Profile. Favorites and
+cart retain their original storage keys and account isolation. No data migration.

@@ -114,3 +114,15 @@ test("corrupt or unavailable account storage is never silently overwritten by pr
     /tidak dapat dibaca/,
   );
 });
+
+test('explicit revocation affects only the verified active ID and preserves credentials and associations', async () => {
+  const f = await fixture();
+  const before = f.data.get(ACCOUNT_KEY);
+  f.tool().provision(f.seller.id);
+  assert.throws(() => f.tool().revoke(f.buyer.id), /ID harus sama/);
+  f.tool().revoke(f.seller.id);
+  assert.equal(f.data.get(ACCOUNT_KEY), before);
+  assert.throws(() => f.accounts.listAccountsForAdmin(), /admin/);
+  f.tool().revoke(f.seller.id);
+  assert.equal(f.accounts.current().sellerProfileId, f.profile.id);
+});

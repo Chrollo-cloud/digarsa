@@ -27,7 +27,7 @@ export default function ServiceActions({ service }) {
         if (added) store.removeFromCart(service.id);
         else store.addToCart(service.id);
         setMessage(
-          added ? "Dihapus dari pertimbangan." : "Ditambahkan ke pertimbangan.",
+          added ? "Dihapus dari keranjang." : "Ditambahkan ke keranjang.",
         );
       }
       setError(false);
@@ -49,11 +49,11 @@ export default function ServiceActions({ service }) {
         </button>
         <button
           type="button"
-          aria-label={`${added ? "Hapus dari" : "Tambah ke"} pertimbangan: ${service.title}`}
+          aria-label={`${added ? "Hapus dari" : "Tambah ke"} keranjang: ${service.title}`}
           aria-pressed={added}
           onClick={() => act("cart")}
         >
-          {added ? "✓ Dipertimbangkan" : "+ Pertimbangkan"}
+          {added ? "✓ Di keranjang" : "+ Keranjang"}
         </button>
       </div>
       <span role={error ? "alert" : "status"}>{message}</span>

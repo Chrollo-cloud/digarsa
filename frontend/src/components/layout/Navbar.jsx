@@ -4,6 +4,7 @@ import { publicNavigation } from "../../data/navigation";
 import Button from "../ui/Button";
 import logo from "../../assets/brand/digarsa-logo-trimmed.png";
 import { useAuth } from "../../features/account/authContext";
+import NotificationBell from "../../features/messaging/NotificationBell";
 import AccountMenu from "../../features/account/AccountMenu";
 import "./Navbar.css";
 
@@ -93,7 +94,10 @@ export default function Navbar() {
           <div className="navbar__actions">
             <>
               {user ? (
-                <AccountMenu key={pathname} onNavigate={close} />
+                <>
+                  <NotificationBell key={`notifications-${user.id}-${pathname}`} onNavigate={close} />
+                  <AccountMenu key={pathname} onNavigate={close} />
+                </>
               ) : (
                 <Link className="navbar__login" to="/login" onClick={close}>
                   Masuk

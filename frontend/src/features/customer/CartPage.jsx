@@ -21,8 +21,8 @@ export default function CartPage() {
   }
   return (
     <CustomerFrame
-      title="Pertimbangkan dengan tenang."
-      description="Daftar pertimbangan layanan kreatif. Setiap layanan diajukan sebagai permintaan terpisah."
+      title="Keranjang layananmu."
+      description="Layanan yang kamu pilih untuk booking. Setiap layanan diajukan sebagai permintaan terpisah."
     >
       {error && (
         <p role="alert" className="customer-warning">
@@ -46,9 +46,9 @@ export default function CartPage() {
                         <h2>
                           <Link to={`/service/${id}`}>{service.title}</Link>
                         </h2>
-                        <Link to={`/seller/${creator.id}`}>{creator.name}</Link>
+                        {creator ? <Link to={`/seller/${creator.id}`}>{creator.name}</Link> : <span>Kreator tidak tersedia</span>}
                         <p>
-                          {service.delivery} · {creator.city}
+                          {service.delivery}{creator?.city ? ` · ${creator.city}` : ""}
                         </p>
                         <strong>{money(service.price)}</strong>
                       </div>
@@ -60,7 +60,7 @@ export default function CartPage() {
                   )}
                   <div className="customer-cart-actions">
                     <button type="button" onClick={() => remove(id)}>
-                      Hapus dari pertimbangan
+                      Hapus dari keranjang
                     </button>
                     {reason ? (
                       <p>{reason}</p>
@@ -78,8 +78,9 @@ export default function CartPage() {
             })}
           </div>
           <aside className="customer-cart-note">
-            <span className="market-kicker">DAFTAR PERTIMBANGAN</span>
-            <h2>{cart.length} layanan</h2>
+            <span className="market-kicker">KERANJANG LAYANAN</span>
+            <h2>Pilihan untuk karyamu.</h2>
+            <dl className="customer-cart-facts"><div><dt>Layanan dipilih</dt><dd>{cart.length}</dd></div><div><dt>Pengajuan</dt><dd>Satu per layanan</dd></div></dl>
             <p>
               Bandingkan gaya, harga awal, dan cara pengerjaan. Tidak ada
               checkout gabungan atau pembayaran otomatis.
@@ -88,7 +89,7 @@ export default function CartPage() {
           </aside>
         </div>
       ) : (
-        <EmptyState title="Belum ada layanan yang dipertimbangkan.">
+        <EmptyState title="Belum ada layanan yang dipilih.">
           Tambahkan layanan dari marketplace, lalu ajukan brief satu per satu.
         </EmptyState>
       )}

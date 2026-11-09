@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../account/authContext";
 import { money } from "../../data/marketplace";
-import { bookingDate } from "./formatters";
+import { bookingDate, customerDeclineReason } from "./formatters";
 export default function BookingCard({ booking }) {
+  const { user } = useAuth();
+  const declineReason = customerDeclineReason(booking, user?.id);
   return (
     <article className="customer-booking-card">
       <header>
@@ -20,8 +23,9 @@ export default function BookingCard({ booking }) {
         {booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}
       </p>
       <p>{bookingDate(booking.requestedDate)}</p>
+      {declineReason && <p className="customer-order-decline"><strong>Alasan ditolak:</strong> {declineReason}</p>}
       <footer>
-        <strong>{money(booking.estimatedPrice)}</strong>
+        <strong><small>Estimasi mulai dari</small>{money(booking.estimatedPrice)}</strong>
         <Link to={`/orders/${booking.id}`}>Lihat detail →</Link>
       </footer>
     </article>

@@ -16,6 +16,7 @@ export function createReviewAdapters({ accounts, customers, getServices }) {
         service_title: row.serviceTitle,
         seller_name: row.creatorName,
         created_at: row.createdAt,
+        completed_at: row.status === "Completed" ? row.updatedAt || null : null,
       }));
     },
     resolveSellerProfile(id) {

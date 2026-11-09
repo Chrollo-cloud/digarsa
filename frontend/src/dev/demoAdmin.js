@@ -11,3 +11,5 @@ const tooling = createDemoAdminProvisioner({
 });
 export const currentDemoAccount = tooling.currentAccount;
 export const provisionDemoAdmin = tooling.provision;
+
+export const revokeDemoAdmin = tooling.revoke;

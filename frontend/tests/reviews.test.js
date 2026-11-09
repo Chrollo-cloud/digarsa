@@ -288,6 +288,7 @@ test("malformed, incompatible, duplicate or invalid stored reviews fail closed w
     "null",
     JSON.stringify({ version: 2, reviews: [] }),
     JSON.stringify({ ...valid, extra: true }),
+    JSON.stringify({ ...valid, reviews: [null] }),
     JSON.stringify({ ...valid, reviews: [...valid.reviews, ...valid.reviews] }),
     ...[
       { rating: 0 },
@@ -533,4 +534,57 @@ test("stored self-reviews and mismatched public service owners cannot inflate pu
   f.values.set(REVIEW_KEY, valid);
   f.service.seller_profile_id = "someone-else";
   rejects(() => f.store.listPublic(), "STORAGE_CORRUPT");
+});
+
+test('editing preserves identifiers, legacy records, timestamps and recalculates public ratings', () => {
+  const f = fixture();
+  const original = f.submit();
+  let events = 0;
+  f.store.subscribe(() => events++);
+  const actions = createReviewActions({ reviews: f.store, messaging: { notifyReviewEvent: () => assert.fail('edit must not notify') } });
+  const edited = actions.update(original.id, { rating: 2, comment: 'Proses berjalan baik tetapi hasilnya masih perlu diperbaiki.' }, { expected_user_id: 'buyer-user' }).review;
+  for (const key of reviewFields.filter(key => !['rating', 'comment'].includes(key))) assert.equal(edited[key], original[key]);
+  assert.ok(edited.updated_at);
+  assert.equal(f.store.getSummary({ service_id: original.service_id }).average, 2);
+  assert.equal(f.store.getSummary({ seller_profile_id: original.seller_profile_id }).total, 1);
+  assert.equal(events, 1);
+  assert.equal(createReviewStore(f.options).listOwn()[0].id, original.id);
+  assert.equal(f.store.listCompletedBookings().filter(row => row.eligible).length, 0);
+  rejects(() => f.submit(), 'DUPLICATE_REVIEW');
+});
+
+test('review edits reject account switching, impersonation, invalid content and changed booking context', () => {
+  const f = fixture();
+  const row = f.submit();
+  const input = { rating: 4, comment: 'Komunikasi dan hasil kolaborasinya sangat baik.' };
+  rejects(() => f.store.update(row.id, input, { expected_user_id: 'other' }), 'SESSION_CHANGED');
+  for (const patch of [{ rating: 0 }, { rating: 2.5 }, { comment: 'short' }, { customer_user_id: 'other' }])
+    rejects(() => f.store.update(row.id, { ...input, ...patch }, { expected_user_id: 'buyer-user' }), 'INVALID_INPUT');
+  f.as({ id: 'other', capabilities: ['buyer'], permissions: ['admin:access'] });
+  rejects(() => f.store.update(row.id, input, { expected_user_id: 'other' }), 'NOT_FOUND_OR_FORBIDDEN');
+  f.as({ id: 'buyer-user', capabilities: ['buyer'] });
+  f.booking.status = 'Accepted';
+  rejects(() => f.store.update(row.id, input, { expected_user_id: 'buyer-user' }), 'INVALID_CONTEXT');
+  f.booking.status = 'Completed';
+  f.as({ id: 'buyer-user', capabilities: ['buyer', 'seller'], sellerProfileId: 'seller-profile' });
+  rejects(() => f.store.update(row.id, input, { expected_user_id: 'buyer-user' }), 'SELF_REVIEW');
+});
+
+test('editing fails closed for corrupt storage and failed writes without overwriting records', () => {
+  const f = fixture();
+  const row = f.submit();
+  const raw = f.values.get(REVIEW_KEY);
+  const edit = store => store.update(row.id, { rating: 3, comment: 'Proses pengerjaan berjalan dengan cukup baik.' }, { expected_user_id: 'buyer-user' });
+  for (const updated_at of ['bad', null, '2020-01-01T00:00:00.000Z']) {
+    const db = JSON.parse(raw);
+    db.reviews[0].updated_at = updated_at;
+    const damaged = JSON.stringify(db);
+    f.values.set(REVIEW_KEY, damaged);
+    rejects(() => edit(f.store), 'STORAGE_CORRUPT');
+    assert.equal(f.values.get(REVIEW_KEY), damaged);
+  }
+  f.values.set(REVIEW_KEY, raw);
+  const quota = createReviewStore({ ...f.options, storage: { getItem: f.storage.getItem, setItem: () => { throw new Error('quota'); } } });
+  rejects(() => edit(quota), 'STORAGE_UNAVAILABLE');
+  assert.equal(f.values.get(REVIEW_KEY), raw);
 });

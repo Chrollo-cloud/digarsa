@@ -14,7 +14,7 @@
 }
 .customer-heading h1 {
   margin: 8px 0 10px;
-  font: 700 clamp(38px, 6vw, 68px)/1.04 var(--font-display);
+  font: 700 clamp(36px, 4.5vw, 56px)/1.04 var(--font-display);
   letter-spacing: -0.055em;
   color: var(--color-indigo);
   overflow-wrap: anywhere;
@@ -23,24 +23,6 @@
   color: var(--color-muted);
   font-size: 14px;
   line-height: 1.7;
-}
-.customer-quick-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 34px;
-}
-.customer-quick-links a {
-  padding: 11px 13px;
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  color: var(--color-indigo);
-  font-size: 12px;
-  font-weight: 700;
-}
-.customer-quick-links a:hover {
-  border-color: var(--color-blue);
-  color: var(--color-blue);
 }
 .customer-stats {
   display: grid;
@@ -53,7 +35,7 @@
   background: white;
   padding: 22px;
   border: 1px solid var(--color-border);
-  border-radius: 5px;
+  border-radius: 10px;
 }
 .customer-stats span {
   color: var(--color-muted);
@@ -121,14 +103,14 @@
 }
 .customer-order-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 .customer-booking-card {
   min-width: 0;
   padding: 17px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 10px;
   background: white;
 }
 .customer-booking-card header,
@@ -509,5 +491,393 @@
   }
   .customer-order-filter {
     flex-wrap: wrap;
+  }
+}
+
+.customer-welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 28px;
+  padding: clamp(24px, 4vw, 40px);
+  background: #e0f2ec;
+  border: 1px solid #cee4de;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.customer-welcome h2 {
+  margin: 12px 0 24px;
+  font: 700 clamp(26px, 3vw, 40px)/1.1 var(--font-display);
+}
+
+.customer-welcome-total {
+  flex: none;
+  padding: 20px;
+  text-align: right;
+}
+
+.customer-welcome-total strong {
+  display: block;
+  font: 500 90px/1 var(--font-display);
+  color: var(--color-indigo);
+  letter-spacing: -.07em;
+}
+
+.customer-welcome-total span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 12px;
+  color: var(--color-indigo);
+}
+
+.customer-stats > a > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.customer-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.customer-dashboard-grid > *, .customer-dashboard-aside {
+  min-width: 0;
+}
+
+.customer-dashboard-panel {
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+  background: white;
+  border-radius: 12px;
+}
+
+.customer-dashboard-panel h2 {
+  font: 700 23px/1.2 var(--font-display);
+  margin: 10px 0 20px;
+}
+
+.customer-dashboard-panel .customer-section-heading h2 {
+  margin-bottom: 0;
+}
+
+.customer-dashboard-panel .customer-empty {
+  padding: 18px 0;
+  border: 0;
+}
+
+.customer-dashboard-panel .customer-empty h2 {
+  font-size: 21px;
+}
+
+.customer-list-caption {
+  font-size: 11px !important;
+  color: var(--color-muted);
+}
+
+.customer-status-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+  margin: 28px 0;
+}
+
+.customer-status-overview > a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--color-indigo);
+}
+
+.customer-status-meter {
+  grid-column: 1/-1;
+  height: 5px;
+  border-radius: 8px;
+  background: #edf0f2;
+  overflow: hidden;
+}
+
+.customer-status-meter i {
+  display: block;
+  height: 100%;
+  background: var(--color-blue);
+  border-radius: inherit;
+}
+
+.customer-recent-orders {
+  display: grid;
+  gap: 14px;
+}
+
+.customer-communication {
+  display: grid;
+}
+
+.customer-communication > a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-indigo);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.customer-communication small {
+  display: block;
+  font-size: 10px;
+  color: var(--color-muted);
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+.customer-communication strong {
+  font: 700 28px var(--font-display);
+}
+
+.customer-profile-action {
+  display: inline-flex;
+  padding-top: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-blue);
+}
+
+.saved-services {
+  display: grid;
+  gap: 16px;
+  max-width: 900px;
+}
+
+.saved-service-card {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: white;
+  min-width: 0;
+}
+
+.saved-service-image {
+  flex: 0 0 128px;
+}
+
+.saved-service-image img {
+  display: block;
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.saved-service-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.saved-service-content h2 {
+  margin: 12px 0 8px;
+  font: 700 20px/1.3 var(--font-display);
+  overflow-wrap: anywhere;
+}
+
+.saved-service-content p {
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.saved-service-content > strong {
+  display: block;
+  font-size: 13px;
+  color: var(--color-indigo);
+}
+
+.saved-service-content strong small {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.saved-service-remove {
+  align-self: flex-start;
+  min-width: 42px;
+  min-height: 42px;
+  background: #eaf6f3;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-blue);
+  font-size: 22px;
+}
+
+.customer-dashboard-aside .saved-service-card {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: 18px 0;
+  gap: 12px;
+}
+
+.customer-dashboard-aside .saved-service-image {
+  flex-basis: 72px;
+}
+
+.customer-dashboard-aside .saved-service-image img {
+  width: 72px;
+  height: 86px;
+}
+
+.customer-dashboard-aside .saved-service-content h2 {
+  font-size: 14px;
+}
+
+.customer-order-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px;
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: white;
+}
+
+.customer-order-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 7px;
+  font: 700 11px var(--font-body);
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.customer-order-tabs button[aria-pressed="true"] {
+  background: #e9f5f1;
+  color: var(--color-indigo);
+}
+
+.customer-order-tabs span {
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  min-height: 19px;
+  padding: 2px;
+  background: #f1f2f3;
+  border-radius: 50%;
+  font-size: 9px;
+}
+
+.customer-booking-card footer strong > small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+
+.customer-order-decline {
+  padding: 12px;
+  background: #fff4f1;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.customer-cart-facts {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.customer-cart-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.customer-cart-facts dt {
+  color: var(--color-muted);
+}
+
+.customer-cart-facts dd {
+  margin: 0;
+  color: var(--color-indigo);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .customer-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .customer-dashboard-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 620px) {
+  .customer-welcome {
+    align-items: flex-start;
+  }
+  .customer-welcome-total {
+    display: none;
+  }
+  .customer-dashboard-aside {
+    display: block;
+  }
+  .customer-dashboard-panel {
+    padding: 20px;
+  }
+  .saved-service-card {
+    padding: 14px;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .saved-service-image {
+    flex-basis: 80px;
+  }
+  .saved-service-image img {
+    width: 80px;
+    height: 92px;
+  }
+  .saved-service-content h2 {
+    font-size: 16px;
+  }
+  .saved-service-remove {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 18px;
+  }
+  .saved-service-content h2 {
+    padding-right: 40px;
+  }
+  .customer-dashboard-aside .saved-service-content h2 {
+    padding-right: 0;
+  }
+  .customer-order-tabs {
+    gap: 4px;
+  }
+  .customer-order-tabs button {
+    padding: 8px 10px;
   }
 }

@@ -464,3 +464,21 @@ test("decline reason display handles legacy, empty, malformed and non-declined b
   assert.equal(customerDeclineReason(undefined, first.id), "");
   assert.equal(customerDeclineReason({ ...base, declineReason: "  Jadwal penuh.\nCoba tanggal lain.  " }, first.id), "Jadwal penuh.\nCoba tanggal lain.");
 });
+
+test('Keranjang keeps the existing cart distinct from favorites through individual booking and reload', () => {
+  const s = setup();
+  s.store.addFavorite('remote');
+  s.store.addToCart('remote');
+  s.store.addToCart('onsite');
+  const existing = createCustomerStore(s.options);
+  assert.deepEqual(existing.view().favorites, ['remote']);
+  assert.deepEqual(existing.view().cart, ['remote','onsite']);
+  const booking = s.confirm('remote');
+  assert.equal(booking.status, 'Requested');
+  assert.deepEqual(existing.view().favorites, ['remote']);
+  assert.deepEqual(existing.view().cart, ['onsite']);
+  s.as(second);
+  assert.deepEqual(existing.view().cart, []);
+  s.as(first);
+  assert.deepEqual(existing.view().cart, ['onsite']);
+});

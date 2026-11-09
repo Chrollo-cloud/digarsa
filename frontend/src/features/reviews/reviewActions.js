@@ -13,6 +13,10 @@ export function createReviewActions({ reviews, messaging }) {
       }
       return { review, notification_error };
     },
+    update(review_id, input, options) {
+      // An edit is not a new review event; never redeliver new_review here.
+      return { review: reviews.update(review_id, input, options), notification_error: "" };
+    },
     retryNotification(review_id) {
       reviews.getNotificationContext(review_id);
       return messaging.notifyReviewEvent(review_id);

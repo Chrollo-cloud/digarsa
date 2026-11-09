@@ -75,6 +75,7 @@ const published = ({
   rating,
   comment,
   created_at,
+  updated_at,
 }) => ({
   id,
   service_id,
@@ -85,6 +86,7 @@ const published = ({
   rating,
   comment,
   created_at,
+  ...(updated_at ? { updated_at } : {}),
   verified: true,
 });
 
@@ -147,7 +149,13 @@ export function createReviewStore({
     const bookings = new Set();
     for (const row of db.reviews) {
       if (
-        !exact(row, reviewFields) ||
+        !exact(
+          row,
+          row && Object.hasOwn(row, "updated_at")
+            ? [...reviewFields, "updated_at"]
+            : reviewFields,
+        ) ||
+        (Object.hasOwn(row, "updated_at") && (!time(row.updated_at) || row.updated_at < row.created_at)) ||
         ![
           "id",
           "booking_id",
@@ -438,6 +446,25 @@ export function createReviewStore({
       )
         fail("INVALID_CONTEXT", "Ringkasan akun atau booking tidak lengkap.");
       db.reviews.push(row);
+      save(db);
+      return { ...row };
+    },
+    update(review_id, input, { expected_user_id } = {}) {
+      const user = account();
+      if (expected_user_id !== user.id)
+        fail("SESSION_CHANGED", "Sesi berubah. Buka kembali formulir dari akun aktif.");
+      if (!id(review_id) || !exact(input, ["rating", "comment"]) ||
+          !Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5 ||
+          typeof input.comment !== "string" || !text(input.comment.trim(), 10, 2000))
+        fail("INVALID_INPUT", "Pilih 1–5 bintang dan tulis ulasan 10–2000 karakter yang valid.");
+      const db = load();
+      const row = db.reviews.find((item) => item.id === review_id && item.customer_user_id === user.id);
+      if (!row) denied();
+      verifyOwn(row, user);
+      const updated_at = source(now);
+      if (!time(updated_at) || updated_at < (row.updated_at || row.created_at))
+        fail("INVALID_DEPENDENCY", "Waktu pembaruan ulasan tidak valid. Coba lagi.");
+      Object.assign(row, { rating: input.rating, comment: input.comment.trim(), updated_at });
       save(db);
       return { ...row };
     },

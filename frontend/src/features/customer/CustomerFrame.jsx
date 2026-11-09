@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
 import { useCustomer } from "./useCustomer";
 import "./customer.css";
 
@@ -16,16 +15,6 @@ export default function CustomerFrame({ title, description, children }) {
           <h1>{title}</h1>
           {description && <p>{description}</p>}
         </header>
-        <nav className="customer-quick-links" aria-label="Navigasi pelanggan">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/marketplace">Marketplace ↗</Link>
-          <Link to="/favorites">Favorit</Link>
-          <Link to="/cart">Pertimbangan</Link>
-          <Link to="/orders">Pesanan</Link>
-          <Link to="/reviews">Ulasan</Link>
-          <Link to="/messages">Pesan</Link>
-          <Link to="/notifications">Notifikasi</Link>
-        </nav>
         {error && (
           <p className="customer-warning" role="alert">
             {error}

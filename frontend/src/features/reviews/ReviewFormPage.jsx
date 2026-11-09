@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../account/authContext";
 import { reviewStore } from "./reviewClient";
 import { reviewActions } from "./reviewActionsClient";
@@ -8,12 +8,23 @@ import RatingStars from "./RatingStars";
 import { services } from "../../data/marketplace";
 import "./reviews.css";
 
-function ReviewComposer({ bookingId }) {
-  const { user, data, error } = useReviews(() =>
-    reviewStore.getEligibility(bookingId),
+function ReviewComposer({ bookingId, editing }) {
+  const { user, data, error } = useReviews(() => reviewStore.getEligibility(bookingId));
+  if (error) return <p className="review-error" role="alert">{error}</p>;
+  return (
+    <ReviewEditor
+      key={`${user.id}-${bookingId}-${editing}`}
+      bookingId={bookingId}
+      user={user}
+      data={data}
+      editing={editing && !!data.review}
+    />
   );
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
+}
+
+function ReviewEditor({ bookingId, user, data, editing }) {
+  const [rating, setRating] = useState(editing ? data.review.rating : 0);
+  const [comment, setComment] = useState(editing ? data.review.comment : "");
   const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -23,22 +34,28 @@ function ReviewComposer({ bookingId }) {
   const successHeading = useRef(null);
   function submit(event) {
     event.preventDefault();
-    if (locked.current || !data?.eligible) return;
+    if (locked.current || (!editing && !data?.eligible)) return;
     locked.current = true;
     setBusy(true);
     setFailure("");
     queueMicrotask(() => {
       try {
-        const saved = reviewActions.submit(
-          {
-            booking_id: bookingId,
-            service_id: data.booking.service_id,
-            seller_profile_id: data.booking.seller_profile_id,
-            rating,
-            comment,
-          },
-          { expected_user_id: user.id },
-        );
+        const saved = editing
+          ? reviewActions.update(
+              data.review.id,
+              { rating, comment },
+              { expected_user_id: user.id },
+            )
+          : reviewActions.submit(
+              {
+                booking_id: bookingId,
+                service_id: data.booking.service_id,
+                seller_profile_id: data.booking.seller_profile_id,
+                rating,
+                comment,
+              },
+              { expected_user_id: user.id },
+            );
         setResult(saved);
       } catch (error) {
         setFailure(error.message);
@@ -48,12 +65,6 @@ function ReviewComposer({ bookingId }) {
       }
     });
   }
-  if (error)
-    return (
-      <div className="review-error" role="alert">
-        {error}
-      </div>
-    );
   if (result)
     return (
       <section
@@ -73,7 +84,7 @@ function ReviewComposer({ bookingId }) {
           Terima kasih, ceritamu berarti.
         </h2>
         <p role="status">
-          Ulasanmu tersimpan dan tampil sebagai ulasan booking terverifikasi.
+          {editing ? "Penilaianmu berhasil diperbarui." : "Ulasanmu tersimpan dan tampil sebagai ulasan booking terverifikasi."}
         </p>
         <RatingStars value={result.review.rating} size={25} />
         <p className="review-comment">{result.review.comment}</p>
@@ -96,12 +107,12 @@ function ReviewComposer({ bookingId }) {
           </div>
         )}
         {failure && <p role="alert">{failure}</p>}
-        <Link className="button button--primary" to="/reviews">
+        <Link className="button button--primary" to="/reviews?tab=history">
           Lihat ulasan saya ↗
         </Link>
       </section>
     );
-  if (!data.eligible)
+  if (!data.eligible && !editing)
     return (
       <section className="review-form-card review-empty">
         <h2>
@@ -110,8 +121,8 @@ function ReviewComposer({ bookingId }) {
             : "Booking belum dapat diulas."}
         </h2>
         <p>{data.reason}</p>
-        <Link to={data.review ? "/reviews" : `/orders/${bookingId}`}>
-          {data.review ? "Lihat ulasan saya ↗" : "Kembali ke pesanan ↗"}
+        <Link to={data.review ? `/review/${bookingId}?edit=1` : `/orders/${bookingId}`}>
+          {data.review ? "Ubah Penilaian ↗" : "Kembali ke pesanan ↗"}
         </Link>
       </section>
     );
@@ -189,8 +200,7 @@ function ReviewComposer({ bookingId }) {
         </div>
         <p className="review-public-note">
           Nama akun dan ulasanmu akan tampil di halaman layanan serta profil
-          kreator. Satu booking hanya dapat diulas sekali; pengeditan belum
-          tersedia.
+          kreator. Satu booking memiliki satu penilaian yang dapat kamu perbarui.
         </p>
         {failure && (
           <p className="review-error" role="alert">
@@ -202,7 +212,7 @@ function ReviewComposer({ bookingId }) {
           type="submit"
           disabled={busy}
         >
-          {busy ? "Menyimpan…" : "Bagikan ulasan ↗"}
+          {busy ? "Menyimpan…" : editing ? "Simpan Penilaian ↗" : "Bagikan ulasan ↗"}
         </button>
       </form>
     </div>
@@ -213,6 +223,8 @@ export default function ReviewFormPage() {
     document.title = "Tulis ulasan — Digarsa";
   }, []);
   const { bookingId } = useParams();
+  const [params] = useSearchParams();
+  const editing = params.get("edit") === "1";
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [bookingId]);
@@ -227,9 +239,9 @@ export default function ReviewFormPage() {
               Ceritakan pengalamanmu<span>.</span>
             </h1>
           </div>
-          <Link to="/reviews">← Ulasan saya</Link>
+          <Link to="/reviews?tab=history">← Beri Penilaian</Link>
         </header>
-        <ReviewComposer key={`${user.id}-${bookingId}`} bookingId={bookingId} />
+        <ReviewComposer key={`${user.id}-${bookingId}-${editing}`} bookingId={bookingId} editing={editing} />
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../account/authContext";
 import "./profile.css";
 
@@ -11,9 +10,6 @@ export default function ProfileLayout({ settings = false, children }) {
   return (
     <div className="personal-page">
       <div className="personal-shell">
-        <Link className="personal-back" to="/dashboard">
-          ← Kembali ke dashboard
-        </Link>
         <header className="personal-heading">
           <span className="market-kicker">
             AKUN DIGARSA / {settings ? "PENGATURAN" : "PROFIL"}
@@ -30,17 +26,9 @@ export default function ProfileLayout({ settings = false, children }) {
             )}
           </h1>
           <p>
-            Kelola informasi akunmu untuk membantu setiap kolaborasi berjalan
-            lebih dekat.
+            {settings ? "Kelola akses, keamanan, dan pahami privasi akun demo kamu." : "Identitas yang membantu ide baik bertemu kolaborasi yang tepat."}
           </p>
         </header>
-        <nav className="personal-navigation" aria-label="Navigasi profil">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/profile">Profil Saya</NavLink>
-          <NavLink to="/favorites">Favorit</NavLink>
-          <NavLink to="/orders">Pesanan</NavLink>
-          <NavLink to="/settings">Pengaturan</NavLink>
-        </nav>
         {storageError && (
           <p className="personal-feedback is-error" role="alert">
             {storageError}

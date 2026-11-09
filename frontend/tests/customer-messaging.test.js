@@ -148,13 +148,23 @@ test("customer inbox excludes selling conversations for the same unified account
     [buying.id],
   );
   assert.equal(f.ui.counts().messages, 0);
-  assert.equal(f.ui.counts().notifications, 1);
+  assert.equal(f.ui.counts().notifications, 0);
+  assert.equal(f.messaging.getUnreadNotificationCount(), 1);
   rejects(() => f.ui.getThread(selling.id), "NOT_FOUND_OR_FORBIDDEN");
   rejects(
     () => f.ui.send(selling.id, "Bukan ruang penjual"),
     "NOT_FOUND_OR_FORBIDDEN",
   );
   rejects(() => f.ui.markRead(selling.id), "NOT_FOUND_OR_FORBIDDEN");
+  f.as(f.seller);
+  f.messaging.sendMessage(buying.id, "Balasan untuk ruang pelanggan");
+  f.as(f.buyer);
+  assert.equal(f.ui.counts().messages, 1);
+  assert.equal(f.ui.counts().notifications, 1);
+  assert.equal(f.messaging.getUnreadNotificationCount(), 2);
+  f.ui.markNotificationRead(f.ui.listNotifications()[0].id);
+  assert.equal(f.ui.counts().notifications, 0);
+  assert.equal(f.messaging.getUnreadNotificationCount(), 1);
 });
 
 test("service and booking starts preserve precise contexts and prevent duplicates", () => {
@@ -257,7 +267,11 @@ test("seller-side message notifications do not link to a customer thread", () =>
   const c = f.ui.startService("design");
   f.ui.send(c.id, "Halo kreator");
   f.as(f.seller);
-  assert.equal(f.ui.listNotifications()[0].to, null);
+  assert.deepEqual(f.ui.listNotifications(), []);
+  assert.equal(f.ui.counts().notifications, 0);
+  const sellerNotice = f.messaging.listNotifications()[0];
+  rejects(() => f.ui.markNotificationRead(sellerNotice.id), "NOT_FOUND_OR_FORBIDDEN");
+  assert.equal(f.messaging.listNotifications()[0].is_read, false);
 });
 
 test("requested notifications derive real ownership, deduplicate, and never update payments", () => {
