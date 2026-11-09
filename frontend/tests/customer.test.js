@@ -6,6 +6,7 @@ import {
   CUSTOMER_KEY,
 } from "../src/features/customer/customerStore.js";
 import { createDemoStore } from "../src/features/account/demoStore.js";
+import { customerDeclineReason } from "../src/features/customer/formatters.js";
 import { safeReturnTo } from "../src/features/account/redirects.js";
 
 const first = { id: "buyer-a", capabilities: ["buyer"], sellerProfileId: null };
@@ -432,4 +433,34 @@ test("write failures do not report success or remove cart entries", () => {
   );
   assert.deepEqual(s.store.view().cart, ["remote"]);
   assert.equal(s.store.view().bookings.length, 0);
+});
+
+
+test("decline reasons persist and are available only in the owning customer's booking view", () => {
+  const f = setup();
+  const booking = f.confirm("remote");
+  f.as({ id: "seller-account", capabilities: ["buyer", "seller"], sellerProfileId: "studio" });
+  f.store.respondToBooking(booking.id, "decline", { reason: "  Jadwal studio tidak tersedia.  " });
+  f.as(first);
+  const own = f.store.getBooking(booking.id);
+  assert.equal(customerDeclineReason(own, first.id), "Jadwal studio tidak tersedia.");
+  const restored = createCustomerStore(f.options);
+  assert.equal(customerDeclineReason(restored.getBooking(booking.id), first.id), "Jadwal studio tidak tersedia.");
+  f.as(second);
+  assert.deepEqual(f.store.view().bookings, []);
+  assert.throws(() => f.store.getBooking(booking.id), /bukan milik/);
+  assert.equal(customerDeclineReason(own, second.id), "");
+  assert.equal(customerDeclineReason(own, null), "");
+});
+
+test("decline reason display handles legacy, empty, malformed and non-declined bookings gracefully", () => {
+  const base = { customerId: first.id, status: "Declined" };
+  for (const declineReason of [undefined, null, "", "  ", 42, { text: "Not displayable" }]) {
+    assert.equal(customerDeclineReason({ ...base, declineReason }, first.id), "");
+  }
+  for (const status of ["Requested", "Accepted", "Paid", "Completed", "Cancelled"]) {
+    assert.equal(customerDeclineReason({ ...base, status, declineReason: "Stale reason" }, first.id), "");
+  }
+  assert.equal(customerDeclineReason(undefined, first.id), "");
+  assert.equal(customerDeclineReason({ ...base, declineReason: "  Jadwal penuh.\nCoba tanggal lain.  " }, first.id), "Jadwal penuh.\nCoba tanggal lain.");
 });

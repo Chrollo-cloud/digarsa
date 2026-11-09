@@ -10,7 +10,7 @@ import { money } from "../../data/marketplace";
 import { useCustomer } from "./useCustomer";
 import CustomerFrame from "./CustomerFrame";
 import EmptyState from "./EmptyState";
-import { bookingDate } from "./formatters";
+import { bookingDate, customerDeclineReason } from "./formatters";
 
 import {
   bookingLifecycle as lifecycle,
@@ -20,7 +20,7 @@ export default function BookingDetailPage() {
   const { bookingId } = useParams();
   const [params] = useSearchParams();
   const location = useLocation();
-  const { bookings } = useCustomer();
+  const { user, bookings } = useCustomer();
   const booking = bookings.find((item) => item.id === bookingId);
   if (!booking)
     return (
@@ -34,6 +34,7 @@ export default function BookingDetailPage() {
         </EmptyState>
       </CustomerFrame>
     );
+  const declineReason = customerDeclineReason(booking, user?.id);
   const terminal = ["Declined", "Cancelled"].includes(booking.status);
   return (
     <CustomerFrame
@@ -84,6 +85,11 @@ export default function BookingDetailPage() {
             Permintaan{" "}
             {booking.status === "Declined" ? "ditolak" : "dibatalkan"}. Alur
             kolaborasi telah berhenti.
+            {declineReason && (
+              <span className="customer-preline">
+                {" "}Alasan penolakan: {declineReason}
+              </span>
+            )}
           </p>
         )}
         <dl className="customer-tracking-facts">

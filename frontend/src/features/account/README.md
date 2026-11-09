@@ -29,9 +29,19 @@ Return-to destinations are allow-listed local paths. Authentication paths,
 external URLs, encoded paths, backslashes, and control characters are rejected.
 Queries on approved pages are preserved. A brief success state precedes redirect.
 
-Account navigation destinations and Seller Center are protected development
-shells. Favorites, orders, messaging, booking, checkout, seller management, and
-publishing new profiles into the public mock catalog remain future work.
+Authenticated accounts can use Dashboard, Profile, Settings, Favorites, Cart
+(consideration list), Orders, Reviews, Messages, and Notifications. An owned Seller
+Profile enables Seller Center, public service publishing/management, incoming
+orders, seller messaging/notifications, and estimated earnings, while preserving
+buyer capabilities. Internal Admin access remains a separate permission.
+
+Booking lifecycle: Requested → Accepted → Paid → Completed. Sellers may accept or
+decline Requested bookings; only an existing valid Paid booking can be completed.
+Declined and Cancelled are alternative terminal outcomes. Checkout and real payment
+confirmation are not implemented. Accepted stays Accepted until a future legitimate
+payment flow records Paid; there is no demo pay action or automatic payment/completion.
+Reviews require Completed bookings. Browser storage remains a local demo rather than
+server authentication, payment verification, or cross-device synchronization.
 
 
 ## Local Admin demo provisioning

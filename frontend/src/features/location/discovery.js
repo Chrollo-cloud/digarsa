@@ -50,11 +50,16 @@ export function discoverServices({
       mode === "onsite" ? publicLocation(service.publicLocation) : null;
     const area = location?.area || seller.city || "";
     if (category && service.category !== category) continue;
-    if (city && !normalize(area).includes(normalize(city))) continue;
+    // The public area may be a district/studio label rather than the seller's city.
+    // Match both public labels without changing the displayed area or inferring a point.
+    if (
+      city &&
+      ![area, seller.city].some(value => normalize(value).includes(normalize(city)))
+    ) continue;
     if (
       query &&
       !normalize(
-        `${service.title} ${service.category} ${seller.name} ${area}`,
+        `${service.title} ${service.category} ${seller.name} ${area} ${seller.city || ""}`,
       ).includes(normalize(query))
     )
       continue;

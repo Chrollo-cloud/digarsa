@@ -54,7 +54,8 @@ export default function OnboardingPage() {
         <span className="account-kicker">MULAI SEBAGAI KREATOR · 01 / 01</span>
         <h2>Profil kreatormu.</h2>
         <p>
-          Isi informasi dasar. Kelola layanan setelah Seller Center tersedia.
+          Aktifkan Seller Profile, lalu kelola layanan, pesanan, dan percakapan
+          di Seller Center.
         </p>
         <form onSubmit={submit} aria-busy={busy}>
           <fieldset disabled={busy}>

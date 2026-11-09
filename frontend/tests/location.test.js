@@ -445,3 +445,66 @@ test("seller visibility changes remove public pins without changing account loca
   });
   assert.deepEqual(f.refresh().services[0].publicLocation, explicit);
 });
+
+test("saved Makassar city matches a confirmed district label without changing radius or displayed area", async () => {
+  const f = await fixture();
+  const profile = f.accounts.getOwnedSeller(f.profile.id);
+  f.accounts.updateSellerProfile({
+    ...profile,
+    specialties: profile.specialties.join(", "),
+    city: "Makassar",
+    publicLocation: {
+      ...pin,
+      area: "Panakkukang",
+      coordinates: { lat: -5.145, lng: 119.415 },
+    },
+  });
+  const buyer = await f.accounts.register({
+    name: "Buyer Makassar",
+    email: "makassar-buyer@example.test",
+    password,
+  });
+  f.accounts.updateBuyerLocation({ ...buyerLocation, city: "Makassar" }, {
+    expectedUserId: buyer.id,
+  });
+  const saved = f.accounts.getBuyerLocation();
+  const rows = f.discover({ city: saved.city, origin: saved.coordinates, radiusKm: 5 });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, f.service.id);
+  assert.equal(rows[0].area, "Panakkukang");
+  assert.ok(rows[0].distance > 0.7 && rows[0].distance < 0.9);
+  assert.equal(f.discover({ city: " makassar " }).length, 1);
+  assert.equal(f.discover({ city: "Panakkukang" }).length, 1);
+  assert.equal(f.discover({ query: "Makassar" }).length, 1);
+  assert.equal(f.discover({ city: "Bandung" }).length, 0);
+  assert.equal(f.discover({ city: "Makassar", origin: point, radiusKm: 0.25 }).length, 0);
+  assert.equal(f.discover({ city: "Makassar" })[0].distance, null);
+  assert.throws(() => f.discover({ city: "Makassar", origin: { lat: 91, lng: 0 } }), /Koordinat/);
+});
+
+test("city matching never reveals hidden pins or private buyer data and keeps remote services separate", async () => {
+  const f = await fixture();
+  const remote = f.store.create({ ...serviceInput, title: "Layanan Remote Makassar", delivery: "Remote" });
+  const profile = f.accounts.getOwnedSeller(f.profile.id);
+  f.accounts.updateBuyerLocation(buyerLocation, { expectedUserId: f.seller.id });
+  f.accounts.updateSellerProfile({
+    ...profile,
+    specialties: profile.specialties.join(", "),
+    city: "Makassar",
+    publicLocation: { version: 1, visibility: "hidden", area: "", coordinates: null, confirmed: false },
+  });
+  const onsite = f.discover({ city: "Makassar" });
+  assert.deepEqual(onsite.map(row => row.id), [f.service.id]);
+  assert.equal(onsite[0].area, "Makassar");
+  assert.equal(onsite[0].publicLocation, null);
+  assert.equal(onsite[0].coordinates, null);
+  assert.equal(onsite[0].distance, null);
+  assert.equal(Object.hasOwn(onsite[0], "discoveryLocation"), false);
+  assert.equal(f.discover({ city: "Area uji studio" }).length, 0);
+  assert.equal(f.discover({ city: "Makassar", origin: point, radiusKm: 25 }).length, 0);
+  const online = f.discover({ city: "Makassar", mode: "remote", origin: point });
+  assert.deepEqual(online.map(row => row.id), [remote.id]);
+  assert.equal(online[0].coordinates, null);
+  assert.equal(online[0].distance, null);
+  assert.deepEqual(f.accounts.getBuyerLocation(), buyerLocation);
+});

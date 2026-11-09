@@ -9,15 +9,22 @@ system and no separate orders store.
 - Orders: the SAME bookings in `digarsa.demo.customer.v1`. Seller reads/updates them
   through `customerStore.sellerView()` / `respondToBooking()`. Statuses are the
   existing ones (`Declined`, not `Rejected`).
-  Transitions: Requested -> Accepted | Declined; Paid -> Completed only. Accepted remains Accepted until a legitimate future payment flow records Paid; no payment action is provided.
-  Completed is allowed from Accepted because payment does not exist yet.
-  Extra optional booking fields: `updatedAt`, `declineReason` (customer UI may show it).
+  Lifecycle: Requested → Accepted → Paid → Completed. Sellers may accept or decline
+  Requested bookings. Declined and Cancelled are alternative terminal outcomes.
+  Checkout and real payment confirmation are not implemented: Accepted remains
+  Accepted until a future legitimate payment flow records Paid. There is no demo
+  payment action or automatic transition to Paid. Only an existing valid Paid booking
+  can be completed by its owning seller; Accepted cannot directly become Completed.
+  Extra optional booking fields: `updatedAt`, `declineReason`. A saved decline reason
+  is shown in seller detail and in the owning customer's declined booking detail.
 
 ## Routes
-Seller (`RequireSeller`): `/seller-dashboard`, `/orders`, `/orders/:id`, `/services`,
-`/services/new`, `/services/:id/edit`, `/services/:id/availability`, `/earnings`,
-`/profile`.
-Admin (`RequireAdmin`): `/admin`, `/moderation`, `/orders` (read-only), `/accounts` (read-only).
+Seller routes are nested under `/seller-dashboard` (`RequireSeller`): the overview,
+`orders`, `orders/:id`, `services`, `services/new`, `services/:id/edit`,
+`services/:id/availability`, `messages`, `messages/:id`, `notifications`, `earnings`,
+and `profile`. For example, incoming orders use `/seller-dashboard/orders`.
+Admin routes are nested under `/admin` (`RequireAdmin`): the overview, `moderation`,
+`orders` (read-only), and `accounts` (read-only).
 
 ## Data
 - `digarsa.demo.seller.v1`: seller-created services, availability slots + admin

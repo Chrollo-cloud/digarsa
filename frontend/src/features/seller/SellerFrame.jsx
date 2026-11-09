@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useSeller } from "./useSeller";
+import { handleSellerMenuEscape } from "./sellerNavigation";
 import { useSellerNotifications } from "./useSellerNotifications";
 import "../workspace/workspace.css";
 import "./seller-center.css";
@@ -59,7 +60,13 @@ export default function SellerFrame({ title, description, children }) {
   ];
   return (
     <div className="ws-page seller-center">
-      <aside className="seller-sidebar" aria-label="Ruang kerja kreator">
+      <aside
+        className="seller-sidebar"
+        aria-label="Ruang kerja kreator"
+        onKeyDown={(event) =>
+          handleSellerMenuEscape(event, open, () => setOpen(false), toggle.current)
+        }
+      >
         <div className="seller-sidebar__heading">
           <div>
             <span className="ws-kicker">RUANG KREATOR</span>
@@ -82,12 +89,6 @@ export default function SellerFrame({ title, description, children }) {
           id="seller-navigation"
           className={`seller-sidebar__nav${open ? " is-open" : ""}`}
           aria-label="Navigasi Seller Center"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setOpen(false);
-              toggle.current?.focus();
-            }
-          }}
         >
           <span className="seller-sidebar__label">WORKSPACE</span>
           {nav.map(([to, label, count, end], index) => (
