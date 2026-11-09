@@ -21,7 +21,7 @@ test('Safari internal pointer blur preserves activation; outside pointer and key
 });
 
 import { accountLinks, accountLinkActive } from '../src/features/account/accountNavigation.js';
-import { safeReturnTo } from '../src/features/account/redirects.js';
+import { safeReturnTo, accountReturnTo } from '../src/features/account/redirects.js';
 test('all customer destinations remain valid; Seller shortcut stays in navbar and Admin requires explicit permission', () => {
   assert.deepEqual(accountLinks(null), []);
   const user = { capabilities: ['buyer'], permissions: [] };
@@ -48,4 +48,17 @@ test('account active destinations follow exact and supported nested routes, neve
   }
   assert.equal(accountLinkActive('/dashboard','/dashboard/nested'), false);
   assert.equal(accountLinkActive('/profile','/profile-other'), false);
+});
+
+test('account login destinations default Admins to Admin and protect role-specific return paths', () => {
+  const admin = { permissions: ['admin:access'], capabilities: ['buyer'] };
+  const customer = { permissions: [], capabilities: ['buyer'] };
+  const seller = { permissions: [], capabilities: ['buyer', 'seller'] };
+  assert.equal(accountReturnTo(null, admin), '/admin');
+  assert.equal(accountReturnTo('/orders/booking-1?tab=paid#detail', admin), '/orders/booking-1?tab=paid#detail');
+  assert.equal(accountReturnTo('/admin/accounts', customer), '/');
+  assert.equal(accountReturnTo('/seller-dashboard/services/id/availability', customer), '/');
+  assert.equal(accountReturnTo('/seller-dashboard/orders', seller), '/seller-dashboard/orders');
+  assert.equal(accountReturnTo('/admin', seller), '/');
+  assert.equal(accountReturnTo('//outside.invalid/admin', admin), '/admin');
 });

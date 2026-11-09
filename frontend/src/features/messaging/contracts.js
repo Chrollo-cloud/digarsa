@@ -5,6 +5,7 @@ export const notificationTypes = Object.freeze([
   "booking_accepted",
   "booking_declined",
   "booking_completed",
+  "booking_paid",
   "new_review",
 ]);
 export const fields = Object.freeze({

@@ -26,8 +26,9 @@ export default function BookingCard({ booking }) {
       <p>{bookingDate(booking.requestedDate)}</p>
       {declineReason && <p className="customer-order-decline"><strong>Alasan ditolak:</strong> {declineReason}</p>}
       <footer>
-        <strong><small>Estimasi mulai dari</small>{money(booking.estimatedPrice)}</strong>
+        <strong><small>{Number.isSafeInteger(booking.finalPrice) ? "Harga akhir Seller" : "Estimasi mulai dari"}</small>{money(booking.finalPrice ?? booking.estimatedPrice)}</strong>
         <Link to={`/orders/${booking.id}`}>Lihat detail →</Link>
+        {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) && <Link to={`/payment/${booking.id}`}>Pembayaran demo →</Link>}
       </footer>
     </article>
   );

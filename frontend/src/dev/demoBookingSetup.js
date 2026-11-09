@@ -1,17 +1,18 @@
-export const DEMO_BOOKING_KEY = "digarsa.dev.booking-fixtures.v1";
+import { DEMO_BOOKING_KEY, EDITORIAL_SAMPLE_SERVICE_IDS } from "../features/customer/demoBookingFixture.js";
+export { DEMO_BOOKING_KEY };
 export const demoIdentities = { seller: "seller.booking@example.test", buyer: "buyer.booking@example.test" };
 export function assertLocalDevelopment(dev, hostname) {
   if (!dev || !["localhost", "127.0.0.1", "[::1]"].includes(hostname)) throw new Error("Penyiapan hanya tersedia pada pengembangan localhost.");
 }
-export function createDemoBookingSetup({ accounts, services, storage, enabled }) {
+export function createDemoBookingSetup({ accounts, services, storage, enabled, editorialServiceIds = EDITORIAL_SAMPLE_SERVICE_IDS }) {
   function read() {
     if (!enabled()) throw new Error("Penyiapan demo tidak diizinkan pada lingkungan ini.");
     const raw = storage.getItem(DEMO_BOOKING_KEY);
-    if (raw === null) return { version: 1, sellerId: null, buyerId: null, profileId: null, serviceIds: [] };
+    if (raw === null) return { version: 1, sellerId: null, buyerId: null, profileId: null, serviceIds: [], editorialServiceIds: [] };
     let row;
     try { row = JSON.parse(raw); } catch { throw new Error("Registri demo rusak; data tidak ditimpa."); }
-    if (row?.version !== 1 || !Array.isArray(row.serviceIds) || row.serviceIds.length > 2 || new Set(row.serviceIds).size !== row.serviceIds.length || ![row.sellerId, row.buyerId, row.profileId].every(id => id === null || typeof id === "string") || row.serviceIds.some(id => typeof id !== "string")) throw new Error("Registri demo tidak kompatibel; data tidak ditimpa.");
-    return row;
+    if (row?.version !== 1 || !Array.isArray(row.serviceIds) || row.serviceIds.length > 2 || new Set(row.serviceIds).size !== row.serviceIds.length || ![row.sellerId, row.buyerId, row.profileId].every(id => id === null || typeof id === "string") || row.serviceIds.some(id => typeof id !== "string") || (row.editorialServiceIds !== undefined && (!Array.isArray(row.editorialServiceIds) || new Set(row.editorialServiceIds).size !== row.editorialServiceIds.length || row.editorialServiceIds.some(id => !EDITORIAL_SAMPLE_SERVICE_IDS.includes(id))))) throw new Error("Registri demo tidak kompatibel; data tidak ditimpa.");
+    return { ...row, editorialServiceIds: row.editorialServiceIds || [] };
   }
   const save = row => storage.setItem(DEMO_BOOKING_KEY, JSON.stringify(row));
   async function signIn(role, password, row) {
@@ -26,8 +27,10 @@ export function createDemoBookingSetup({ accounts, services, storage, enabled })
     row[key] = user.id; save(row); return user;
   }
   return {
-    async setup({ sellerPassword, buyerPassword }) {
+    async setup({ sellerPassword, buyerPassword, enableEditorialSamples = false }) {
       const row = read();
+      if (typeof enableEditorialSamples !== "boolean") throw new Error("Pilihan fixture editorial tidak valid.");
+      row.editorialServiceIds = enableEditorialSamples ? [...editorialServiceIds] : [];
       await signIn("seller", sellerPassword, row);
       if (!row.profileId) {
         const profile = accounts.activateSeller({ name: "Studio Demo Booking", category: "Fotografi & Film", city: "Makassar", bio: "Studio pengujian lokal untuk pemesanan Digarsa, bukan seller terverifikasi identitas.", image: "", portfolioLink: "", specialties: "Fotografi, Video", publicLocation: { version: 1, visibility: "pin", area: "Area QA sintetis Makassar — bukan lokasi pribadi", coordinates: { lat: -5.14, lng: 119.42 }, confirmed: true } });
@@ -45,6 +48,7 @@ export function createDemoBookingSetup({ accounts, services, storage, enabled })
         }
       }
       await signIn("buyer", buyerPassword, row);
+      save(row);
       return { ...row, serviceIds: [...row.serviceIds] };
     },
     async login(role, password) {
@@ -61,7 +65,7 @@ export function createDemoBookingSetup({ accounts, services, storage, enabled })
       if (owned.error) throw new Error(owned.error);
       if (row.serviceIds.some(id => !owned.services.some(service => service.id === id))) throw new Error("Layanan demo tidak dapat diverifikasi; reset dihentikan.");
       for (const id of row.serviceIds) services.setActive(id, false);
-      row.serviceIds = []; save(row); // Keep accounts, orders and history intact.
+      row.serviceIds = []; row.editorialServiceIds = []; save(row); // Keep accounts, orders and history intact.
     },
   };
 }

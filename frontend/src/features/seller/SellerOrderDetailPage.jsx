@@ -16,7 +16,7 @@ import {
 const copy = {
   accept: {
     title: "Terima permintaan ini?",
-    body: "Pelanggan akan melihat status Diterima Seller. Detail harga akhir dan jadwal dibahas bersama pelanggan; belum ada pembayaran di sistem ini.",
+    body: "Pelanggan akan melihat status Diterima Seller. Harga akhir di bawah dikonfirmasi saat diterima. Belum ada pembayaran; pelanggan dapat menjalankan simulasi demo secara terpisah.",
     confirm: "Ya, terima permintaan",
   },
   decline: {
@@ -37,6 +37,7 @@ export default function SellerOrderDetailPage() {
   const booking = bookings.find((item) => item.id === bookingId);
   const [pending, setPending] = useState("");
   const [reason, setReason] = useState("");
+  const [price, setPrice] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
 
@@ -63,6 +64,7 @@ export default function SellerOrderDetailPage() {
       orders.respondToBooking(booking.id, pending, {
         expectedStatus: booking.status,
         reason,
+        finalPrice: price.trim() ? Number(price) : NaN,
       });
       setDone(
         `Pesanan ${sellerActions[pending].label}. Pelanggan melihat status terbaru di halaman Pesanan mereka.`,
@@ -125,6 +127,7 @@ export default function SellerOrderDetailPage() {
               <dt>Estimasi harga awal</dt>
               <dd>{money(booking.estimatedPrice)}</dd>
             </div>
+            {Number.isSafeInteger(booking.finalPrice) && <div><dt>Harga akhir Seller</dt><dd>{money(booking.finalPrice)}</dd></div>}
             <div>
               <dt>Mode pengerjaan</dt>
               <dd>{booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}</dd>
@@ -161,6 +164,14 @@ export default function SellerOrderDetailPage() {
           {available.length === 0 && (
             <p>{bookingStatusDescription(booking.status)}</p>
           )}
+          {booking.status === "Accepted" && !Number.isSafeInteger(booking.finalPrice) && <div className="ws-form">
+            <p>Pesanan lama ini belum memiliki harga akhir. Konfirmasikan harga yang disepakati sebelum simulasi pelanggan.</p>
+            <label className="field">Harga akhir (IDR)<input className="field__control" type="number" min="0" step="1" value={price} onChange={event => setPrice(event.target.value)} /></label>
+            <button type="button" className="button button--primary" onClick={() => {
+              try { orders.confirmAcceptedPrice(booking.id, price.trim() ? Number(price) : NaN); setError(""); }
+              catch (failure) { setError(failure.message); }
+            }}>Konfirmasi harga akhir</button>
+          </div>}
           {!pending && available.length > 0 && (
             <div className="ws-actions">
               {available.map((key) => (
@@ -171,6 +182,7 @@ export default function SellerOrderDetailPage() {
                   onClick={() => {
                     setDone("");
                     setError("");
+                    setPrice(String(booking.estimatedPrice));
                     setPending(key);
                   }}
                 >
@@ -185,6 +197,9 @@ export default function SellerOrderDetailPage() {
             <div className="ws-form">
               <h3>{copy[pending].title}</h3>
               <p>{copy[pending].body}</p>
+              {pending === "accept" && <label className="field">Harga akhir yang disepakati (IDR)
+                <input className="field__control" type="number" min="0" max="1000000000000" step="1" value={price} onChange={event => setPrice(event.target.value)} />
+              </label>}
               {pending === "decline" && (
                 <div className="field">
                   <label htmlFor="decline-reason">Alasan (opsional)</label>

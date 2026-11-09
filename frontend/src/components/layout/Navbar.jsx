@@ -58,33 +58,6 @@ export default function Navbar() {
             height="153"
           />
         </Link>
-        <div className="navbar__utilities">
-          {user && <NotificationBell key={`notifications-${user.id}-${pathname}`} onNavigate={close} />}
-          <CartLink key={user?.id || "guest"} onNavigate={close} />
-        </div>
-        <button
-          className="navbar__toggle"
-          ref={trigger}
-          type="button"
-          aria-expanded={isOpen}
-          aria-controls="public-navigation"
-          aria-label={isOpen ? "Tutup navigasi" : "Buka navigasi"}
-          onClick={() => setOpenPath(isOpen ? null : pathname)}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            aria-hidden="true"
-          >
-            <path
-              d={isOpen ? "M6 6l12 12M18 6L6 18" : "M4 6h16M4 12h16M4 18h16"}
-            />
-          </svg>
-        </button>
         <div
           className={`navbar__menu${isOpen ? " is-open" : ""}`}
           id="public-navigation"
@@ -97,17 +70,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="navbar__actions">
-            <>
-              {user ? (
-                <>
-                  <AccountMenu key={pathname} onNavigate={close} />
-                </>
-              ) : (
-                <Link className="navbar__login" to="/login" onClick={close}>
-                  Masuk
-                </Link>
-              )}
-            </>
+            {!user && <Link className="navbar__login" to="/login" onClick={close}>Masuk</Link>}
             <Button
               variant="aqua"
               className="navbar__cta"
@@ -123,6 +86,26 @@ export default function Navbar() {
             </Button>
           </div>
         </div>
+        <div className="navbar__right">
+          <div className="navbar__utilities">
+            {user && <NotificationBell key={`notifications-${user.id}-${pathname}`} onNavigate={close} />}
+            <CartLink key={user?.id || "guest"} onNavigate={close} />
+          </div>
+          {user && <AccountMenu key={pathname} onNavigate={close} />}
+        </div>
+        <button
+          className="navbar__toggle"
+          ref={trigger}
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls="public-navigation"
+          aria-label={isOpen ? "Tutup navigasi" : "Buka navigasi"}
+          onClick={() => setOpenPath(isOpen ? null : pathname)}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+            <path d={isOpen ? "M6 6l12 12M18 6L6 18" : "M4 6h16M4 12h16M4 18h16"} />
+          </svg>
+        </button>
       </nav>
     </header>
   );

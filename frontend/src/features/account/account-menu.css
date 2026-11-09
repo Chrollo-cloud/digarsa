@@ -1,23 +1,75 @@
 .account-menu {
   position: relative;
+  min-width: 0;
 }
 .account-menu__trigger {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
-  min-height: 42px;
-  max-width: 170px;
-  padding: 8px 11px;
-  border: 1px solid rgba(242, 242, 237, 0.55);
-  border-radius: 7px;
-  background: rgba(35, 41, 70, 0.14);
-  color: var(--color-paper);
-  font: 700 12px var(--font-body);
+  min-height: 44px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-indigo);
+  font: 500 12px var(--font-body);
 }
-.account-menu__trigger > span:first-child {
-  white-space: nowrap;
+.account-menu__trigger:hover {
+  background: rgba(70, 75, 113, 0.055);
+}
+.account-menu__trigger:focus-visible {
+  background: rgba(124, 213, 199, 0.16);
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+.account-menu__trigger .account-menu__trigger-avatar.personal-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--color-aqua, #7CD5C7);
+  color: var(--color-indigo);
+  font-size: 12px;
+  font-weight: 800;
+}
+.account-menu__trigger .account-menu__trigger-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.account-menu__chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 14px;
+  height: 14px;
+}
+.account-menu__trigger-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  text-align: left;
+}
+.account-menu__trigger-copy strong,
+.account-menu__trigger-copy small {
+  display: block;
+  max-width: 145px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-menu__trigger-copy strong {
+  font-size: 12px;
+  font-weight: 750;
+}
+.account-menu__trigger-copy small {
+  color: var(--color-muted);
+  font-size: 10px;
 }
 .account-menu__panel {
   position: absolute;
@@ -64,8 +116,8 @@
   outline-color: var(--color-blue);
 }
 @media (min-width: 761px) and (max-width: 1050px) {
-  .account-menu__trigger {
-    max-width: 90px;
+  .account-menu__trigger-copy small {
+    display: none;
   }
 }
 @media (max-width: 760px) {
@@ -73,9 +125,25 @@
     margin-top: 10px;
   }
   .account-menu__trigger {
-    width: 100%;
-    max-width: none;
-    justify-content: flex-start;
+    width: 54px;
+    min-width: 54px;
+    max-width: 54px;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px;
+  }
+  .account-menu__trigger .account-menu__trigger-avatar.personal-avatar {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .account-menu__chevron {
+    margin-left: 0;
+    width: 12px;
+    height: 12px;
+  }
+  .account-menu__trigger-copy {
+    display: none;
   }
   .account-menu__panel {
     position: static;

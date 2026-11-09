@@ -133,7 +133,7 @@ export function createSellerMessaging({
             to: `/seller-dashboard/messages/${encodeURIComponent(conversation.id)}`,
           }];
         }
-        if (notice.type === "booking_requested") {
+        if (["booking_requested", "booking_paid"].includes(notice.type)) {
           if (!sellerBookingIds.has(notice.related_entity_id)) return [];
           return [{
             ...notice,

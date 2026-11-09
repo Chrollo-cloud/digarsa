@@ -5,14 +5,14 @@ import Button from "../../components/ui/Button";
 import DemoNotice from "./DemoNotice";
 import PasswordInput from "./PasswordInput";
 import { useAuth } from "./authContext";
-import { safeReturnTo } from "./redirects";
+import { accountReturnTo } from "./redirects";
 import "./account.css";
 
 export default function AuthPage({ register = false }) {
   const { user, store, storageError } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const destination = safeReturnTo(params.get("returnTo"));
+  const [destination, setDestination] = useState(() => accountReturnTo(params.get("returnTo"), user));
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -34,8 +34,10 @@ export default function AuthPage({ register = false }) {
     setBusy(true);
     setError("");
     try {
-      if (register) await store.register(Object.fromEntries(form));
-      else await store.login(form.get("email"), form.get("password"));
+      const account = register
+        ? await store.register(Object.fromEntries(form))
+        : await store.login(form.get("email"), form.get("password"));
+      setDestination(accountReturnTo(params.get("returnTo"), account));
       setSuccess(true);
     } catch (failure) {
       setError(failure.message);
@@ -137,6 +139,7 @@ export default function AuthPage({ register = false }) {
               {error || storageError}
             </p>
           )}
+          {!register && !user && <p className="account-switch"><Link to="/forgot-password">Lupa Password?</Link></p>}
           <DemoNotice />
           {!user && (
             <p className="account-switch">

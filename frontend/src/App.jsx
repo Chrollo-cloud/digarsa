@@ -30,6 +30,10 @@ import BookingNotifications from "./features/messaging/BookingNotifications";
 import ReviewsPage from "./features/reviews/ReviewsPage";
 import ReviewFormPage from "./features/reviews/ReviewFormPage";
 
+const CheckoutPage = lazy(() => import("./features/customer/CheckoutPage"));
+const PaymentPage = lazy(() => import("./features/customer/PaymentPage"));
+const RecoveryPage = lazy(() => import("./features/account/RecoveryPage"));
+
 const NearbyServicesPage = lazy(
   () => import("./features/location/NearbyServicesPage"),
 );
@@ -76,6 +80,7 @@ export default function App() {
               path="/register"
               element={<AuthPage key="register" register />}
             />
+            <Route path="/forgot-password" element={<Suspense fallback={publicPageLoading}><RecoveryPage /></Suspense>} />
             <Route element={<RequireAccount />}>
               <Route path="/become-a-creator" element={<OnboardingPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -87,6 +92,9 @@ export default function App() {
               />
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/booking" element={<Navigate to="/orders" replace />} />
+              <Route path="/checkout" element={<Suspense fallback={publicPageLoading}><CheckoutPage /></Suspense>} />
+              <Route path="/payment/:bookingId" element={<Suspense fallback={publicPageLoading}><PaymentPage /></Suspense>} />
               <Route
                 path="/booking/:serviceId"
                 element={<BookingRequestPage />}

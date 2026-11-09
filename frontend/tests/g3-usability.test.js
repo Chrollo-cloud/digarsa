@@ -11,6 +11,7 @@ import { createDemoBookingSetup, DEMO_BOOKING_KEY, assertLocalDevelopment } from
 import { readingFromPosition } from "../src/features/location/locationModel.js";
 import { bookingStatusLabel, bookingLifecycle } from "../src/features/customer/bookingLifecycle.js";
 import { createMediaStore, validatePhoto, preparePhoto } from "../src/features/media/mediaStore.js";
+import { resolveDemoEditorialSeller } from "../src/features/customer/demoBookingFixture.js";
 
 test("cart badges count distinct owned services and never substitute zero for unavailable data", () => {
   assert.equal(cartBadge({ cart: ["a", "a", "b"] }, "buyer"), 2);
@@ -73,6 +74,31 @@ test("fixture provisioning refuses production/non-loopback and does not overwrit
   await assert.rejects(setup.setup({ sellerPassword: password, buyerPassword: password }));
   assert.equal(accounts.current().id, old.id);
   assert.equal(storage.getItem(DEMO_BOOKING_KEY), null);
+});
+test("opt-in editorial samples resolve only to the owned demo Seller and preserve booking ownership", async () => {
+  const values = new Map();
+  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  const accounts = createDemoStore(storage, webcrypto);
+  const sellerStore = createSellerStore({ storage, currentUser: () => accounts.current(), activeBookingCount: () => 0 });
+  const setup = createDemoBookingSetup({ accounts, services: sellerStore, storage, enabled: () => true });
+  const credentials = { sellerPassword: webcrypto.randomUUID(), buyerPassword: webcrypto.randomUUID() };
+  const fixture = await setup.setup({ ...credentials, enableEditorialSamples: true });
+  const service = { id: "identity", creatorId: "arah", title: "Visual identity editorial", price: 1200000, delivery: "Remote", availability: "Open" };
+  const resolveDemo = row => resolveDemoEditorialSeller({ service: row, development: true, hostname: "localhost", storage, accounts });
+  assert.equal(resolveDemo(service).id, fixture.profileId);
+  assert.equal(resolveDemo({ ...service, id: "unknown-real-service" }), null);
+  assert.equal(resolveDemoEditorialSeller({ service, development: false, hostname: "localhost", storage, accounts }), null);
+  const orders = createCustomerStore({ storage, currentUser: () => accounts.current(), catalog: [service], creators: [{ id: "arah", name: "Studio Arah" }], resolveSellerProfile: id => accounts.getBookableSeller(id), resolveDemoSellerProfile: resolveDemo });
+  await setup.login("buyer", credentials.buyerPassword);
+  orders.addToCart(service.id);
+  const booking = orders.submitCheckout([{ serviceId: service.id, input: { requestedDate: "2099-01-01", requirements: "Identitas visual untuk kampanye contoh", description: "Permintaan QA untuk menguji layanan editorial melalui seller demo yang benar." } }], { checkoutId: "checkout-editorial-1", confirmed: true, expectedUserId: accounts.current().id })[0];
+  assert.equal(booking.creatorId, fixture.profileId);
+  assert.equal(booking.creatorName, "Studio Demo Booking");
+  await setup.login("seller", credentials.sellerPassword);
+  assert.equal(orders.sellerView().bookings[0].id, booking.id);
+  await setup.reset(credentials.sellerPassword);
+  assert.equal(resolveDemo(service), null);
+  assert.equal(orders.sellerView().bookings[0].id, booking.id);
 });
 test("photo validation rejects unsupported, oversized, empty and undecodable files", async () => {
   assert.throws(() => validatePhoto(new Blob([], { type: "image/png" })));

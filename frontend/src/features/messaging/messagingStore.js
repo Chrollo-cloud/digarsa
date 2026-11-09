@@ -496,13 +496,14 @@ export function createMessagingStore({
         Accepted: "booking_accepted",
         Declined: "booking_declined",
         Completed: "booking_completed",
+        Paid: booking.demo_payment === true ? "booking_paid" : undefined,
       }[booking.status];
       if (!type)
         fail(
           "UNSUPPORTED_EVENT",
           "Status booking tidak menghasilkan notifikasi yang didukung.",
         );
-      const customerEvent = type === "booking_requested";
+      const customerEvent = ["booking_requested", "booking_paid"].includes(type);
       if (
         customerEvent
           ? user.id !== row.customer_user_id
@@ -533,9 +534,11 @@ export function createMessagingStore({
             Accepted: "Booking diterima",
             Declined: "Booking ditolak",
             Completed: "Booking selesai",
+            Paid: "Simulasi pembayaran dikonfirmasi",
           }[booking.status],
-          message:
-            "Status booking diperbarui pada data demo Digarsa. Notifikasi ini tidak memproses atau membuktikan pembayaran.",
+          message: booking.status === "Paid"
+            ? "Pembayaran demo disimulasikan oleh pelanggan. Tidak ada uang dipindahkan atau konfirmasi bank."
+            : "Status booking diperbarui pada data demo Digarsa. Notifikasi ini tidak memproses atau membuktikan pembayaran.",
           related_entity_id: booking_id,
         },
         timestamp(),

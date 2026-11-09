@@ -2,7 +2,7 @@ import { ADMIN_PERMISSION } from "../account/demoStore.js";
 
 export const CUSTOMER_KEY = "digarsa.demo.customer.v1";
 // Phase 7: seller-side transitions on the SAME booking records (no second orders store).
-// Checkout is not implemented. Accepted stays Accepted; only an existing Paid booking can be completed.
+// Individual and combined checkout share these records. Only Paid may become Completed.
 export const sellerActions = {
   accept: { from: ["Requested"], to: "Accepted", label: "diterima" },
   decline: { from: ["Requested"], to: "Declined", label: "ditolak" },
@@ -24,6 +24,8 @@ export const localToday = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
+export const validPrice = value => Number.isSafeInteger(value) && value >= 0 && value <= 1e12;
+const validCheckoutId = value => typeof value === "string" && /^checkout-[a-zA-Z0-9-]{1,100}$/.test(value);
 const empty = () => ({ version: 1, lists: [], bookings: [] });
 const string = (value, max = 5000) =>
   typeof value === "string" && value.length > 0 && value.length <= max;
@@ -37,11 +39,11 @@ const requiredText = (value, label, min, max) => {
     throw new Error(`${label} harus ${min}–${max} karakter.`);
   return result;
 };
-export function bookingRestriction(service, user, creator, sellerProfile) {
+export function bookingRestriction(service, user, creator, sellerProfile, bookingSellerId = service?.creatorId) {
   if (!service) return "Layanan tidak ditemukan.";
   if (
     user &&
-    (service.creatorId === user.sellerProfileId ||
+    (bookingSellerId === user.sellerProfileId ||
       creator?.ownerUserId === user.id)
   )
     return "Kamu tidak dapat memesan layanan sendiri.";
@@ -52,7 +54,7 @@ export function bookingRestriction(service, user, creator, sellerProfile) {
   if (!creator) return "Informasi layanan belum lengkap.";
   if (
     !sellerProfile ||
-    sellerProfile.id !== service.creatorId ||
+    sellerProfile.id !== bookingSellerId ||
     !sellerProfile.ownerUserId
   )
     return "Booking belum tersedia: layanan ini belum memiliki Seller Profile dengan akun pemilik yang valid.";
@@ -67,12 +69,31 @@ export function createCustomerStore({
   catalog,
   creators: people,
   resolveSellerProfile = () => null,
+  resolveDemoSellerProfile = () => null,
   catalogError = () => "",
+  allowDemoPayment = () => false,
   randomId = () => globalThis.crypto.randomUUID(),
   today = localToday,
   now = () => new Date().toISOString(),
 }) {
   const listeners = new Set();
+  function demoSeller(service) {
+    if (!service) return null;
+    try {
+      const fixture = resolveDemoSellerProfile(service);
+      if (!fixture?.id || !fixture.ownerUserId || fixture.demoFixture !== true)
+        return null;
+      const actual = resolveSellerProfile(fixture.id);
+      return actual?.ownerUserId === fixture.ownerUserId
+        ? { ...actual, demoFixture: true }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  function bookingSeller(service) {
+    return demoSeller(service) || (service ? resolveSellerProfile(service.creatorId) : null);
+  }
   function raw() {
     try {
       return storage.getItem(CUSTOMER_KEY);
@@ -122,6 +143,16 @@ export function createCustomerStore({
           ].every((key) => string(row[key], 200)) &&
           !ids.has(row.id) &&
           statuses.includes(row.status) &&
+          (!Object.hasOwn(row, "finalPrice") || validPrice(row.finalPrice)) &&
+          (!Object.hasOwn(row, "checkoutId") || validCheckoutId(row.checkoutId)) &&
+          (!Object.hasOwn(row, "checkoutServiceIds") ||
+            (Array.isArray(row.checkoutServiceIds) && row.checkoutServiceIds.length > 0 &&
+              row.checkoutServiceIds.length <= 20 && new Set(row.checkoutServiceIds).size === row.checkoutServiceIds.length &&
+              row.checkoutServiceIds.every(id => string(id, 200)))) &&
+          (!Object.hasOwn(row, "demoPayment") ||
+            (row.demoPayment?.kind === "simulation" && validPrice(row.finalPrice) &&
+              row.demoPayment.amount === row.finalPrice && string(row.demoPayment.id, 200) &&
+              Number.isFinite(Date.parse(row.demoPayment.paidAt)) && ["Paid", "Completed"].includes(row.status))) &&
           ["remote", "onsite"].includes(row.deliveryMode) &&
           Number.isFinite(row.estimatedPrice) &&
           row.estimatedPrice >= 0 &&
@@ -202,7 +233,9 @@ export function createCustomerStore({
   function validate(serviceId, input) {
     const account = user();
     const service = catalog.find((item) => item.id === serviceId);
-    const creator = people.find((item) => item.id === service?.creatorId);
+    const demo = demoSeller(service);
+    const seller = demo || (service ? resolveSellerProfile(service.creatorId) : null);
+    const creator = demo || people.find((item) => item.id === service?.creatorId);
     const reason = restriction(service, account, creator);
     if (reason) throw new Error(reason);
     if (!creator || !Number.isFinite(service.price) || service.price < 0)
@@ -219,9 +252,9 @@ export function createCustomerStore({
       throw new Error("Pilih tanggal hari ini atau setelahnya yang valid.");
     return {
       serviceId: service.id,
-      creatorId: creator.id,
+      creatorId: seller.id,
       serviceTitle: service.title,
-      creatorName: creator.name,
+      creatorName: seller.name,
       estimatedPrice: service.price,
       deliveryMode,
       requestedDate,
@@ -252,7 +285,8 @@ export function createCustomerStore({
         service,
         account,
         creator,
-        service ? resolveSellerProfile(service.creatorId) : null,
+        bookingSeller(service),
+        bookingSeller(service)?.id || service?.creatorId,
       );
     } catch {
       return "Data akun pemilik layanan belum dapat diverifikasi. Periksa penyimpanan demo lalu coba lagi.";
@@ -269,6 +303,20 @@ export function createCustomerStore({
         );
       } catch {
         return "Data akun dan layanan belum dapat diverifikasi.";
+      }
+    },
+    getBookingSellerProfile(serviceId) {
+      try {
+        return bookingSeller(catalog.find((row) => row.id === serviceId));
+      } catch {
+        return null;
+      }
+    },
+    getDemoBookingSellerProfile(serviceId) {
+      try {
+        return demoSeller(catalog.find((row) => row.id === serviceId));
+      } catch {
+        return null;
       }
     },
     snapshot: raw,
@@ -349,6 +397,87 @@ export function createCustomerStore({
         throw new Error("Booking tidak ditemukan atau bukan milik akunmu.");
       return booking;
     },
+    // All drafts validate before one envelope write. localStorage is not a cross-tab
+    // transaction; stable checkout IDs allow read-back/retry after uncertain writes.
+    submitCheckout(entries, { checkoutId, confirmed = false, expectedUserId } = {}) {
+      const account = user();
+      if (!confirmed || account.id !== expectedUserId)
+        throw new Error("Sesi berubah atau permintaan belum dikonfirmasi. Tinjau checkout kembali.");
+      if (!validCheckoutId(checkoutId) || !Array.isArray(entries) || !entries.length || entries.length > 20)
+        throw new Error("Pilih 1–20 layanan dan gunakan referensi checkout yang valid.");
+      const ids = entries.map(row => row?.serviceId);
+      if (ids.some(id => !string(id, 200)) || new Set(ids).size !== ids.length)
+        throw new Error("Pilihan layanan tidak valid atau berulang.");
+      const data = writable();
+      const previous = data.bookings.filter(row => row.checkoutId === checkoutId);
+      if (previous.some(row => row.customerId !== account.id))
+        throw new Error("Referensi checkout bukan milik akun aktif.");
+      const cart = data.lists.find(row => row.userId === account.id)?.cart || [];
+      const details = entries.map(({ serviceId, input }) => {
+        const existing = previous.find(row => row.serviceId === serviceId);
+        if (existing) {
+          const expectedIds = existing.checkoutServiceIds || [];
+          if (expectedIds.length !== ids.length || !ids.every(id => expectedIds.includes(id)) ||
+            ["requirements", "description", "location", "requestedDate"].some(key =>
+              existing[key] !== (key === "location" && existing.deliveryMode === "remote" ? "" : String(input?.[key] || "").trim())))
+            throw new Error("Isi checkout berbeda dari pengajuan sebelumnya. Buka pesanan yang sudah tersimpan.");
+          return existing;
+        }
+        if (!cart.includes(serviceId)) throw new Error("Layanan pilihan tidak ada pada keranjang akun aktif.");
+        if (!input?.requestedDate) throw new Error("Tanggal yang diminta wajib diisi untuk setiap layanan checkout.");
+        return { ...validate(serviceId, input || {}), id: `booking-${randomId()}`,
+          customerId: account.id, status: "Requested", createdAt: now(),
+          checkoutId, checkoutServiceIds: [...ids] };
+      });
+      if (previous.some(row => !ids.includes(row.serviceId)))
+        throw new Error("Pilihan checkout berbeda dari pengajuan sebelumnya.");
+      const fresh = details.filter(row => !previous.some(old => old.id === row.id));
+      if (new Set(details.map(row => row.id)).size !== details.length ||
+        fresh.some(row => data.bookings.some(old => old.id === row.id)))
+        throw new Error("ID pesanan bertabrakan. Coba lagi dengan referensi baru.");
+      if (user().id !== account.id) throw new Error("Sesi berubah. Checkout tidak disimpan.");
+      if (fresh.length) {
+        data.bookings.push(...fresh);
+        const list = data.lists.find(row => row.userId === account.id);
+        if (list) list.cart = list.cart.filter(id => !ids.includes(id));
+        write(data);
+      }
+      return details.map(row => ({ ...row }));
+    },
+    confirmAcceptedPrice(bookingId, finalPrice) {
+      const account = sellerAccount();
+      const data = writable();
+      const booking = data.bookings.find(row => row.id === bookingId && row.creatorId === account.sellerProfileId);
+      if (!booking || booking.status !== "Accepted" || Object.hasOwn(booking, "finalPrice"))
+        throw new Error("Harga hanya dapat dikonfirmasi untuk pesanan diterima milikmu yang belum memiliki harga akhir.");
+      if (!validPrice(finalPrice)) throw new Error("Harga akhir harus rupiah bulat antara 0 dan 1 triliun.");
+      booking.finalPrice = finalPrice;
+      booking.updatedAt = now();
+      write(data);
+      return { ...booking };
+    },
+    simulatePayment(bookingId, { confirmed = false, expectedUserId, expectedFinalPrice } = {}) {
+      const account = user();
+      if (!allowDemoPayment()) throw new Error("Simulasi pembayaran tidak diaktifkan pada lingkungan ini.");
+      if (!confirmed || account.id !== expectedUserId)
+        throw new Error("Konfirmasi simulasi dari akun pemilik pesanan.");
+      const data = writable();
+      const booking = data.bookings.find(row => row.id === bookingId && row.customerId === account.id);
+      if (!booking) throw new Error("Pesanan bukan milik akun aktif.");
+      if (!validPrice(booking.finalPrice) || booking.finalPrice !== expectedFinalPrice)
+        throw new Error("Harga akhir belum dikonfirmasi atau berubah. Tinjau kembali pesanan.");
+      // Repeating an already-saved simulation returns its existing receipt.
+      if (["Paid", "Completed"].includes(booking.status) && booking.demoPayment?.kind === "simulation")
+        return { ...booking };
+      if (booking.status !== "Accepted") throw new Error("Hanya pesanan Diterima Seller yang dapat disimulasikan pembayarannya.");
+      if (!resolveSellerProfile(booking.creatorId)?.ownerUserId)
+        throw new Error("Pemilik Seller Profile belum dapat diverifikasi.");
+      booking.status = "Paid";
+      booking.updatedAt = now();
+      booking.demoPayment = { id: `simulation-${randomId()}`, kind: "simulation", amount: booking.finalPrice, paidAt: booking.updatedAt };
+      write(data);
+      return { ...booking };
+    },
     // --- Phase 7: Seller Center / Admin access to the same booking records ---
     // The seller identity always comes from the Phase 5 session, never from input.
     sellerView() {
@@ -385,7 +514,7 @@ export function createCustomerStore({
           ["Requested", "Accepted", "Paid"].includes(row.status),
       ).length;
     },
-    respondToBooking(bookingId, action, { expectedStatus, reason } = {}) {
+    respondToBooking(bookingId, action, { expectedStatus, reason, finalPrice } = {}) {
       const account = sellerAccount();
       const rule = Object.hasOwn(sellerActions, action)
         ? sellerActions[action]
@@ -410,6 +539,11 @@ export function createCustomerStore({
         );
       const note = typeof reason === "string" ? reason.trim() : "";
       if (note.length > 500) throw new Error("Alasan maksimal 500 karakter.");
+      if (action === "accept") {
+        const price = finalPrice === undefined ? booking.estimatedPrice : finalPrice;
+        if (!validPrice(price)) throw new Error("Harga akhir harus rupiah bulat antara 0 dan 1 triliun.");
+        booking.finalPrice = price;
+      }
       booking.status = rule.to;
       booking.updatedAt = now();
       if (action === "decline" && note) booking.declineReason = note;

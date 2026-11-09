@@ -54,7 +54,7 @@ export default function SellerOrdersPage() {
                 </p>
               </div>
               <div className="ws-row__side">
-                <span className="ws-price">{money(booking.estimatedPrice)}</span>
+                <span className="ws-price">{money(booking.finalPrice ?? booking.estimatedPrice)}</span>
                 <StatusBadge status={booking.status} />
                 <Link to={`/seller-dashboard/orders/${booking.id}`}>
                   {booking.status === "Requested" ? "Tinjau →" : "Detail →"}

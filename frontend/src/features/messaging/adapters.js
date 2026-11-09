@@ -37,6 +37,7 @@ export function createMessagingAdapters({ accounts, customers, getServices }) {
             seller_profile_id: booking.creatorId,
             service_id: booking.serviceId,
             status: booking.status,
+            demo_payment: booking.demoPayment?.kind === "simulation",
           }
         : null;
     },

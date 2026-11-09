@@ -25,6 +25,7 @@ export default function ServiceDetailPage() {
   if (!service) return <NotFound type="Layanan" />;
   const creator = getCreator(service.creatorId);
   const reason = customerStore.getBookingRestriction(service.id);
+  const demoSeller = customerStore.getDemoBookingSellerProfile(service.id);
   return (
     <div className="market-page market-detail">
       <div className="market-shell">
@@ -99,6 +100,7 @@ export default function ServiceDetailPage() {
                   Ajukan permintaan booking ↗
                 </Link>
               )}
+              {demoSeller && <p className="market-demo-note">Contoh editorial ini dapat dipesan dalam demo lokal. Permintaan diteruskan ke akun Seller demo {demoSeller.name}; kreator contoh bukan identitas terverifikasi.</p>}
               <ServiceActions service={service} />
               <ContactCreator
                 key={`${user?.id || "guest"}-${service.id}`}

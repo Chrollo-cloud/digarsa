@@ -10,9 +10,9 @@
 }
 .navbar {
   height: var(--nav-height);
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 22px;
 }
 .wordmark {
@@ -39,12 +39,14 @@
   max-height: 58px;
   object-fit: contain;
 }
-.navbar__utilities { display: flex; align-items: center; gap: 10px; order: 2; }
+.navbar__utilities { display: flex; align-items: center; gap: 10px; }
+.navbar__right { display: flex; align-items: center; justify-self: end; gap: 12px; min-width: 0; }
 .navbar__menu {
-  order: 1;
   display: flex;
   align-items: center;
-  gap: clamp(28px, 5vw, 80px);
+  justify-content: center;
+  gap: clamp(18px, 2.5vw, 36px);
+  min-width: 0;
 }
 .navbar__links,
 .navbar__actions {
@@ -92,11 +94,9 @@
 }
 .navbar__toggle {
   display: none;
-  order: 3;
 }
 @media (min-width: 761px) and (max-width: 1050px) {
-  .navbar,
-  .navbar__menu {
+  .navbar {
     gap: 24px;
   }
   .navbar__links {
@@ -107,6 +107,7 @@
   }
 }
 @media (max-width: 900px) {
+  .navbar { display: flex; justify-content: space-between; }
   .navbar__brand {
     width: clamp(120px, 31vw, 180px);
     max-height: 56px;
@@ -126,6 +127,7 @@
     background: transparent;
     color: inherit;
   }
+  .navbar__right { margin-left: auto; gap: 8px; }
   .navbar__menu {
     position: absolute;
     top: var(--nav-height);
@@ -182,7 +184,7 @@
 .site-header .notification-bell__mobile { color: var(--color-indigo); }
 @media (max-width: 900px) {
   .navbar { gap: 10px; }
-  .navbar__utilities { margin-left: auto; gap: 8px; }
+  .navbar__utilities { gap: 8px; }
   .navbar__toggle { margin-left: 0; }
   .navbar__utilities .notification-bell__mobile { display: grid; place-items: center; font-size: 0; width: 40px; height: 40px; padding: 0; border: 1px solid var(--color-border); border-radius: 50%; }
   .navbar__utilities .notification-bell__mobile span { display: none; }
@@ -190,6 +192,12 @@
 }
 
 @media (max-width: 900px) {
-  .navbar__menu .account-menu__trigger { width: 100%; max-width: none; }
+  .navbar__menu .account-menu__trigger { width: auto; max-width: 230px; }
   .navbar__menu .account-menu__panel { position: static; width: 100%; margin-top: 8px; max-height: 45dvh; }
+}
+@media (max-width: 760px) {
+  .navbar__menu .account-menu__trigger { max-width: 58px; }
+}
+@media (max-width: 640px) {
+  .navbar { gap: 6px; }
 }

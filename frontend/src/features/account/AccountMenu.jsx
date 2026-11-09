@@ -104,8 +104,14 @@ export default function AccountMenu({ onNavigate }) {
           }
         }}
       >
-        <span>{user.name}</span>
-        <span aria-hidden="true">⌄</span>
+        <Avatar user={user} className="account-menu__trigger-avatar" />
+        <span className="account-menu__trigger-copy">
+          <strong>{user.name}</strong>
+          <small>{user.email}</small>
+        </span>
+        <svg className="account-menu__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="m2.5 4.5 3.5 3 3.5-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
       {open && (
         <div

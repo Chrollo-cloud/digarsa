@@ -182,6 +182,7 @@ export default function BookingRequestPage() {
   const service = services.find((item) => item.id === serviceId);
   const creator = service && getCreator(service.creatorId);
   const reason = store.getBookingRestriction(serviceId);
+  const demoSeller = service && store.getDemoBookingSellerProfile(service.id);
   return (
     <CustomerFrame
       title="Mulai dari kebutuhan yang jelas."
@@ -198,11 +199,14 @@ export default function BookingRequestPage() {
           Pilih layanan lain yang tersedia untuk memulai kolaborasi.
         </EmptyState>
       ) : (
-        <BookingForm
-          key={`${user.id}-${service.id}`}
-          service={service}
-          creator={creator}
-        />
+        <>
+          {demoSeller && <p className="customer-warning">Contoh editorial ini akan dipesan melalui akun Seller demo {demoSeller.name}. Kreator contoh tidak dinyatakan terverifikasi.</p>}
+          <BookingForm
+            key={`${user.id}-${service.id}`}
+            service={service}
+            creator={creator}
+          />
+        </>
       )}
     </CustomerFrame>
   );

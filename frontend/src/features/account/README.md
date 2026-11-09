@@ -59,9 +59,10 @@ demoAdmin.provisionDemoAdmin('PASTE_CURRENT_DEMO_ACCOUNT_ID');
 location.reload();
 ```
 
-Visit `/admin`, or use Admin Dashboard in the existing account menu. Login still
-lands on Homepage by default; accessing `/admin` as a guest retains that protected
-return destination. Refresh preserves the local session. Logout revokes the active
+Visit `/admin`, or use Admin Dashboard in the existing account menu. Authorized
+Admin login defaults to `/admin`; explicit internal return paths are preserved only
+when the signed-in account has the required Seller/Admin capability. Customer login
+still defaults to Homepage. Refresh preserves the local session. Logout revokes the active
 session; it does not remove the deliberately provisioned permission from the account.
 
 This module is never imported into the application graph or included in `dist`.

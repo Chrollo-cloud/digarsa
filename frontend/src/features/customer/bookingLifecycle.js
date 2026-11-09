@@ -5,8 +5,8 @@ export function bookingStatusDescription(status) {
       Requested:
         "Menunggu tinjauan kreator. Permintaan belum diterima dan belum ada pembayaran.",
       Accepted:
-        "Permintaan diterima. Belum dibayar dan belum dapat ditandai selesai. Pembayaran belum tersedia; status tetap diterima sampai ada konfirmasi pembayaran yang sah.",
-      Paid: "Status sudah dibayar tercatat pada data pesanan. Hanya kreator pemilik pesanan yang dapat menandai pekerjaan selesai. Demo ini tidak menyediakan aksi pembayaran.",
+        "Permintaan diterima. Belum dibayar dan belum dapat ditandai selesai. Pada demo, gunakan simulasi pembayaran secara sengaja; status tetap diterima sampai simulasi tercatat. Produksi memerlukan konfirmasi backend yang sah.",
+      Paid: "Status sudah dibayar tercatat pada data pesanan. Hanya kreator pemilik pesanan yang dapat menandai pekerjaan selesai. Pembayaran demo bukan transaksi nyata atau konfirmasi bank.",
       Completed:
         "Pekerjaan ditandai selesai pada data booking. Halaman ini tidak memproses pembayaran atau memverifikasi riwayat pembayaran lama.",
       Declined:

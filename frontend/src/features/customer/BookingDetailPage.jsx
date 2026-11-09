@@ -106,6 +106,7 @@ export default function BookingDetailPage() {
             <dt>Estimasi harga awal</dt>
             <dd>{money(booking.estimatedPrice)}</dd>
           </div>
+          {Number.isSafeInteger(booking.finalPrice) && <div><dt>Harga akhir Seller</dt><dd>{money(booking.finalPrice)}</dd></div>}
           <div>
             <dt>Mode pengerjaan</dt>
             <dd>{booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}</dd>
@@ -132,6 +133,9 @@ export default function BookingDetailPage() {
         <p className="customer-info">
           {bookingStatusDescription(booking.status)}
         </p>
+        {booking.demoPayment?.kind === "simulation" && <p className="customer-info">Pembayaran disimulasikan. Tidak ada uang dipindahkan.</p>}
+        {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) &&
+          <Link className="button button--primary" to={`/payment/${booking.id}`}>Pembayaran demo →</Link>}
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
         {booking.status === "Completed" && (
           <BookingReviewAction bookingId={booking.id} />

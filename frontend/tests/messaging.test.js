@@ -442,6 +442,7 @@ test("new_review requires a verified review and a matching completed booking", (
     "booking_accepted",
     "booking_declined",
     "booking_completed",
+    "booking_paid",
     "new_review",
   ]);
 });
