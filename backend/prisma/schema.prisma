@@ -97,56 +97,59 @@ enum ReportStatus {
 // ───────────── AKUN ─────────────
 
 model User {
-  id            String        @id @default(uuid())
-  email         String        @unique
-  passwordHash  String
-  name          String
-  phone         String?
-  role          Role          @default(USER)
-  accountStatus AccountStatus @default(ACTIVE)
-  region        String?
-  lat           Float?
-  lng           Float?
-  avatarUrl     String?
-  tokenVersion  Int           @default(0) // naikkan untuk membatalkan semua token lama
-  lastLoginAt   DateTime?
-  deletedAt     DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  email             String        @unique
+  passwordHash      String
+  name              String
+  phone             String?
+  birthDate         DateTime?     @db.Date
+  gender            String?
+  discoveryLocation Json?
+  role              Role          @default(USER)
+  accountStatus     AccountStatus @default(ACTIVE)
+  region            String?
+  lat               Float?
+  lng               Float?
+  avatarUrl         String?
+  tokenVersion      Int           @default(0) // naikkan untuk membatalkan semua token lama
+  lastLoginAt       DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   sellerProfile SellerProfile?
 
   // relasi balik
-  passwordResets PasswordReset[]
-  verificationsReviewed SellerVerification[] @relation("VerificationReviewer")
-  servicesModerated Service[] @relation("ServiceModerator")
-  favorites Favorite[]
-  cartItems CartItem[]
-  serviceViews ServiceView[]
-  bookingsAsCustomer Booking[] @relation("BookingCustomer")
-  reviewsWritten Review[] @relation("ReviewAuthor")
-  conversationsAsCustomer Conversation[] @relation("ConversationCustomer")
-  messagesSent Message[] @relation("MessageSender")
-  notifications Notification[]
-  reportsFiled Report[] @relation("ReportReporter")
-  reportsResolved Report[] @relation("ReportResolver")
-  feedbacks Feedback[]
-  activityLogs ActivityLog[]
+  passwordResets          PasswordReset[]
+  verificationsReviewed   SellerVerification[] @relation("VerificationReviewer")
+  servicesModerated       Service[]            @relation("ServiceModerator")
+  favorites               Favorite[]
+  cartItems               CartItem[]
+  serviceViews            ServiceView[]
+  bookingsAsCustomer      Booking[]            @relation("BookingCustomer")
+  reviewsWritten          Review[]             @relation("ReviewAuthor")
+  conversationsAsCustomer Conversation[]       @relation("ConversationCustomer")
+  messagesSent            Message[]            @relation("MessageSender")
+  notifications           Notification[]
+  reportsFiled            Report[]             @relation("ReportReporter")
+  reportsResolved         Report[]             @relation("ReportResolver")
+  feedbacks               Feedback[]
+  activityLogs            ActivityLog[]
 }
 
 model PasswordReset {
-  id                   String    @id @default(uuid())
-  userId               String
-  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  otpHash              String
-  attempts             Int       @default(0)
-  expiresAt            DateTime
-  verifiedAt           DateTime?
-  resetTokenHash       String?
-  resetTokenExpiresAt  DateTime?
-  usedAt               DateTime?
-  requestIp            String?
-  createdAt            DateTime  @default(now())
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash             String
+  attempts            Int       @default(0)
+  expiresAt           DateTime
+  verifiedAt          DateTime?
+  resetTokenHash      String?
+  resetTokenExpiresAt DateTime?
+  usedAt              DateTime?
+  requestIp           String?
+  createdAt           DateTime  @default(now())
 
   @@index([userId, createdAt])
 }
@@ -169,13 +172,13 @@ model SellerProfile {
   updatedAt          DateTime           @updatedAt
 
   // relasi balik
-  sellerVerifications SellerVerification[]
+  sellerVerifications    SellerVerification[]
   sellerUnavailableDates SellerUnavailableDate[]
-  portfolioItems PortfolioItem[]
-  services Service[]
-  bookings Booking[]
-  reviews Review[]
-  conversations Conversation[]
+  portfolioItems         PortfolioItem[]
+  services               Service[]
+  bookings               Booking[]
+  reviews                Review[]
+  conversations          Conversation[]
 }
 
 model SellerVerification {
@@ -257,18 +260,18 @@ model Service {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
+  // relasi balik
+  serviceImages ServiceImage[]
+  favorites     Favorite[]
+  cartItems     CartItem[]
+  serviceViews  ServiceView[]
+  bookings      Booking[]
+  reviews       Review[]
+  conversations Conversation[]
+
   @@index([status, categoryId, region])
   @@index([moderationStatus, isHidden])
   @@index([price])
-
-  // relasi balik
-  serviceImages ServiceImage[]
-  favorites Favorite[]
-  cartItems CartItem[]
-  serviceViews ServiceView[]
-  bookings Booking[]
-  reviews Review[]
-  conversations Conversation[]
 }
 
 model ServiceImage {
@@ -337,13 +340,13 @@ model Booking {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  @@index([customerId])
-  @@index([sellerId, status])
-
   // relasi balik
   payment Payment?
-  review Review?
+  review  Review?
   reports Report[]
+
+  @@index([customerId])
+  @@index([sellerId, status])
 }
 
 // = transactions di frontend; terpisah dari status booking
@@ -392,23 +395,23 @@ model Conversation {
   seller     SellerProfile @relation(fields: [sellerId], references: [id])
   createdAt  DateTime      @default(now())
 
-  @@unique([serviceId, customerId])
-
   // relasi balik
   messages Message[]
+
+  @@unique([serviceId, customerId])
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
-  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+  sender         User          @relation("MessageSender", fields: [senderId], references: [id])
   body           String
-  isFlagged      Boolean      @default(false)
+  isFlagged      Boolean       @default(false)
   flagReasons    String[]
   flagSeverity   FlagSeverity?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime      @default(now())
 
   @@index([conversationId, createdAt])
 }

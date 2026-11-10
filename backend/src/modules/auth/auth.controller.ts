@@ -1,10 +1,13 @@
 import type { RequestHandler } from "express";
-import bcrypt from "bcryptjs";
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { prisma } from "../../config/prisma.js";
 import { createAccessToken } from "../../lib/jwt.js";
 import { HttpError } from "../../lib/http.js";
 import { writeAuditLog } from "../../lib/audit.js";
+import { hashPassword, verifyPassword } from "../../lib/password.js";
+import { discoveryLocationSchema } from "../../lib/location.schema.js";
+import { toFrontendAccount } from "./auth.mapper.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import {
   changePasswordSchema,
   deleteAccountSchema,
@@ -22,11 +25,9 @@ const PUBLIC_USER = {
   name: true,
   email: true,
   phone: true,
+  birthDate: true,
+  gender: true,
   role: true,
-  accountStatus: true,
-  region: true,
-  lat: true,
-  lng: true,
   avatarUrl: true,
   createdAt: true,
 } as const;
@@ -63,7 +64,7 @@ function parse<T>(schema: { safeParse: (value: unknown) => any }, body: unknown)
 export const register: RequestHandler = async (req, res) => {
   const input = parse<ReturnType<typeof registerSchema.parse>>(registerSchema, req.body);
   requireJwtSecret();
-  const passwordHash = await bcrypt.hash(input.password, 12);
+  const passwordHash = await hashPassword(input.password);
 
   try {
     const user = await prisma.user.create({
@@ -77,7 +78,7 @@ export const register: RequestHandler = async (req, res) => {
     });
     const accessToken = createAccessToken(user.id, user.role, 0);
     await writeAuditLog(user.id, "ACCOUNT_REGISTERED", "USER", user.id);
-    res.status(201).json({ data: { user, accessToken } });
+    res.status(201).json({ data: { user: toFrontendAccount(user, null), accessToken } });
   } catch (error) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
       throw new HttpError(409, "EMAIL_ALREADY_EXISTS", "Email sudah terdaftar.");
@@ -90,22 +91,25 @@ export const login: RequestHandler = async (req, res) => {
   const input = parse<ReturnType<typeof loginSchema.parse>>(loginSchema, req.body);
   requireJwtSecret();
   const user = await prisma.user.findUnique({ where: { email: input.email } });
-  if (!user || user.accountStatus !== "ACTIVE" || !(await bcrypt.compare(input.password, user.passwordHash))) {
+  if (!user || user.accountStatus !== "ACTIVE") {
     throw new HttpError(401, "INVALID_CREDENTIALS", "Email atau password salah.");
   }
+  const passwordCheck = await verifyPassword(input.password, user.passwordHash);
+  if (!passwordCheck.matches) throw new HttpError(401, "INVALID_CREDENTIALS", "Email atau password salah.");
 
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastLoginAt: new Date(),
+      ...(passwordCheck.needsRehash ? { passwordHash: await hashPassword(input.password) } : {}),
+    },
+  });
+  const seller = await prisma.sellerProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
   const accessToken = createAccessToken(user.id, user.role, user.tokenVersion);
   await writeAuditLog(user.id, "ACCOUNT_LOGIN", "USER", user.id);
   res.status(200).json({
     data: {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-      },
+      user: toFrontendAccount(user, seller),
       accessToken,
     },
   });
@@ -113,35 +117,71 @@ export const login: RequestHandler = async (req, res) => {
 
 export const getMe: RequestHandler = async (_req, res) => {
   const { userId } = res.locals.auth as AuthLocals["auth"];
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: PUBLIC_USER });
-  if (!user || user.accountStatus !== "ACTIVE") {
+  const user = await prisma.user.findFirst({ where: { id: userId, accountStatus: "ACTIVE" }, select: PUBLIC_USER });
+  if (!user) {
     throw new HttpError(401, "UNAUTHORIZED", "Akun tidak tersedia atau sudah dinonaktifkan.");
   }
   const sellerProfile = await prisma.sellerProfile.findUnique({
     where: { userId },
-    select: { id: true, displayName: true, verificationStatus: true },
+    select: { id: true, displayName: true },
   });
-  res.status(200).json({ data: { user: { ...user, sellerProfile } } });
+  res.status(200).json({ data: { user: toFrontendAccount(user, sellerProfile), sellerProfile } });
 };
 
 export const updateMe: RequestHandler = async (req, res) => {
   const { userId } = res.locals.auth as AuthLocals["auth"];
   const input = parse<ReturnType<typeof patchProfileSchema.parse>>(patchProfileSchema, req.body);
-  const user = await prisma.user.update({ where: { id: userId }, data: input, select: PUBLIC_USER });
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone || null } : {}),
+      ...(input.birthDate !== undefined ? { birthDate: input.birthDate ? new Date(`${input.birthDate}T00:00:00.000Z`) : null } : {}),
+      ...(input.gender !== undefined ? { gender: input.gender || null } : {}),
+      ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl || null } : {}),
+    },
+    select: PUBLIC_USER,
+  });
+  const seller = await prisma.sellerProfile.findUnique({ where: { userId }, select: { id: true } });
   await writeAuditLog(userId, "PROFILE_UPDATED", "USER", userId);
-  res.status(200).json({ data: { user } });
+  res.status(200).json({ data: { user: toFrontendAccount(user, seller) } });
+};
+
+export const getDiscoveryLocation: RequestHandler = async (_req, res) => {
+  const { userId } = res.locals.auth as AuthLocals["auth"];
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { discoveryLocation: true } });
+  if (!user) throw new HttpError(404, "ACCOUNT_NOT_FOUND", "Akun tidak ditemukan.");
+  res.status(200).json({ data: { discoveryLocation: user.discoveryLocation } });
+};
+
+export const updateDiscoveryLocation: RequestHandler = async (req, res) => {
+  const { userId } = res.locals.auth as AuthLocals["auth"];
+  const parsed = discoveryLocationSchema.safeParse(req.body?.discoveryLocation);
+  if (!parsed.success) {
+    throw new HttpError(400, "VALIDATION_ERROR", "Data lokasi akun tidak valid.", validationDetails(parsed.error.issues));
+  }
+  await prisma.user.update({ where: { id: userId }, data: { discoveryLocation: parsed.data as Prisma.InputJsonValue } });
+  await writeAuditLog(userId, "PRIVATE_DISCOVERY_LOCATION_UPDATED", "USER", userId);
+  res.status(200).json({ data: { discoveryLocation: parsed.data } });
+};
+
+export const clearDiscoveryLocation: RequestHandler = async (_req, res) => {
+  const { userId } = res.locals.auth as AuthLocals["auth"];
+  await prisma.user.update({ where: { id: userId }, data: { discoveryLocation: Prisma.DbNull } });
+  await writeAuditLog(userId, "PRIVATE_DISCOVERY_LOCATION_CLEARED", "USER", userId);
+  res.status(200).json({ data: { discoveryLocation: null } });
 };
 
 export const changePassword: RequestHandler = async (req, res) => {
   const { userId } = res.locals.auth as AuthLocals["auth"];
   const input = parse<ReturnType<typeof changePasswordSchema.parse>>(changePasswordSchema, req.body);
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !(await bcrypt.compare(input.currentPassword, user.passwordHash))) {
+  if (!user || !(await verifyPassword(input.currentPassword, user.passwordHash)).matches) {
     throw new HttpError(401, "INVALID_PASSWORD", "Password saat ini tidak sesuai.");
   }
   await prisma.user.update({
     where: { id: userId },
-    data: { passwordHash: await bcrypt.hash(input.newPassword, 12), tokenVersion: { increment: 1 } },
+    data: { passwordHash: await hashPassword(input.newPassword), tokenVersion: { increment: 1 } },
   });
   await writeAuditLog(userId, "PASSWORD_CHANGED", "USER", userId);
   res.status(200).json({ data: { message: "Password berhasil diubah. Silakan login kembali." } });
@@ -158,7 +198,7 @@ export const deleteMe: RequestHandler = async (req, res) => {
   const { userId } = res.locals.auth as AuthLocals["auth"];
   const input = parse<ReturnType<typeof deleteAccountSchema.parse>>(deleteAccountSchema, req.body);
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+  if (!user || !(await verifyPassword(input.password, user.passwordHash)).matches) {
     throw new HttpError(401, "INVALID_PASSWORD", "Password tidak sesuai.");
   }
 
@@ -183,7 +223,7 @@ export const deleteMe: RequestHandler = async (req, res) => {
       lat: null,
       lng: null,
       avatarUrl: null,
-      passwordHash: await bcrypt.hash(randomBytes(32).toString("hex"), 12),
+      passwordHash: await hashPassword(randomBytes(32).toString("hex")),
       accountStatus: "DELETED",
       deletedAt: new Date(),
       tokenVersion: { increment: 1 },
@@ -250,7 +290,7 @@ export const resetPassword: RequestHandler = async (req, res) => {
   if (!reset) throw new HttpError(400, "INVALID_RESET_TOKEN", "Tautan pemulihan tidak valid atau sudah kedaluwarsa.");
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: reset.userId }, data: { passwordHash: await bcrypt.hash(input.password, 12), tokenVersion: { increment: 1 } } }),
+    prisma.user.update({ where: { id: reset.userId }, data: { passwordHash: await hashPassword(input.password), tokenVersion: { increment: 1 } } }),
     prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
   ]);
   await writeAuditLog(reset.userId, "PASSWORD_RESET", "USER", reset.userId);

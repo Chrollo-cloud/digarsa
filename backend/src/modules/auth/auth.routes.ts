@@ -12,6 +12,9 @@ import {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  getDiscoveryLocation,
+  updateDiscoveryLocation,
+  clearDiscoveryLocation,
 } from "./auth.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
@@ -53,6 +56,9 @@ router.patch("/me", authenticate, updateMe);
 router.delete("/me", authenticate, deleteMe);
 router.post("/change-password", authenticate, changePassword);
 router.post("/logout-all", authenticate, logoutAll);
+router.get("/me/discovery-location", authenticate, getDiscoveryLocation);
+router.patch("/me/discovery-location", authenticate, updateDiscoveryLocation);
+router.delete("/me/discovery-location", authenticate, clearDiscoveryLocation);
 router.post("/password/forgot", otpLimiter, forgotPassword);
 router.post("/password/verify-otp", otpLimiter, verifyOtp);
 router.post("/password/reset", otpLimiter, resetPassword);
