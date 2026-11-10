@@ -12,9 +12,10 @@ export default function LocationMap({
   onSelect,
   onPick,
 }) {
-  const host = useRef(null),
-    instance = useRef(null),
-    layers = useRef(null);
+const host = useRef(null);
+const instance = useRef(null);
+const layers = useRef(null);
+const buyerLayer = useRef(null);
   const handlers = useRef({ onSelect, onPick });
   const [tileError, setTileError] = useState(false);
   useEffect(() => {
@@ -26,14 +27,17 @@ export default function LocationMap({
       zoom: 4,
       minZoom: 2,
       maxZoom: 18,
-      scrollWheelZoom: false,
-      zoomAnimation: false,
-      fadeAnimation: false,
-      markerZoomAnimation: false,
-      inertia: false,
+     scrollWheelZoom: true,
+     wheelDebounceTime: 80,
+     wheelPxPerZoomLevel: 80,
+     zoomAnimation: true,
+     fadeAnimation: false,
+     markerZoomAnimation: false,
+     inertia: false,
     });
     instance.current = map;
     layers.current = L.layerGroup().addTo(map);
+    buyerLayer.current = L.layerGroup().addTo(map);
     const tile = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution:
@@ -99,6 +103,30 @@ export default function LocationMap({
     else if (view.bounds.length) map.fitBounds(L.latLngBounds(view.bounds), { padding: [45, 45], maxZoom: 14, animate: false });
     else map.setView([-2.5, 118], 4, { animate: false });
   }, [viewKey]);
+  // Pin lokasi pencarian pribadi milik pembeli
+useEffect(() => {
+  const layer = buyerLayer.current;
+  if (!layer) return;
+
+  layer.clearLayers();
+
+  if (!center) return;
+
+  const marker = L.circleMarker(
+    [center.lat, center.lng],
+    {
+      radius: 10,
+      color: "#ffffff",
+      weight: 4,
+      fillColor: "#0797c2",
+      fillOpacity: 1,
+    }
+  );
+
+  marker
+    .bindPopup("Lokasi pencarian kamu")
+    .addTo(layer);
+}, [center?.lat, center?.lng]);
   const focused = points.find(point => point.id === focusId)?.coordinates;
   const focusLat = focused?.lat, focusLng = focused?.lng;
   useEffect(() => {
