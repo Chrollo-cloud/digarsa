@@ -4,6 +4,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import authRoutes from "./modules/auth/auth.routes.js";
 import sellerRoutes from "./modules/sellers/seller.routes.js";
+import serviceRoutes from "./modules/services/service.routes.js";
+import catalogRoutes from "./modules/catalog/catalog.routes.js";
 import { errorHandler, notFoundHandler } from "./lib/http.js";
 
 const app = express();
@@ -40,6 +42,8 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/sellers", sellerRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/v1", catalogRoutes);
 
 app.get("/", (_req, res) => {
   res.status(200).json({
