@@ -550,3 +550,36 @@
   .device-location-panel { padding: 18px 16px; }
   .device-location-panel .button { white-space: normal; }
 }
+
+
+/* Interaksi peta */
+.location-map {
+  cursor: grab;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+.location-map:active {
+  cursor: grabbing;
+}
+
+/* Pin lokasi pencarian pembeli */
+.location-map .leaflet-interactive {
+  cursor: pointer;
+}
+
+/* Kontrol zoom Leaflet */
+.location-map .leaflet-control-zoom a {
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-size: 20px;
+}
+
+/* Popup lokasi */
+.location-map .leaflet-popup-content {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+}
