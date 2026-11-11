@@ -689,16 +689,3 @@
     transform: none;
   }
 }
-
-.market-nearby-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin-top: 8px;
-  color: var(--color-aqua);
-  font-size: 13px;
-  text-underline-offset: 5px;
-}
-.market-nearby-link:hover { text-decoration: underline; }
-.market-nearby-link svg { flex-shrink: 0; }
