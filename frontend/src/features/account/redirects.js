@@ -4,7 +4,7 @@ const destinations = [
   /^\/messages\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/(?:service|seller|booking|orders)\/[a-zA-Z0-9][a-zA-Z0-9-]*\/?$/,
   /^\/seller-dashboard(?:\/(?:profile|earnings|availability|notifications|messages(?:\/[a-zA-Z0-9][a-zA-Z0-9_-]*)?|orders(?:\/[a-zA-Z0-9][a-zA-Z0-9-]*)?|services(?:\/new|\/[a-zA-Z0-9][a-zA-Z0-9-]*\/edit)?))?\/?$/,
-  /^\/admin(?:\/(?:accounts|moderation|orders))?\/?$/,
+  /^\/admin(?:\/(?:accounts|moderation|orders|reports))?\/?$/,
 ];
 
 // Syntax validation only: RequireAccount/RequireSeller/RequireAdmin still enforce

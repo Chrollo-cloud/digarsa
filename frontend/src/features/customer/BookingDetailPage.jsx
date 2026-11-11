@@ -5,6 +5,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import ContactCreator from "../messaging/ContactCreator";
+import ReportAccountButton from "../account/ReportAccountButton";
 import BookingReviewAction from "../reviews/BookingReviewAction";
 import { money } from "../../data/marketplace";
 import { useCustomer } from "./useCustomer";
@@ -148,6 +149,7 @@ export default function BookingDetailPage() {
         {booking.status === "Completed" && (
           <BookingReviewAction bookingId={booking.id} />
         )}
+        <ReportAccountButton targetSellerProfileId={booking.creatorId} />
         <ContactCreator
           key={booking.id}
           sellerProfileId={booking.creatorId}

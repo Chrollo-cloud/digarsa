@@ -159,9 +159,10 @@ export function createDemoStore(
     listeners.forEach((listener) => listener());
   }
   function accountForSession(db) {
-    return db.session?.token
-      ? db.accounts.find((account) => account.id === db.session.userId)
+    const account = db.session?.token
+      ? db.accounts.find((item) => item.id === db.session.userId)
       : null;
+    return account && account.status !== "suspended" ? account : null;
   }
   function ownedProfile(db, account) {
     return account
@@ -277,7 +278,7 @@ export function createDemoStore(
         throw new Error("Email atau kata sandi tidak cocok.");
       const db = read();
       const latest = db.accounts.find((item) => item.id === account.id);
-      if (!latest) throw new Error("Akun demo tidak tersedia.");
+      if (!latest || latest.status === "suspended") throw new Error("Akun ini sedang dinonaktifkan oleh Admin Digarsa.");
       db.session = { userId: latest.id, token: cryptoApi.randomUUID() };
       write(db);
       return publicUser(db, latest);
@@ -539,7 +540,8 @@ export function createDemoStore(
 },
     // Seller profiles are public marketplace data (no credentials involved).
     listSellerProfiles() {
-      return read().profiles.map((profile) => ({
+      const db = read();
+      return db.profiles.filter((profile) => db.accounts.find((account) => account.id === profile.ownerUserId)?.status !== "suspended").map((profile) => ({
         ...profile,
         specialties: [...(profile.specialties || [])],
         ...(Object.hasOwn(profile, "publicLocation")
@@ -578,7 +580,8 @@ export function createDemoStore(
       if (
         owners.length !== 1 ||
         !owners[0].id ||
-        owners[0].sellerProfileId !== profile.id
+        owners[0].sellerProfileId !== profile.id ||
+        owners[0].status === "suspended"
       )
         return null;
       return {
@@ -631,6 +634,45 @@ export function createDemoStore(
       }
       return identities;
     },
+    // Reports are tied to real account IDs; reporter identity comes from session.
+    reportAccount({ targetAccountId, targetSellerProfileId, reason, details = "" }) {
+      const db = read();
+      const reporter = accountForSession(db);
+      if (!reporter) throw new Error("Masuk untuk melaporkan akun.");
+      const target = targetAccountId
+        ? db.accounts.find((item) => item.id === targetAccountId)
+        : db.accounts.find((item) => item.sellerProfileId === targetSellerProfileId);
+      if (!target || target.id === reporter.id) throw new Error("Akun yang dilaporkan tidak valid.");
+      const allowed = ["Penipuan atau transaksi mencurigakan", "Pelecehan atau komunikasi tidak pantas", "Identitas atau profil palsu", "Spam atau penyalahgunaan platform", "Lainnya"];
+      if (!allowed.includes(reason)) throw new Error("Pilih alasan laporan.");
+      const note = typeof details === "string" ? details.trim().slice(0, 1000) : "";
+      if (note.length < 10) throw new Error("Jelaskan laporan minimal 10 karakter.");
+      db.reports ||= [];
+      if (db.reports.some((row) => row.reporterId === reporter.id && row.targetAccountId === target.id && row.status === "open"))
+        throw new Error("Laporan untuk akun ini masih dalam peninjauan.");
+      const report = { id: cryptoApi.randomUUID(), reporterId: reporter.id, targetAccountId: target.id, reason, details: note, status: "open", createdAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null, action: null };
+      db.reports.push(report); write(db); return { ...report };
+    },
+    listAccountReportsForAdmin() {
+      const db = read(); const admin = accountForSession(db);
+      if (!admin || !hasAdmin(admin)) throw new Error("Memerlukan izin admin internal.");
+      return (db.reports || []).map((row) => ({ ...row, reporter: db.accounts.find((a) => a.id === row.reporterId)?.name || "Akun tidak tersedia", target: db.accounts.find((a) => a.id === row.targetAccountId)?.name || "Akun tidak tersedia", targetEmail: db.accounts.find((a) => a.id === row.targetAccountId)?.email || "", targetStatus: db.accounts.find((a) => a.id === row.targetAccountId)?.status || "active" })).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    reviewAccountReport(reportId, action) {
+      const db = read(); const admin = accountForSession(db);
+      if (!admin || !hasAdmin(admin)) throw new Error("Memerlukan izin admin internal.");
+      if (!["dismiss", "suspend"].includes(action)) throw new Error("Tindakan laporan tidak valid.");
+      const report = (db.reports || []).find((row) => row.id === reportId);
+      if (!report || report.status !== "open") throw new Error("Laporan sudah ditinjau atau tidak tersedia.");
+      const target = db.accounts.find((item) => item.id === report.targetAccountId);
+      if (action === "suspend") {
+        if (!target || hasAdmin(target)) throw new Error("Akun Admin tidak dapat dinonaktifkan dari alur laporan.");
+        target.status = "suspended"; target.suspendedAt = new Date().toISOString();
+        if (db.session?.userId === target.id) db.session = null;
+      }
+      report.status = "reviewed"; report.action = action; report.reviewedAt = new Date().toISOString(); report.reviewedBy = admin.id;
+      write(db); return { ...report };
+    },
     // Admin-only. Never returns salts or password verifiers.
     listAccountsForAdmin() {
       const db = read();
@@ -658,6 +700,7 @@ export function createDemoStore(
           sellerCity: profile?.city || "",
           isAdmin: hasAdmin(item),
           isSelf: item.id === account.id,
+          status: item.status === "suspended" ? "suspended" : "active",
         };
       });
     },

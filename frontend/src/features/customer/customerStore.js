@@ -451,8 +451,8 @@ export function createCustomerStore({
       const paymentStatus = paymentStatusOf(booking);
       if (!["Unpaid", "Failed", "Expired"].includes(paymentStatus))
         throw new Error(paymentStatus === "Pending" ? "Pembayaran sedang diproses." : "Pembayaran untuk booking ini sudah selesai.");
-      if (!method || !["BCA", "BRI", "BNI", "Mandiri", "QRIS"].includes(method))
-        throw new Error("Pilih metode pembayaran yang tersedia.");
+      if (method !== "QRIS")
+        throw new Error("Metode pembayaran demo yang tersedia hanya QRIS.");
       booking.paymentStatus = "Pending";
       booking.paymentMethod = method;
       booking.paymentAttemptedAt = now();

@@ -6,6 +6,7 @@ import PublicReviews from "../../features/reviews/PublicReviews";
 import VerifiedRating from "../../features/reviews/VerifiedRating";
 import ServiceCard from "../../components/marketplace/ServiceCard";
 import Reviews from "../../components/marketplace/Reviews";
+import ReportAccountButton from "../../features/account/ReportAccountButton";
 import NotFound from "../../components/marketplace/NotFound";
 import "./marketplace.css";
 
@@ -48,15 +49,29 @@ export default function CreatorProfilePage() {
             </p>
           </div>
         </section>
-        <p className="market-profile-bio">{creator.bio}</p>
-        {creator.publicLocation?.area && (
-          <p>Wilayah layanan publik: {creator.publicLocation.area}</p>
-        )}
-        <ul className="market-skills">
-          {creator.skills.map((skill) => (
-            <li key={skill}>{skill}</li>
-          ))}
-        </ul>
+       <p className="market-profile-bio">{creator.bio}</p>
+
+{creator.publicLocation?.area && (
+  <p className="market-profile-location">
+    Wilayah layanan publik: {creator.publicLocation.area}
+  </p>
+)}
+
+<ul className="market-skills">
+  {creator.skills.map((skill) => (
+    <li key={skill}>{skill}</li>
+  ))}
+</ul>
+
+{/* Report Account di bawah informasi profil Seller */}
+<div className="market-profile-report">
+  <p>Menemukan sesuatu yang mencurigakan?</p>
+
+  <ReportAccountButton
+    targetSellerProfileId={creator.id}
+    label="Laporkan Akun Seller"
+  />
+</div>
         <section className="market-section" aria-labelledby="creator-services">
           <div className="market-section-head">
             <div>

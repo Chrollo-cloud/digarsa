@@ -74,7 +74,7 @@
 }
 .personal-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 19px;
   margin: 25px 0;
   padding: 0;
@@ -601,54 +601,34 @@
   }
 }
 
-/* Gender select - Personal Information */
-.personal-gender-field .personal-gender-control {
-  box-sizing: border-box;
-  width: 70%;
+/* Gender select alignment */
+.personal-gender-field {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  width: 100%;
   min-width: 0;
-  height: 40px;
-  min-height: 40px;
   margin: 0;
-  padding: 0 30px 0 10px;
-  font-size: 11px;
+  gap: 6px;
 }
 
 .personal-gender-field > label {
   display: block;
   margin: 0;
-  color: #42495a;
-  font-size: 11px;
-  font-weight: 600;
   line-height: 1.5;
 }
 
-.personal-gender-field .personal-gender-control {
-  display: block;
+.personal-gender-field select {
   box-sizing: border-box;
+  display: block;
   width: 100%;
-  min-width: 0;
   height: 46px;
   min-height: 46px;
   margin: 0;
-  padding: 0 36px 0 12px;
+  padding: 0 12px;
   border: 1px solid #d9dce0;
   border-radius: 4px;
-  background-color: #fff;
+  background: white;
   color: #42495a;
-  font-family: inherit;
   font-size: 12px;
-  line-height: normal;
-  cursor: pointer;
-}
-
-.personal-gender-field .personal-gender-control:focus {
-  outline: none;
-  border-color: var(--color-blue);
-  box-shadow: 0 0 0 3px rgba(40, 123, 152, 0.12);
-}
-
-@media (max-width: 620px) {
-  .personal-gender-field {
-    width: 100%;
-  }
 }

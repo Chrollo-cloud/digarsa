@@ -226,20 +226,24 @@ function removeAvatar() {
             onChange={edit}
             autoComplete="bday"
           />
-          <label className="field">
-            Jenis kelamin (opsional)
-            <select
-              className="field__control"
-              name="gender"
-              value={values.gender}
-              onChange={edit}
-            >
-              <option value="">Pilih jenis kelamin</option>
-              <option>Perempuan</option>
-              <option>Laki-laki</option>
-              <option>Tidak ingin menyebutkan</option>
-            </select>
-          </label>
+          <div className="field personal-gender-field">
+  <label htmlFor="profile-gender">
+    Jenis kelamin (opsional)
+  </label>
+
+  <select
+    id="profile-gender"
+    className="field__control"
+    name="gender"
+    value={values.gender}
+    onChange={edit}
+  >
+    <option value="">Pilih jenis kelamin</option>
+    <option>Perempuan</option>
+    <option>Laki-laki</option>
+    <option>Tidak ingin menyebutkan</option>
+  </select>
+</div>
           <div className="field personal-avatar-upload">
   <label htmlFor="profile-avatar-file">
     Upload foto profil (opsional)
