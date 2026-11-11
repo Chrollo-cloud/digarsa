@@ -74,6 +74,34 @@ test("registration validates name, email, password and login rejects bad credent
   assert.equal(user.email, "demo@example.com");
 });
 
+test("development password reset requires a verified short-lived OTP and rotates only the selected account password", async () => {
+  const { store, storage } = setup();
+  const accountUser = await store.register(account());
+  const db = JSON.parse(storage.getItem(ACCOUNT_KEY));
+  db.accounts[0].permissions = [ADMIN_PERMISSION];
+  storage.setItem(ACCOUNT_KEY, JSON.stringify(db));
+  store.logout();
+  const challenge = store.requestPasswordReset(" DEMO@example.com ");
+  assert.match(challenge.code, /^\d{4}$/);
+  assert.throws(() => store.verifyPasswordResetCode(challenge.challengeId, accountUser.email, "0000" === challenge.code ? "9999" : "0000"), /OTP salah/);
+  await assert.rejects(store.completePasswordReset(challenge.challengeId, accountUser.email, "New-password-456", "New-password-456"), /Verifikasi code|Verifikasi kode/);
+  assert.equal(Object.hasOwn(JSON.parse(storage.getItem(ACCOUNT_KEY)).accounts[0], "resetCode"), false);
+  assert.equal(store.verifyPasswordResetCode(challenge.challengeId, accountUser.email, challenge.code), true);
+  await assert.rejects(store.completePasswordReset(challenge.challengeId, accountUser.email, "short", "short"), /8–128/);
+  await store.completePasswordReset(challenge.challengeId, accountUser.email, "New-password-456", "New-password-456");
+  await assert.rejects(store.login(accountUser.email, account().password), /tidak cocok/);
+  const restored = await store.login(accountUser.email, "New-password-456");
+  assert.equal(restored.id, accountUser.id);
+  assert.deepEqual(restored.permissions, [ADMIN_PERMISSION]);
+});
+
+test("password reset local OTP is unavailable when the demo store is production-configured", async () => {
+  const { storage } = setup();
+  const productionStore = createDemoStore(storage, webcrypto, false);
+  await productionStore.register(account());
+  assert.throws(() => productionStore.requestPasswordReset("demo@example.com"), /backend/);
+});
+
 test("sessions persist across store instances and logout clears only the session", async () => {
   const { store, storage } = setup();
   const user = await store.register(account());

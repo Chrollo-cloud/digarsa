@@ -129,10 +129,7 @@ reuses the unchanged /cart store and individual booking links (no migration/paym
 2. Run `npm run dev -- --host 127.0.0.1` from frontend. Open
    `http://127.0.0.1:5173/__demo/admin` (use Vite's actual port).
 3. Explicitly create the dedicated srikandi@gmail.com demo account, or choose login
-   if it already exists. Existing credentials are never overwritten. A wrong
-   password fails normally. The password is read by the dev server only, sent over
-   loopback only after your explicit same-origin setup action, and used by the
-   existing demoStore register/login methods; it is never a client env constant.
+   if it already exists. Login uses the password configured in the ignored local environment file; this does not grant Admin permission.
 4. Inspect the shown account ID/email, type that exact ID, then explicitly activate
    Admin. Email selects this setup's dedicated account, never grants permission.
    The existing localhost development provisioner verifies the signed-in ID before

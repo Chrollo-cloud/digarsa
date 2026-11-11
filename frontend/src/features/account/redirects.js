@@ -1,5 +1,5 @@
 const destinations = [
-  /^\/(?:dashboard|profile|settings|saved|favorites|cart|orders|reviews|messages|notifications|become-a-creator|nearby|marketplace|about|how-it-works)?\/?$/,
+  /^\/(?:dashboard|profile|settings|saved|favorites|cart|booking|orders|reviews|messages|notifications|become-a-creator|nearby|marketplace|about|how-it-works)?\/?$/,
   /^\/review\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/messages\/[a-zA-Z0-9][a-zA-Z0-9_-]*\/?$/,
   /^\/(?:service|seller|booking|orders)\/[a-zA-Z0-9][a-zA-Z0-9-]*\/?$/,

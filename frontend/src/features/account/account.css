@@ -238,3 +238,357 @@
     border-radius: 14px;
   }
 }
+
+.account-forgot-password {
+  justify-self: end;
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   PASSWORD RESET — DIGARSA DESIGN SYSTEM
+========================================= */
+
+.password-reset-page {
+  min-height: min(820px, calc(100svh - var(--nav-height)));
+  background: var(--color-paper);
+  place-items: center;
+  padding: clamp(24px, 4vw, 48px);
+  gap: clamp(24px, 4vw, 48px);
+}
+
+/* Editorial panel */
+.password-reset-page .account-editorial {
+  background: var(--color-indigo);
+  color: var(--color-paper);
+}
+
+.password-reset-page .account-editorial .account-kicker {
+  color: var(--color-aqua);
+}
+
+.password-reset-page .account-editorial h1 {
+  color: var(--color-paper);
+}
+
+.password-reset-page .account-editorial em {
+  color: var(--color-aqua);
+}
+
+.password-reset-page .account-editorial p {
+  color: rgba(242, 242, 237, 0.78);
+}
+
+.password-reset-page .account-editorial::after {
+  border-color: rgba(124, 213, 199, 0.25);
+}
+
+/* Main reset card */
+.password-reset-card {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100% - 36px, 470px);
+  min-height: 560px;
+  padding: 64px clamp(24px, 5vw, 42px) 32px;
+  margin: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--color-indigo);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  box-shadow: 0 18px 50px rgba(35, 41, 70, 0.07);
+}
+
+/* Back link */
+.password-reset-back {
+  position: absolute;
+  top: 25px;
+  left: 28px;
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.password-reset-back:hover {
+  color: var(--color-indigo);
+}
+
+/* Step icon */
+.password-reset-icon {
+  width: 68px;
+  height: 68px;
+  margin: 12px auto 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e7f5f2;
+  color: var(--color-blue);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* Progress indicator */
+.password-reset-progress {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 30px;
+}
+
+.password-reset-progress span {
+  width: 18px;
+  height: 4px;
+  border-radius: 5px;
+  background: #e0e3e8;
+  transition: background 0.2s ease;
+}
+
+.password-reset-progress .is-current {
+  background: var(--color-blue);
+}
+
+/* Heading */
+.password-reset-card > .account-kicker {
+  text-align: center;
+  color: var(--color-blue);
+}
+
+.password-reset-card > h1 {
+  margin: 9px 0;
+  color: var(--color-indigo);
+  font: 700 27px/1.2 var(--font-display);
+  letter-spacing: -0.04em;
+  text-align: center;
+}
+
+.password-reset-subtitle {
+  min-height: 38px;
+  margin: 8px 0 12px;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Forms */
+.password-reset-card form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.password-reset-card .field {
+  color: var(--color-indigo);
+  font-size: 12px;
+}
+
+.password-reset-card .field__control,
+.password-reset-card .account-password {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--color-indigo);
+}
+
+.password-reset-card .field__control {
+  min-height: 46px;
+  font-size: 12px;
+}
+
+.password-reset-card .field__control:focus,
+.password-reset-card .account-password:focus-within {
+  border-color: var(--color-blue);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(21, 155, 197, 0.12);
+}
+
+/* Password input */
+.password-reset-card .account-password {
+  display: flex;
+  overflow: hidden;
+}
+
+.password-reset-card .account-password input {
+  border: 0;
+  background: transparent;
+  min-width: 0;
+}
+
+.password-reset-card .account-password button {
+  color: var(--color-indigo);
+}
+
+/* Primary actions */
+.password-reset-card .button {
+  justify-content: center;
+  min-height: 48px;
+  border: 1px solid var(--color-indigo);
+  border-radius: 5px;
+  background: var(--color-indigo);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.password-reset-card .button:hover:not(:disabled) {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+}
+
+.password-reset-card .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* OTP inputs */
+.password-reset-otp {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.password-reset-otp input {
+  box-sizing: border-box;
+  width: 48px;
+  height: 52px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-paper);
+  color: var(--color-indigo);
+  font: 700 22px var(--font-display);
+  text-align: center;
+  outline: none;
+}
+
+.password-reset-otp input:focus {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 3px rgba(21, 155, 197, 0.12);
+}
+
+/* Resend code */
+.password-reset-resend {
+  color: var(--color-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.password-reset-resend button {
+  border: 0;
+  background: transparent;
+  color: var(--color-blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.password-reset-resend button:hover {
+  color: var(--color-indigo);
+}
+
+/* Development OTP notice */
+.password-reset-demo-code {
+  padding: 12px;
+  border: 1px solid #d7ebe7;
+  border-radius: 6px;
+  background: #e7f5f2;
+  color: var(--color-indigo);
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Success state */
+.password-reset-success {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.password-reset-success > strong {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--color-aqua);
+  color: var(--color-indigo);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+}
+
+.password-reset-success p {
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Feedback */
+.password-reset-card .account-feedback {
+  margin-top: 16px;
+  border-radius: 5px;
+  background: #e7f5f2;
+  color: var(--color-indigo);
+}
+
+.password-reset-card .account-feedback.is-error {
+  background: #fff0ed;
+  color: #9b3a2a;
+}
+
+/* Disclaimer */
+.password-reset-disclaimer {
+  margin: auto 0 0;
+  padding-top: 24px;
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 780px) {
+  .password-reset-page {
+    min-height: calc(100svh - var(--nav-height));
+    padding: 28px 16px;
+  }
+
+  .password-reset-card {
+    width: min(100%, 470px);
+    min-height: 560px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .password-reset-card {
+    min-height: 530px;
+    padding: 62px 22px 26px;
+  }
+
+  .password-reset-back {
+    left: 22px;
+  }
+
+  .password-reset-otp {
+    gap: 8px;
+  }
+
+  .password-reset-otp input {
+    width: 44px;
+    height: 48px;
+  }
+
+  .password-reset-card > h1 {
+    font-size: 24px;
+  }
+}

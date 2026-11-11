@@ -4,6 +4,100 @@ import { useAuth } from "../account/authContext";
 import { validateProfilePatch } from "../account/profileValidation";
 import Avatar from "./Avatar";
 
+const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_AVATAR_BLOB_SIZE = 180 * 1024;
+const MAX_AVATAR_DATA_URL_LENGTH = 250_000;
+
+async function compressAvatar(file) {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Gunakan gambar JPG, PNG, atau WEBP.");
+  }
+
+  if (file.size > MAX_AVATAR_FILE_SIZE) {
+    throw new Error("Ukuran gambar maksimal 5 MB.");
+  }
+
+  let bitmap;
+
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("File gambar tidak dapat dibaca.");
+  }
+
+  try {
+    if (bitmap.width * bitmap.height > 20_000_000) {
+      throw new Error("Resolusi gambar terlalu besar.");
+    }
+
+    const scale = Math.min(
+      1,
+      512 / Math.max(bitmap.width, bitmap.height),
+    );
+
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Gagal memproses gambar.");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+
+    let blob = null;
+
+    for (const quality of [0.82, 0.72, 0.62]) {
+      blob = await new Promise((resolve) => {
+        canvas.toBlob(resolve, "image/jpeg", quality);
+      });
+
+      if (blob && blob.size <= MAX_AVATAR_BLOB_SIZE) break;
+    }
+
+    if (!blob || blob.size > MAX_AVATAR_BLOB_SIZE) {
+      throw new Error(
+        "Foto masih terlalu besar setelah dikompres. Pilih gambar lain.",
+      );
+    }
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Gagal membaca hasil gambar."));
+        }
+      };
+
+      reader.onerror = () => reject(
+        new Error("Gagal membaca file gambar."),
+      );
+
+      reader.readAsDataURL(blob);
+    });
+
+    if (dataUrl.length > MAX_AVATAR_DATA_URL_LENGTH) {
+      throw new Error("Ukuran foto hasil kompresi masih terlalu besar.");
+    }
+
+    return dataUrl;
+  } finally {
+    bitmap.close?.();
+  }
+}
+
 const fieldsFor = (user) => ({
   name: user.name,
   avatarUrl: user.avatarUrl,
@@ -18,6 +112,7 @@ export default function PersonalInfoForm({ user }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const dialog = useRef(null);
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   function edit(event) {
     setValues((previous) => ({
       ...previous,
@@ -26,6 +121,42 @@ export default function PersonalInfoForm({ user }) {
     setError("");
     setSuccess("");
   }
+
+  async function selectAvatar(event) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+
+  input.value = "";
+
+  if (!file) return;
+
+  setError("");
+  setSuccess("");
+  setIsProcessingAvatar(true);
+
+  try {
+    const avatarUrl = await compressAvatar(file);
+
+    setValues((previous) => ({
+      ...previous,
+      avatarUrl,
+    }));
+  } catch (failure) {
+    setError(failure.message);
+  } finally {
+    setIsProcessingAvatar(false);
+  }
+}
+
+function removeAvatar() {
+  setValues((previous) => ({
+    ...previous,
+    avatarUrl: "",
+  }));
+
+  setError("");
+  setSuccess("");
+}
   function review(event) {
     event.preventDefault();
     setSuccess("");
@@ -52,7 +183,7 @@ export default function PersonalInfoForm({ user }) {
   return (
     <section className="personal-card">
       <div className="personal-card-heading">
-        <Avatar user={user} />
+        <Avatar user={{ ...user, avatarUrl: values.avatarUrl }} />
         <div>
           <span className="market-kicker">PROFIL AKUN</span>
           <h2>Data diri</h2>
@@ -109,15 +240,46 @@ export default function PersonalInfoForm({ user }) {
               <option>Tidak ingin menyebutkan</option>
             </select>
           </label>
-          <Input
-            label="URL foto profil (opsional)"
-            name="avatarUrl"
-            type="url"
-            value={values.avatarUrl}
-            onChange={edit}
-            maxLength={2048}
-            hint="URL http/https. Kosongkan untuk memakai inisial. Foto dimuat setelah disimpan."
-          />
+          <div className="field personal-avatar-upload">
+  <label htmlFor="profile-avatar-file">
+    Upload foto profil (opsional)
+  </label>
+
+  <input
+    id="profile-avatar-file"
+    className="field__control"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    onChange={selectAvatar}
+    disabled={isProcessingAvatar}
+    aria-describedby="profile-avatar-hint"
+  />
+
+  <span
+    id="profile-avatar-hint"
+    className="field__hint"
+  >
+    JPG, PNG, atau WEBP. Maksimal 5 MB. Foto akan dikompres
+    sebelum disimpan.
+  </span>
+
+  {isProcessingAvatar && (
+    <span className="personal-field-note" role="status">
+      Sedang memproses foto...
+    </span>
+  )}
+
+  {values.avatarUrl && (
+    <button
+      type="button"
+      className="button button--secondary"
+      onClick={removeAvatar}
+      disabled={isProcessingAvatar}
+    >
+      Hapus foto
+    </button>
+  )}
+</div>
         </div>
         {error && (
           <p className="personal-feedback is-error" role="alert">
@@ -131,9 +293,13 @@ export default function PersonalInfoForm({ user }) {
         )}
         <div className="personal-form-actions">
           <p>Pastikan data diri kamu sudah benar.</p>
-          <button type="submit" className="button button--primary">
-            Simpan Data Diri ↗
-          </button>
+         <button
+          type="submit"
+          className="button button--primary"
+          disabled={isProcessingAvatar}
+        >
+          Simpan Data Diri
+        </button>
         </div>
       </form>
       <dialog

@@ -25,22 +25,73 @@ function text(value, name, min, max) {
     throw new Error(`${name} harus ${min}–${max} karakter.`);
   return result;
 }
+
+
 function optionalUrl(value, name) {
-  if (!value?.trim()) return "";
+  if (value == null || value === "") return "";
+
+  if (typeof value !== "string") {
+    throw new Error(`${name} tidak valid.`);
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) return "";
+
   try {
-    const url = new URL(value.trim());
+    const url = new URL(normalized);
+
     if (
       !["http:", "https:"].includes(url.protocol) ||
       url.username ||
       url.password ||
       url.href.length > 2048
-    )
+    ) {
       throw new Error();
+    }
+
     return url.href;
   } catch {
-    throw new Error(`${name} harus URL http atau https yang valid.`);
+    throw new Error(
+      `${name} harus URL http atau https yang valid.`,
+    );
   }
 }
+
+
+
+function optionalProfileImage(value, name) {
+  // Foto profil bersifat opsional.
+  if (value == null || value === "") return "";
+
+  if (typeof value !== "string") {
+    throw new Error(`${name} tidak valid.`);
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) return "";
+
+  // Compressed JPEG produced by the local image upload form.
+  if (normalized.startsWith("data:")) {
+    const validJpeg =
+      /^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]+={0,2}$/.test(
+        normalized,
+      );
+
+    if (!validJpeg || normalized.length > 250_000) {
+      throw new Error(
+        `${name} harus berupa gambar JPEG yang valid dan maksimal 180 KB setelah kompresi.`,
+      );
+    }
+
+    return normalized;
+  }
+
+  // Preserve support for existing HTTP/HTTPS image URLs.
+  return optionalUrl(normalized, name);
+}
+
 const hasAdmin = (account) => account?.permissions?.includes(ADMIN_PERMISSION);
 const hex = (buffer) =>
   Array.from(new Uint8Array(buffer), (byte) =>
@@ -49,8 +100,13 @@ const hex = (buffer) =>
 
 // Demo-only credential verification. Browser storage and permissions can be altered
 // by the device owner; this is NOT a server-authenticated security boundary.
-export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
+export function createDemoStore(
+  storage,
+  cryptoApi = globalThis.crypto,
+  allowDemoPasswordReset = true,
+) {
   const listeners = new Set();
+  const passwordResetChallenges = new Map();
   function read() {
     let raw;
     try {
@@ -226,6 +282,64 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       write(db);
       return publicUser(db, latest);
     },
+    requestPasswordReset(emailInput) {
+      if (!allowDemoPasswordReset)
+        throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      if (!emailPattern.test(email)) throw new Error("Masukkan email yang valid.");
+      const account = read().accounts.find((item) => item.email === email);
+      if (!account) throw new Error("Email tidak ditemukan.");
+      const challengeId = cryptoApi.randomUUID();
+      const code = String(cryptoApi.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, "0");
+      const expiresAt = Date.now() + 5 * 60 * 1000;
+      passwordResetChallenges.set(challengeId, {
+        email, code, expiresAt, verified: false, attempts: 0,
+        accountId: account.id, passwordVerifier: account.passwordVerifier,
+      });
+      return { challengeId, code, expiresAt };
+    },
+    verifyPasswordResetCode(challengeId, emailInput, code) {
+      if (!allowDemoPasswordReset) throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      const challenge = passwordResetChallenges.get(challengeId);
+      if (!challenge || challenge.email !== email) throw new Error("Kode verifikasi tidak valid.");
+      if (Date.now() > challenge.expiresAt) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Kode verifikasi sudah kedaluwarsa. Kirim kode baru.");
+      }
+      if (challenge.attempts >= 5) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Terlalu banyak percobaan. Kirim kode baru.");
+      }
+      challenge.attempts += 1;
+      if (typeof code !== "string" || code !== challenge.code)
+        throw new Error("Kode OTP salah.");
+      challenge.verified = true;
+      return true;
+    },
+    async completePasswordReset(challengeId, emailInput, newPassword, confirmation) {
+      if (!allowDemoPasswordReset) throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      const challenge = passwordResetChallenges.get(challengeId);
+      if (!challenge || challenge.email !== email || !challenge.verified)
+        throw new Error("Verifikasi kode terlebih dahulu.");
+      if (Date.now() > challenge.expiresAt) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Kode verifikasi sudah kedaluwarsa. Mulai kembali.");
+      }
+      validateNewPassword(newPassword, confirmation);
+      const salt = hex(cryptoApi.getRandomValues(new Uint8Array(16)));
+      const passwordVerifier = await verifier(newPassword, salt);
+      const db = read();
+      const account = db.accounts.find((item) => item.id === challenge.accountId && item.email === email);
+      if (!account || account.passwordVerifier !== challenge.passwordVerifier)
+        throw new Error("Data akun berubah. Mulai ulang reset password.");
+      account.salt = salt;
+      account.passwordVerifier = passwordVerifier;
+      write(db);
+      passwordResetChallenges.delete(challengeId);
+      return true;
+    },
     updateProfile(input, { expectedUserId } = {}) {
       const db = read();
       const account = accountForSession(db);
@@ -325,39 +439,50 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       write(db);
     },
     activateSeller(input) {
-      const db = read();
-      const account = accountForSession(db);
-      if (!account)
-        throw new Error("Masuk sebelum mengaktifkan Seller Profile.");
-      if (
-        account.sellerProfileId ||
-        db.profiles.some((profile) => profile.ownerUserId === account.id)
-      )
-        throw new Error("Seller Profile sudah diaktifkan.");
-      if (!sellerCategories.includes(input.category))
-        throw new Error("Pilih kategori layanan yang tersedia.");
-      const profile = {
-        id: `creator-${cryptoApi.randomUUID()}`,
-        ownerUserId: account.id,
-        ...(Object.hasOwn(input, "publicLocation")
-          ? { publicLocation: validatePublicLocation(input.publicLocation) }
-          : {}),
-        name: text(input.name, "Nama kreator", 2, 80),
-        category: input.category,
-        city: text(input.city, "Kota", 2, 80),
-        bio: text(input.bio, "Bio", 30, 500),
-        image: optionalUrl(input.image, "Foto profil"),
-        portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
-        specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
-      };
-      db.profiles.push(profile);
-      account.sellerProfileId = profile.id;
-      write(db);
-      return profile;
-    },
+  const db = read();
+  const account = accountForSession(db);
+
+  if (!account)
+    throw new Error("Masuk sebelum mengaktifkan Seller Profile.");
+
+  if (
+    account.sellerProfileId ||
+    db.profiles.some((profile) => profile.ownerUserId === account.id)
+  )
+    throw new Error("Seller Profile sudah diaktifkan.");
+
+  if (!sellerCategories.includes(input.category))
+    throw new Error("Pilih kategori layanan yang tersedia.");
+
+  const profile = {
+    id: `creator-${cryptoApi.randomUUID()}`,
+    ownerUserId: account.id,
+
+    ...(Object.hasOwn(input, "publicLocation")
+      ? { publicLocation: validatePublicLocation(input.publicLocation) }
+      : {}),
+
+    name: text(input.name, "Nama kreator", 2, 80),
+    category: input.category,
+    city: text(input.city, "Kota", 2, 80),
+    bio: text(input.bio, "Bio", 30, 500),
+
+    image: optionalProfileImage(input.image, "Foto profil"),
+
+    portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
+
+    specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+
+  db.profiles.push(profile);
+  account.sellerProfileId = profile.id;
+
+  write(db);
+  return profile;
+},
     getOwnedSeller(profileId) {
       const db = read();
       const profile = ownedProfile(db, accountForSession(db));
@@ -368,32 +493,50 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     // --- Phase 7 additions (Seller Center / Admin). Additive only. ---
     // Owner edits their own Seller Profile. Owner and ID never come from input.
     updateSellerProfile(input) {
-      const db = read();
-      const account = accountForSession(db);
-      if (!account) throw new Error("Masuk sebelum mengubah Seller Profile.");
-      const profile = ownedProfile(db, account);
-      if (!profile) throw new Error("Akun ini belum memiliki Seller Profile.");
-      if (!sellerCategories.includes(input.category))
-        throw new Error("Pilih kategori layanan yang tersedia.");
-      const next = {
-        ...(Object.hasOwn(input, "publicLocation")
-          ? { publicLocation: validatePublicLocation(input.publicLocation) }
-          : {}),
-        name: text(input.name, "Nama kreator", 2, 80),
-        category: input.category,
-        city: text(input.city, "Kota", 2, 80),
-        bio: text(input.bio, "Bio", 30, 500),
-        image: optionalUrl(input.image, "Foto profil"),
-        portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
-        specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
-      };
-      Object.assign(profile, next);
-      write(db);
-      return { ...profile, specialties: [...profile.specialties] };
-    },
+  const db = read();
+  const account = accountForSession(db);
+
+  if (!account)
+    throw new Error("Masuk sebelum mengubah Seller Profile.");
+
+  const profile = ownedProfile(db, account);
+
+  if (!profile)
+    throw new Error("Akun ini belum memiliki Seller Profile.");
+
+  if (!sellerCategories.includes(input.category))
+    throw new Error("Pilih kategori layanan yang tersedia.");
+
+  const next = {
+    ...(Object.hasOwn(input, "publicLocation")
+      ? { publicLocation: validatePublicLocation(input.publicLocation) }
+      : {}),
+
+    name: text(input.name, "Nama kreator", 2, 80),
+    category: input.category,
+    city: text(input.city, "Kota", 2, 80),
+    bio: text(input.bio, "Bio", 30, 500),
+
+    // Perbaikan utama:
+    image: optionalProfileImage(input.image, "Foto profil"),
+
+    portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
+
+    specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+
+  Object.assign(profile, next);
+
+  write(db);
+
+  return {
+    ...profile,
+    specialties: [...profile.specialties],
+  };
+},
     // Seller profiles are public marketplace data (no credentials involved).
     listSellerProfiles() {
       return read().profiles.map((profile) => ({
@@ -524,4 +667,4 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
 export const demoStore = createDemoStore({
   getItem: (key) => window.localStorage.getItem(key),
   setItem: (key, value) => window.localStorage.setItem(key, value),
-});
+}, globalThis.crypto, import.meta.env?.DEV === true);

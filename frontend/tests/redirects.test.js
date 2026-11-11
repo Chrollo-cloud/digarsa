@@ -25,6 +25,7 @@ test("valid nested seller/admin routes preserve pathname, query, and hash", () =
     "/settings",
     "/favorites",
     "/cart",
+    "/booking",
     "/booking/identity",
     "/orders/booking-a1",
     "/become-a-creator",
@@ -78,6 +79,7 @@ test("status copy keeps acceptance distinct from payment and completion", () => 
     "Requested",
     "Accepted",
     "Paid",
+    "In Progress",
     "Completed",
   ]);
   assert.match(bookingStatusDescription("Accepted"), /Belum dibayar/);

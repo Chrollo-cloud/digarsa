@@ -27,6 +27,7 @@ test('all customer destinations remain valid; Seller shortcut stays in navbar an
   const user = { capabilities: ['buyer'], permissions: [] };
   const links = accountLinks(user);
   assert.deepEqual(links.map(([to]) => to), ['/dashboard','/profile','/settings','/favorites','/cart','/orders','/reviews','/messages','/notifications']);
+  assert.deepEqual(links.find(([to]) => to === "/orders"), ["/orders", "Booking Saya"]);
   for (const [to] of links) assert.equal(safeReturnTo(to), to);
   assert.equal(accountLinks({...user, email:'admin@example.test',sellerProfileId:'unverified'}).length, 9);
   const seller = {...user, capabilities:['buyer','seller'],sellerProfileId:'owned-profile'};
