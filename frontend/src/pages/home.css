@@ -508,25 +508,66 @@
   justify-content: space-between;
   font-size: 12px;
 }
+
+/* Flip controls are attached to each card face */
+.creator-card {
+  border-radius: 5px;
+}
+
+.creator-card__face {
+  border-radius: inherit;
+}
+
 .creator-card__toggle {
   position: absolute;
-  z-index: 2;
-  top: 12px;
-  right: 12px;
-  max-width: calc(100% - 24px);
-  padding: 8px 10px;
-  background: var(--color-card-back);
+  z-index: 3;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  min-height: 50px;
+  padding: 0 20px;
+  border: 0;
+  border-top: 1px solid rgba(124, 213, 199, 0.4);
+  border-radius: 0;
+  background: rgba(48, 57, 95, 0.96);
   color: var(--color-aqua);
-  border: 1px solid rgba(124, 213, 199, 0.62);
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
-.creator-card:not(.is-flipped) .creator-card__toggle {
-  top: auto;
-  bottom: 12px;
+
+.creator-card__toggle:hover {
+  background: var(--color-navy);
 }
-.creator-card:not(.is-flipped) .creator-card__front-copy {
-  bottom: 58px;
+
+.creator-card__toggle span:last-child {
+  font-size: 17px;
 }
+
+.creator-card__front .creator-card__toggle {
+  background: rgba(48, 57, 95, 0.96);
+}
+
+.creator-card__back .creator-card__toggle {
+  background: var(--color-navy);
+}
+
+.creator-card:not(.is-flipped) .creator-card__front .creator-card__front-copy {
+  bottom: 72px;
+}
+
+.creator-card__back {
+  padding: 24px 22px 74px;
+  border: 1px solid rgba(124, 213, 199, 0.38);
+  border-radius: inherit;
+}
+
 .home-creators :focus-visible {
   outline-color: var(--color-aqua);
 }
@@ -666,7 +707,7 @@
     height: 390px;
   }
   .creator-card__back {
-    padding: 58px 12px 14px;
+  padding: 24px 12px 68px;
   }
   .creator-card h3 {
     font-size: 21px;

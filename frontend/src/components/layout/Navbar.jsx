@@ -114,8 +114,8 @@ export default function Navbar() {
               }
               onClick={close}
             >
-              {user?.sellerProfileId ? "Seller Center" : "Jadi Kreator"}{" "}
-              <span aria-hidden="true">↗</span>
+              {user?.sellerProfileId ? "Seller Center" : "Jadi Kreator"}
+              {user?.sellerProfileId && <span aria-hidden="true">↗</span>}
             </Button>
           </div>
         </div>
