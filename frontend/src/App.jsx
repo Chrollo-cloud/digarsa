@@ -8,6 +8,7 @@ import ServiceDetailPage from "./pages/marketplace/ServiceDetailPage";
 import CreatorProfilePage from "./pages/marketplace/CreatorProfilePage";
 import AuthProvider from "./features/account/AuthProvider";
 import AuthPage from "./features/account/AuthPage";
+import PasswordResetPage from "./features/account/PasswordResetPage";
 import OnboardingPage from "./features/account/OnboardingPage";
 import {
   RequireAccount,
@@ -20,6 +21,8 @@ import CartPage from "./features/customer/CartPage";
 import BookingRequestPage from "./features/customer/BookingRequestPage";
 import OrdersPage from "./features/customer/OrdersPage";
 import BookingDetailPage from "./features/customer/BookingDetailPage";
+import CheckoutPage from "./features/customer/CheckoutPage";
+import PaymentSummaryPage from "./features/customer/PaymentSummaryPage";
 import ProfilePage from "./features/profile/ProfilePage";
 import SettingsPage from "./features/profile/SettingsPage";
 import "./features/seller/sellerClient"; // publishes seller services into the shared catalog
@@ -69,6 +72,7 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
             <Route path="/login" element={<AuthPage key="login" />} />
+            <Route path="/reset-password" element={<PasswordResetPage />} />
             <Route
               path="/register"
               element={<AuthPage key="register" register />}
@@ -84,6 +88,8 @@ export default function App() {
               />
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/booking" element={<Navigate to="/orders" replace />} />
               <Route
                 path="/booking/:serviceId"
                 element={<BookingRequestPage />}
@@ -91,6 +97,10 @@ export default function App() {
               <Route
                 path="/orders/:bookingId"
                 element={<BookingDetailPage />}
+              />
+              <Route
+                path="/orders/:bookingId/payment"
+                element={<PaymentSummaryPage />}
               />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/reviews" element={<ReviewsPage />} />

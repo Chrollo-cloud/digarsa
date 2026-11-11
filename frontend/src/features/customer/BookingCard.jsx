@@ -28,6 +28,7 @@ export default function BookingCard({ booking }) {
         <strong><small>Estimasi mulai dari</small>{money(booking.estimatedPrice)}</strong>
         <Link to={`/orders/${booking.id}`}>Lihat detail →</Link>
       </footer>
+      <small className="customer-payment-status">Pembayaran: {booking.paymentStatus || (booking.status === "Paid" || booking.status === "Completed" ? "Paid" : "Unpaid")}</small>
     </article>
   );
 }

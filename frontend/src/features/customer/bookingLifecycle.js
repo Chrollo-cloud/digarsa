@@ -1,14 +1,15 @@
-export const bookingLifecycle = ["Requested", "Accepted", "Paid", "Completed"];
+export const bookingLifecycle = ["Requested", "Accepted", "Paid", "In Progress", "Completed"];
 export function bookingStatusDescription(status) {
   return (
     {
       Requested:
         "Menunggu tinjauan kreator. Permintaan belum diterima dan belum ada pembayaran.",
       Accepted:
-        "Permintaan diterima. Belum dibayar dan belum dapat ditandai selesai. Checkout belum tersedia; status tetap Accepted sampai ada pembayaran yang sah.",
-      Paid: "Status Paid tercatat pada data booking. Hanya kreator pemilik pesanan yang dapat menandai pekerjaan selesai. Demo ini tidak menyediakan aksi pembayaran.",
+        "Seller menerima permintaan. Belum dibayar; status tetap Accepted sampai pembayaran berhasil. Kamu dapat membuka ringkasan pembayaran untuk melanjutkan.",
+      Paid: "Pembayaran simulasi berhasil. Hanya kreator pemilik yang dapat memulai pengerjaan pesanan.",
+      "In Progress": "Seller sedang mengerjakan pesanan.",
       Completed:
-        "Pekerjaan ditandai selesai pada data booking. Halaman ini tidak memproses pembayaran atau memverifikasi riwayat pembayaran lama.",
+        "Seller menandai pekerjaan selesai. Kamu dapat memberikan review terverifikasi.",
       Declined:
         "Permintaan ditolak oleh kreator. Alur booking berhenti; tidak ada pembayaran otomatis.",
       Cancelled:

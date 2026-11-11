@@ -23,6 +23,11 @@ const copy = {
     body: "Pelanggan akan melihat status Declined. Alur booking berhenti dan tidak bisa dibuka lagi.",
     confirm: "Ya, tolak permintaan",
   },
+  start: {
+    title: "Mulai pengerjaan?",
+    body: "Status akan berubah menjadi In Progress. Pembayaran simulasi berhasil tercatat pada booking yang sama.",
+    confirm: "Ya, mulai pengerjaan",
+  },
   complete: {
     title: "Tandai pekerjaan selesai?",
     body: "Pelanggan akan melihat status Completed. Pastikan hasil kerja sudah diserahkan.",
@@ -53,7 +58,10 @@ export default function SellerOrderDetailPage() {
 
   const terminal = ["Declined", "Cancelled"].includes(booking.status);
   const available = Object.entries(sellerActions)
-    .filter(([, rule]) => rule.from.includes(booking.status))
+    .filter(([key, rule]) =>
+      rule.from.includes(booking.status) &&
+      !(booking.status === "Paid" && key === "complete")
+    )
     .map(([key]) => key);
 
   function submit() {
@@ -125,6 +133,14 @@ export default function SellerOrderDetailPage() {
               <dd>{money(booking.estimatedPrice)}</dd>
             </div>
             <div>
+              <dt>Harga final</dt>
+              <dd>{money(booking.finalPrice ?? booking.estimatedPrice)}</dd>
+            </div>
+            <div>
+              <dt>Status pembayaran</dt>
+              <dd>{booking.paymentStatus || (booking.status === "Paid" || booking.status === "Completed" ? "Paid" : "Unpaid")}</dd>
+            </div>
+            <div>
               <dt>Mode pengerjaan</dt>
               <dd>{booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}</dd>
             </div>
@@ -175,6 +191,7 @@ export default function SellerOrderDetailPage() {
                 >
                   {key === "accept" && "Terima"}
                   {key === "decline" && "Tolak"}
+                  {key === "start" && "Mulai pengerjaan"}
                   {key === "complete" && "Tandai selesai"}
                 </button>
               ))}

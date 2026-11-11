@@ -155,6 +155,55 @@ test("cart is isolated, persists full-book entries, and has no quantity or combi
   assert.equal(s.store.checkout, undefined);
 });
 
+test("multi-service checkout creates separate Requested bookings atomically and removes only selected cart items", () => {
+  const s = setup();
+  s.store.addToCart("remote");
+  s.store.addToCart("onsite");
+  s.store.addToCart("scheduled");
+  const onsiteBrief = {
+    ...brief,
+    requestedDate: "2026-11-08",
+    location: "Jalan Pengayoman nomor 12, Makassar",
+  };
+  const created = s.store.createBookings([
+    { serviceId: "remote", input: brief },
+    { serviceId: "onsite", input: onsiteBrief },
+  ], { confirmed: true, expectedUserId: first.id });
+  assert.equal(created.length, 2);
+  assert.deepEqual(created.map(({ status, paymentStatus }) => [status, paymentStatus]), [
+    ["Requested", "Unpaid"],
+    ["Requested", "Unpaid"],
+  ]);
+  assert.deepEqual(s.store.view().cart, ["scheduled"]);
+  assert.equal(s.store.view().bookings.length, 2);
+  assert.throws(() => s.store.createBookings([
+    { serviceId: "remote", input: brief },
+    { serviceId: "remote", input: brief },
+  ], { confirmed: true, expectedUserId: first.id }), /duplikat/);
+  assert.equal(s.store.view().bookings.length, 2);
+});
+
+test("payment waits for Seller acceptance, retries failed simulation, and changes the shared order lifecycle only on success", () => {
+  const s = setup();
+  const booking = s.confirm("remote");
+  assert.equal(booking.paymentStatus, "Unpaid");
+  assert.throws(() => s.store.beginPayment(booking.id, "BCA", { expectedUserId: first.id }), /setelah Seller menerima/);
+  s.as({ ...second, id: "seller-account", capabilities: ["buyer", "seller"], sellerProfileId: "studio" });
+  assert.throws(() => s.store.beginPayment(booking.id, "BCA", { expectedUserId: first.id }), /Sesi berubah/);
+  s.store.respondToBooking(booking.id, "accept");
+  s.as(first);
+  s.store.beginPayment(booking.id, "QRIS", { expectedUserId: first.id });
+  assert.equal(s.store.getBooking(booking.id).status, "Accepted");
+  assert.equal(s.store.getBooking(booking.id).paymentStatus, "Pending");
+  s.store.simulatePayment(booking.id, false, { expectedUserId: first.id });
+  assert.equal(s.store.getBooking(booking.id).status, "Accepted");
+  assert.equal(s.store.getBooking(booking.id).paymentStatus, "Failed");
+  s.store.beginPayment(booking.id, "BCA", { expectedUserId: first.id });
+  s.store.simulatePayment(booking.id, true, { expectedUserId: first.id });
+  assert.equal(s.store.getBooking(booking.id).status, "Paid");
+  assert.equal(s.store.getBooking(booking.id).paymentStatus, "Paid");
+});
+
 test("guests cannot mutate favorites, cart, or bookings", () => {
   const s = setup();
   s.as(null);

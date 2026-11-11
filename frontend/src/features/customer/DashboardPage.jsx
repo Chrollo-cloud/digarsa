@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const statistics = [
     ["Booking aktif", overview.active, "/orders"],
     ["Kolaborasi selesai", overview.completed, "/orders?status=Completed"],
-    ["Layanan favorit", favorites.length, "/favorites"],
+    ["Favorite", favorites.length, "/favorites"],
     ["Di keranjang", cart.length, "/cart"],
   ];
   return (
@@ -119,13 +119,13 @@ export default function DashboardPage() {
           </section>
           <section className="customer-dashboard-panel">
             <div className="customer-section-heading">
-              <h2>Pilihan tersimpan.</h2>
+              <h2>Favorite pilihan.</h2>
               <Link to="/favorites">Semua ↗</Link>
             </div>
             {saved.length ? saved.slice(0, 2).map((service) => (
               <SavedServiceCard key={service.id} service={service} id={service.id} />
             )) : (
-              <p>Layanan favoritmu akan muncul di sini. Simpan karya yang membuatmu ingin berkolaborasi.</p>
+              <p>Favorite kamu akan muncul di sini. Simpan karya yang membuatmu ingin berkolaborasi.</p>
             )}
           </section>
         </aside>

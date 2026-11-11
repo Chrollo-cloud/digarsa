@@ -106,6 +106,14 @@ export default function BookingDetailPage() {
             <dd>{money(booking.estimatedPrice)}</dd>
           </div>
           <div>
+            <dt>Harga final</dt>
+            <dd>{money(booking.finalPrice ?? booking.estimatedPrice)}</dd>
+          </div>
+          <div>
+            <dt>Status pembayaran</dt>
+            <dd>{booking.paymentStatus || (booking.status === "Paid" || booking.status === "Completed" ? "Paid" : "Unpaid")}</dd>
+          </div>
+          <div>
             <dt>Mode pengerjaan</dt>
             <dd>{booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}</dd>
           </div>
@@ -132,6 +140,11 @@ export default function BookingDetailPage() {
           {bookingStatusDescription(booking.status)}
         </p>
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
+        {booking.status === "Accepted" && ["Unpaid", "Failed", "Expired"].includes(booking.paymentStatus) && (
+          <Link className="button button--primary customer-payment-link" to={`/orders/${booking.id}/payment`}>
+            {booking.paymentStatus === "Unpaid" ? "Lanjut ke pembayaran" : "Coba pembayaran lagi"} ↗
+          </Link>
+        )}
         {booking.status === "Completed" && (
           <BookingReviewAction bookingId={booking.id} />
         )}
