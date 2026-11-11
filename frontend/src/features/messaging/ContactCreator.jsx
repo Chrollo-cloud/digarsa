@@ -43,7 +43,11 @@ export default function ContactCreator({
       const conversation = bookingId
         ? customerMessaging.startBooking(bookingId)
         : customerMessaging.startService(serviceId);
-      navigate(`/messages/${conversation.id}`);
+      // Thread digabung per kreator; `contextId` memilih kartu produk/booking
+      // yang jadi topik di atas kolom ketik (seperti Shopee).
+      navigate(`/messages/${conversation.id}`, {
+        state: { contextId: conversation.id },
+      });
     } catch (error) {
       setFailure(error.message);
     } finally {

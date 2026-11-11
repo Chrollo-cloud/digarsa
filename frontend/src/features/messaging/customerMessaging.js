@@ -48,41 +48,120 @@ export function createCustomerMessaging({
         service?.title ||
         (conversation.booking_id ? "Percakapan booking" : "Diskusi kreatif"),
       service_available: !!service,
+      // Data kartu produk di chat (gambar + harga layanan).
+      service_image: service?.image || service?.images?.[0]?.src || null,
+      service_price: service?.price ?? null,
     };
   }
-  function inbox() {
+  const newestFirst = (a, b) =>
+    String(b.last_activity_at).localeCompare(String(a.last_activity_at)) ||
+    String(b.id).localeCompare(String(a.id));
+  const oldestFirst = (a, b) =>
+    String(a.created_at).localeCompare(String(b.created_at)) ||
+    String(a.id).localeCompare(String(b.id));
+
+  // Semua percakapan mentah (satu per layanan/booking) milik customer.
+  function ownConversations() {
     const user = account();
     return messaging
       .listConversations()
-      .filter((row) => row.customer_user_id === user.id)
+      .filter((row) => row.customer_user_id === user.id);
+  }
+  // Semua percakapan dengan Seller yang sama = SATU chat bagi customer.
+  const sameSeller = (all, sellerProfileId) =>
+    all.filter((row) => row.seller_profile_id === sellerProfileId);
+
+  function buildGroup(conversations) {
+    const user = account();
+    const contexts = conversations
       .map((row) => {
         const messages = messaging.listMessages(row.id);
         return {
           ...row,
           ...identity(row),
           last_message: messages.at(-1) || null,
+          last_activity_at: messages.at(-1)?.created_at || row.updated_at,
           unread_count: messages.filter(
             (item) => item.sender_user_id !== user.id && item.read_at === null,
           ).length,
         };
-      });
+      })
+      .sort(newestFirst);
+    const latest = contexts[0];
+    // ID untuk URL: percakapan paling lama, tidak berubah saat ada booking baru.
+    const canonical = [...contexts].sort(oldestFirst)[0];
+    const titles = [...new Set(contexts.map((row) => row.service_title))];
+    const lastMessage =
+      contexts
+        .map((row) => row.last_message)
+        .filter(Boolean)
+        .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+        .at(-1) || null;
+    return {
+      ...latest,
+      id: canonical.id,
+      conversation_ids: contexts.map((row) => row.id),
+      contexts,
+      service_title:
+        titles.length > 1
+          ? `${titles[0]} +${titles.length - 1} lainnya`
+          : titles[0],
+      booking_id: contexts.some((row) => row.booking_id)
+        ? latest.booking_id || contexts.find((row) => row.booking_id).booking_id
+        : null,
+      last_message: lastMessage,
+      last_activity_at: lastMessage?.created_at || latest.last_activity_at,
+      unread_count: contexts.reduce((sum, row) => sum + row.unread_count, 0),
+    };
+  }
+  function inbox() {
+    const all = ownConversations();
+    const groups = new Map();
+    for (const row of all) {
+      if (!groups.has(row.seller_profile_id)) groups.set(row.seller_profile_id, []);
+      groups.get(row.seller_profile_id).push(row);
+    }
+    return [...groups.values()].map(buildGroup).sort(newestFirst);
   }
   const api = {
     listInbox: inbox,
+    // ID percakapan mana pun dalam grup membuka thread gabungan yang sama.
     getThread(id) {
       const conversation = customerConversation(id);
-      return {
-        conversation: { ...conversation, ...identity(conversation) },
-        messages: messaging.listMessages(id),
-      };
+      const group = sameSeller(ownConversations(), conversation.seller_profile_id);
+      const combined = buildGroup(group);
+      const titleOf = new Map(
+        combined.contexts.map((row) => [row.id, row.service_title]),
+      );
+      const messages = group
+        .flatMap((row) =>
+          messaging.listMessages(row.id).map((message) => ({
+            ...message,
+            context_id: row.id,
+            context_service_id: row.service_id,
+            context_booking_id: row.booking_id,
+            context_service_title: titleOf.get(row.id),
+          })),
+        )
+        .sort(
+          (a, b) =>
+            String(a.created_at).localeCompare(String(b.created_at)) ||
+            String(a.id).localeCompare(String(b.id)),
+        );
+      return { conversation: combined, messages };
     },
+    // `id` = konteks (layanan/booking) yang dipakai untuk mengirim pesan.
     send(id, content, options) {
       customerConversation(id);
       return messaging.sendMessage(id, content, options);
     },
+    // Membuka thread gabungan menandai semua konteks dengan seller ini sebagai dibaca.
     markRead(id) {
-      customerConversation(id);
-      return messaging.markConversationRead(id);
+      const conversation = customerConversation(id);
+      let total = 0;
+      for (const row of sameSeller(ownConversations(), conversation.seller_profile_id))
+        total += messaging.markConversationRead(row.id).messages_marked_read;
+      return { messages_marked_read: total };
     },
     startService(service_id) {
       const user = account();
@@ -114,7 +193,7 @@ export function createCustomerMessaging({
       const notifications = messaging.listNotifications();
       // Related IDs never become URLs without verifying the current account's
       // customer context. Seller notifications belong in Seller Center.
-      const conversations = inbox();
+      const conversations = ownConversations();
       const view = customers.view();
       if (view.error)
         throw new MessagingError("DEPENDENCY_UNAVAILABLE", view.error);
@@ -127,8 +206,13 @@ export function createCustomerMessaging({
               .listMessages(row.id)
               .some((item) => item.id === notice.related_entity_id),
           );
-          if (conversation)
-            to = `/messages/${encodeURIComponent(conversation.id)}`;
+          if (conversation) {
+            const canonical = sameSeller(
+              conversations,
+              conversation.seller_profile_id,
+            ).sort(oldestFirst)[0];
+            to = `/messages/${encodeURIComponent(canonical.id)}`;
+          }
         } else if (notice.type.startsWith("booking_")) {
           const booking = view.bookings.find(
             (row) =>

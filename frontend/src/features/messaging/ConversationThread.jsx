@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { customerMessaging } from "./customerMessagingClient";
 import { messageSafety } from "./customerMessaging";
 import { useMessaging } from "./useMessaging";
 import MessagingState from "./MessagingState";
+import { ContextBar, ContextCard } from "./ChatContext";
 
 function MobileBack() {
   return (
@@ -43,6 +44,11 @@ export default function ConversationThread({ id }) {
   const [failure, setFailure] = useState("");
   const [sending, setSending] = useState(false);
   const [away, setAway] = useState(false);
+  const location = useLocation();
+  // Datang dari tombol "Chat Kreator": topik awal = layanan/booking tersebut.
+  const [pickedContextId, setPickedContextId] = useState(
+    () => location.state?.contextId || "",
+  );
   const scroller = useRef(null);
   const composer = useRef(null);
   const nearBottom = useRef(true);
@@ -50,6 +56,11 @@ export default function ConversationThread({ id }) {
   const ownSend = useRef(false);
   const retryId = useRef(null);
   const messages = data?.messages || [];
+  // Every service/booking with this seller lives in ONE thread; this picks which
+  // context a new message is sent through (defaults to the most recent one).
+  const contexts = data?.conversation?.contexts || [];
+  const selectedContext =
+    contexts.find((row) => row.id === pickedContextId) || contexts[0] || null;
   const lastId = messages.at(-1)?.id;
   const unread = messages
     .filter((row) => row.sender_user_id !== user.id && row.read_at === null)
@@ -97,7 +108,7 @@ export default function ConversationThread({ id }) {
 
   function submit(event) {
     event.preventDefault();
-    if (sendingLock.current || !text.trim()) return;
+    if (sendingLock.current || !text.trim() || !selectedContext) return;
     sendingLock.current = true;
     setSending(true);
     setFailure("");
@@ -105,7 +116,10 @@ export default function ConversationThread({ id }) {
       try {
         retryId.current ||= crypto.randomUUID();
         ownSend.current = true;
-        customerMessaging.send(id, text, { client_event_id: retryId.current });
+        customerMessaging.send(selectedContext.id, text, {
+          client_event_id: retryId.current,
+        });
+        setPickedContextId(selectedContext.id);
         retryId.current = null;
         setText("");
       } catch (error) {
@@ -154,17 +168,22 @@ export default function ConversationThread({ id }) {
         <div className="workspace-thread-identity">
           <h2>{conversation.seller_name}</h2>
           <p title={conversation.service_title}>
-            {conversation.service_title}
+            {contexts.length > 1
+              ? `${contexts.length} layanan`
+              : conversation.service_title}
             <span>
               {" "}
-              · {conversation.booking_id ? "Booking" : "Diskusi layanan"}
+              ·{" "}
+              {contexts.length === 1 && !selectedContext?.booking_id
+                ? "Diskusi layanan"
+                : "Booking"}
             </span>
           </p>
         </div>
-        {conversation.service_available && (
+        {selectedContext?.service_available && (
           <Link
             className="workspace-service-link"
-            to={`/service/${conversation.service_id}`}
+            to={`/service/${selectedContext.service_id}`}
           >
             <span>Lihat layanan</span>
             <span aria-hidden="true">↗</span>
@@ -195,6 +214,9 @@ export default function ConversationThread({ id }) {
               <br />
               apa yang ingin kamu wujudkan.
             </p>
+            <div className="chat-ctx-empty-card">
+              <ContextCard context={selectedContext} role="customer" />
+            </div>
           </div>
         )}
         {messages.map((message, index) => {
@@ -204,6 +226,9 @@ export default function ConversationThread({ id }) {
             index === 0 ||
             dayKey(message.created_at) !==
               dayKey(messages[index - 1].created_at);
+          const newContext =
+            index === 0 ||
+            messages[index - 1].context_id !== message.context_id;
           return (
             <Fragment key={message.id}>
               {newDay && (
@@ -212,6 +237,12 @@ export default function ConversationThread({ id }) {
                     {dayLabel(message.created_at)}
                   </time>
                 </div>
+              )}
+              {newContext && (
+                <ContextCard
+                  context={contexts.find((row) => row.id === message.context_id)}
+                  role="customer"
+                />
               )}
               <article
                 className={`workspace-bubble ${mine ? "is-mine" : ""}`}
@@ -267,6 +298,12 @@ export default function ConversationThread({ id }) {
         <label htmlFor="message-content" className="workspace-sr-only">
           Pesan untuk kreator
         </label>
+        <ContextBar
+          contexts={contexts}
+          selectedId={selectedContext?.id || ""}
+          onSelect={setPickedContextId}
+          disabled={sending}
+        />
         <div className="workspace-compose-row">
           <textarea
             id="message-content"

@@ -486,3 +486,177 @@
     transition: none;
   }
 }
+
+
+/* Combined customer conversation contexts */
+.seller-message-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.seller-message-context label {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.seller-message-context select {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  flex: 1;
+  padding: 7px 30px 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  outline: none;
+  background: var(--color-paper);
+  color: var(--color-indigo);
+  font: inherit;
+  font-size: 11px;
+}
+
+.seller-message-context select:focus {
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 2px rgb(49 92 185 / 12%);
+}
+
+.seller-message-context select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seller-message-context .seller-message-booking-link {
+  white-space: nowrap;
+}
+
+.seller-message-context-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-blue);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.seller-message-bubble.is-mine .seller-message-context-label {
+  color: rgb(255 255 255 / 72%);
+}
+
+/* Keep the combined timeline readable */
+.seller-message-bubble {
+  overflow-wrap: anywhere;
+}
+
+.seller-message-history {
+  scroll-padding-block: 16px;
+}
+
+.seller-message-service {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .seller-message-context {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .seller-message-context select {
+    width: 100%;
+    flex: auto;
+  }
+
+  .seller-message-context .seller-message-booking-link {
+    align-self: flex-start;
+  }
+}
+
+/*
+  Tampilan chat Seller memakai stylesheet yang sama dengan chat Customer
+  (../messaging/workspace.css + messaging.css + chatContext.css).
+  File ini HANYA berisi penyesuaian karena chat Seller berada di dalam
+  layout Seller Center (bukan halaman penuh seperti /messages).
+*/
+.seller-chat {
+  font-family: var(--font-body);
+  color: var(--color-ink-soft);
+}
+.seller-chat .workspace-panels {
+  height: min(720px, max(480px, calc(100dvh - 330px)));
+  min-height: 480px;
+}
+/* Seller Center sudah punya <h1>; judul inbox memakai <h2> bergaya sama */
+.seller-chat .workspace-inbox-heading h2 {
+  font: 700 36px/1.03 var(--font-display);
+  letter-spacing: -0.055em;
+  margin: 8px 0 0;
+  color: var(--color-indigo);
+}
+.seller-chat .workspace-inbox-heading h2 > span {
+  color: var(--color-blue);
+}
+
+@media (max-width: 700px) {
+  .seller-chat .workspace-panels {
+    display: flex;
+    height: min(740px, max(520px, calc(100dvh - 300px)));
+    min-height: 520px;
+  }
+  .seller-chat .workspace-inbox {
+    width: 100%;
+    border: 0;
+  }
+  .seller-chat .workspace-chat-panel {
+    display: none;
+  }
+  .seller-chat--open .workspace-inbox {
+    display: none;
+  }
+  .seller-chat--open .workspace-chat-panel {
+    display: block;
+    width: 100%;
+  }
+  .seller-chat .workspace-back {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 42px;
+    margin-left: -7px;
+    font-size: 11px;
+    color: var(--color-blue);
+    flex-shrink: 0;
+  }
+  .seller-chat .workspace-thread-header {
+    gap: 9px;
+    padding: 13px 14px;
+  }
+  .seller-chat .workspace-thread-header .workspace-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 11px;
+  }
+  .seller-chat .workspace-service-link > span:first-child {
+    display: none;
+  }
+  .seller-chat .workspace-history {
+    padding: 18px 16px;
+    gap: 10px;
+  }
+  .seller-chat .workspace-bubble {
+    max-width: 82%;
+  }
+  .seller-chat .workspace-composer {
+    padding: 11px 12px 12px;
+  }
+  .seller-chat .workspace-compose-row textarea {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}

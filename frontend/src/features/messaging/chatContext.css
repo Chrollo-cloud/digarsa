@@ -1,0 +1,196 @@
+/* Kartu konteks chat (layanan / booking) — dipakai Customer & Seller */
+.chat-ctx-thumb {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #e0eeea;
+  color: var(--color-blue);
+  font-size: 22px;
+}
+.chat-ctx-card {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 460px);
+  margin: 6px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid #dfe8e2;
+  border-radius: 10px;
+  background: #fbfcfa;
+  box-shadow: 0 6px 18px -14px rgba(35, 41, 70, 0.35);
+}
+.chat-ctx-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.chat-ctx-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font: 8px var(--font-metadata);
+  letter-spacing: 0.08em;
+  color: #65797c;
+}
+.chat-ctx-status {
+  font-style: normal;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e5f3ee;
+  color: #2f6b5c;
+  letter-spacing: 0.04em;
+}
+.chat-ctx-body > strong {
+  font: 700 13px/1.35 var(--font-display);
+  color: var(--color-indigo);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.chat-ctx-price {
+  font: 700 12px var(--font-body);
+  color: var(--color-blue);
+}
+.chat-ctx-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.chat-ctx-links a {
+  padding: 3px 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-blue);
+  white-space: nowrap;
+}
+.chat-ctx-links a:hover {
+  text-decoration: underline;
+}
+
+/* Pratinjau topik di atas kolom ketik + daftar "Ganti topik" */
+.chat-ctx-bar {
+  position: relative;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.chat-ctx-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid #dfe8e2;
+  border-radius: 9px;
+  background: #fbfcfa;
+}
+.chat-ctx-current .chat-ctx-thumb,
+.chat-ctx-option .chat-ctx-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  font-size: 16px;
+}
+.chat-ctx-current-copy,
+.chat-ctx-option > span:last-child {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.chat-ctx-current-copy > small:first-child {
+  font: 8px var(--font-metadata);
+  letter-spacing: 0.08em;
+  color: #65797c;
+}
+.chat-ctx-current-copy strong,
+.chat-ctx-option strong {
+  font: 700 12px var(--font-display);
+  color: var(--color-indigo);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.chat-ctx-current-copy > small:last-child,
+.chat-ctx-option small {
+  font-size: 9px;
+  color: #65797c;
+}
+.chat-ctx-switch {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #dde4dd;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-blue);
+  font: 700 10px var(--font-body);
+  cursor: pointer;
+}
+.chat-ctx-switch:hover:enabled {
+  border-color: var(--color-blue);
+}
+.chat-ctx-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.chat-ctx-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  max-height: 230px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  overflow-y: auto;
+  border: 1px solid #dfe8e2;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px -12px rgba(35, 41, 70, 0.35);
+}
+.chat-ctx-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.chat-ctx-option:hover {
+  background: #f0f3f0;
+}
+.chat-ctx-option.is-selected {
+  background: #eaf3f0;
+  border-color: #d6e7e0;
+}
+.chat-ctx-empty-card {
+  margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+  .chat-ctx-card {
+    width: 100%;
+    padding: 9px 10px;
+  }
+  .chat-ctx-thumb {
+    width: 46px;
+    height: 46px;
+  }
+}
