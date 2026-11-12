@@ -11,7 +11,7 @@ export default function ServiceCard({ service }) {
       <Link
         className="market-card__image"
         to={`/service/${service.id}`}
-        aria-label={`Lihat layanan ${service.title}, ${service.availability}`}
+        aria-label={`Show services ${service.title}, ${service.availability}`}
       >
         <img src={service.image} alt={service.alt} loading="lazy" />
         <Availability value={service.availability} />
@@ -30,7 +30,7 @@ export default function ServiceCard({ service }) {
             <strong>{creator.name}</strong>
             <small>{creator.city}</small>
           </span>
-          <span aria-hidden="true">↗</span>
+          <span aria-hidden="true"></span>
         </Link>
         <div className="market-card__price">
           <span>Mulai dari</span>

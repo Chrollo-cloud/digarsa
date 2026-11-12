@@ -35,27 +35,27 @@ function CartContents() {
     } catch (failure) { setError(failure.message); }
   }
   return (
-    <CustomerFrame title="Keranjang layananmu."
-      description="Pilih layanan untuk kolaborasimu. Setiap layanan menjadi pesanan terpisah, termasuk saat kreatornya berbeda.">
+    <CustomerFrame title="Cart servicesmu."
+      description="Choose a service for your collaboration. Each service creates a separate order, including when services have different creators.">
       {error && <p role="alert" className="customer-warning">{error}</p>}
       {cart.length ? (
         <div className="checkout-layout">
-          <section className="checkout-services" aria-label="Layanan di keranjang">
+          <section className="checkout-services" aria-label="Service di keranjang">
             <div className="checkout-toolbar">
               <button type="button" className="location-link" disabled={!!storageError}
-                onClick={() => setSelected(cart.filter(id => !store.getBookingRestriction(id)))}>Pilih semua yang tersedia</button>
-              <button type="button" className="location-link" onClick={() => setSelected([])}>Batal pilih semua</button>
+                onClick={() => setSelected(cart.filter(id => !store.getBookingRestriction(id)))}>Select all available</button>
+              <button type="button" className="location-link" onClick={() => setSelected([])}>Cancel pilih semua</button>
               <span role="status">{chosen.length} dipilih</span>
             </div>
             {groups.map(group => (
               <section className="checkout-seller" key={group.id}>
-                <h2>{group.creator?.name || "Kreator tidak tersedia"}</h2>
-                {group.creator?.demoFixture && <p className="customer-warning">Layanan contoh editorial. Permintaan akan masuk ke akun Seller demo ini; kreator contoh tidak dinyatakan terverifikasi.</p>}
+                <h2>{group.creator?.name || "Creator unavailable"}</h2>
+                {group.creator?.demoFixture && <p className="customer-warning">Editorial service sample. Requests go to this demo Seller account; the sample creator is not verified.</p>}
                 {group.items.map(({ id, service }) => {
                   const reason = store.getBookingRestriction(id);
                   return (
                     <article className="checkout-cart-row" key={id}>
-                      <input type="checkbox" aria-label={`Pilih ${service?.title || "layanan tidak tersedia"}`}
+                      <input type="checkbox" aria-label={`Select ${service?.title || "unavailable service"}`}
                         checked={chosen.includes(id)} disabled={!!reason || !!storageError}
                         onChange={event => setSelected(value => event.target.checked ? [...value, id] : value.filter(item => item !== id))} />
                       {service?.image && <img src={service.image} alt={service.alt || service.title} />}
@@ -64,11 +64,11 @@ function CartContents() {
                           <Availability value={service.availability} />
                           <h3><Link to={`/service/${id}`}>{service.title}</Link></h3>
                           <strong>{money(service.price)}</strong>
-                        </> : <h3>Layanan tidak tersedia.</h3>}
+                        </> : <h3>Service unavailable.</h3>}
                         {reason && <p className="checkout-unavailable">{reason}</p>}
                         <div className="checkout-row-actions">
-                          <button type="button" className="location-link" onClick={() => remove(id)}>Hapus dari keranjang</button>
-                          {!reason && <Link to={`/booking/${id}`}>Ajukan satu layanan →</Link>}
+                          <button type="button" className="location-link" onClick={() => remove(id)}>Remove from cart</button>
+                          {!reason && <Link to={`/booking/${id}`}>Request a service </Link>}
                         </div>
                       </div>
                     </article>
@@ -77,19 +77,19 @@ function CartContents() {
               </section>
             ))}
           </section>
-          <aside className="checkout-summary" aria-label="Ringkasan pilihan">
+          <aside className="checkout-summary" aria-label="Overview pilihan">
             <span className="market-kicker">RENCANA KOLABORASI</span>
             <h2>Pilihanmu.</h2>
-            <dl><div><dt>Layanan dipilih</dt><dd>{chosen.length}</dd></div>
+            <dl><div><dt>Service dipilih</dt><dd>{chosen.length}</dd></div>
               <div><dt>Estimasi subtotal</dt><dd>{money(checkoutTotal(chosen, services))}</dd></div></dl>
-            {chosen.length > 20 && <p role="alert">Pilih maksimal 20 layanan per checkout.</p>}
-            <p>Harga awal adalah estimasi. Setiap Seller mengonfirmasi harga akhir saat menerima pesanan. Belum ada pembayaran.</p>
+            {chosen.length > 20 && <p role="alert">Pilih maksimal 20 services per checkout.</p>}
+            <p>Harga awal adalah estimasi. Setiap Seller mengonfirmasi harga akhir saat menerima orders. Belum ada pembayaran.</p>
             <button type="button" className="button button--primary" disabled={!chosen.length || chosen.length > 20 || !!storageError}
-              onClick={() => navigate(checkoutDestination(chosen, `checkout-${crypto.randomUUID()}`))}>Lanjut ke checkout →</button>
-            <Link to="/marketplace">Temukan layanan lain ↗</Link>
+              onClick={() => navigate(checkoutDestination(chosen, `checkout-${crypto.randomUUID()}`))}>Continue to checkout </button>
+            <Link to="/marketplace">Find more services </Link>
           </aside>
         </div>
-      ) : <EmptyState title="Keranjangmu masih kosong.">Tambahkan layanan dari marketplace untuk memulai kolaborasi.</EmptyState>}
+      ) : <EmptyState title="Your cart is empty.">Add services from the marketplace to start a collaboration.</EmptyState>}
     </CustomerFrame>
   );
 }

@@ -87,7 +87,7 @@ export default function AccountMenu({ onNavigate }) {
         type="button"
         ref={trigger}
         className="account-menu__trigger"
-        aria-label={`Menu akun ${user.name}`}
+        aria-label={`Account menu for ${user.name}`}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls="account-navigation"
@@ -118,7 +118,7 @@ export default function AccountMenu({ onNavigate }) {
           id="account-navigation"
           className="account-menu__panel"
           role="menu"
-          aria-label="Navigasi akun"
+          aria-label="Account navigation"
           ref={menu}
         >
           <div className="account-menu__identity" role="presentation">
@@ -140,26 +140,26 @@ export default function AccountMenu({ onNavigate }) {
               <MenuIcon index={to === "/admin" ? 10 : index} />
               <span className="account-menu__label">{label}</span>
               {to === "/messages" && counts?.messages > 0 && (
-                <small aria-label={`${counts.messages} pesan belum dibaca`}>
+                <small aria-label={`${counts.messages} unread messages`}>
                   {counts.messages}
                 </small>
               )}
               {to === "/notifications" && counts?.notifications > 0 && (
                 <small
-                  aria-label={`${counts.notifications} notifikasi belum dibaca`}
+                  aria-label={`${counts.notifications} unread notifications`}
                 >
                   {counts.notifications}
                 </small>
               )}
               {messagingError &&
                 ["/messages", "/notifications"].includes(to) && (
-                  <small>Data tidak tersedia</small>
+                  <small>Data unavailable</small>
                 )}
             </Link>
           ))}
           <button type="button" role="menuitem" onClick={logout}>
             <MenuIcon index={11} />
-            <span className="account-menu__label">Keluar</span>
+            <span className="account-menu__label">Log out</span>
           </button>
           {error && <p role="alert">{error}</p>}
         </div>

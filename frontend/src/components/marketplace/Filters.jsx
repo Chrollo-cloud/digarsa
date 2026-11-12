@@ -1,35 +1,36 @@
 import { categories, locations } from "../../data/marketplace";
+import { categoryLabel } from "../../features/seller/categoryLabels";
 
 export default function Filters({ values, update, reset }) {
   return (
-    <aside className="market-filters market-panel" aria-label="Filter layanan">
-      <h2>Filter</h2>
+    <aside className="market-filters market-panel" aria-label="Service filters">
+      <h2>Filters</h2>
       <label>
-        Kategori
+        Category
         <select
           value={values.category}
           onChange={(event) => update("category", event.target.value)}
         >
-          <option value="">Semua kategori</option>
+          <option value="">All categories</option>
           {categories.map((category) => (
-            <option key={category}>{category}</option>
+            <option key={category} value={category}>{categoryLabel(category)}</option>
           ))}
         </select>
       </label>
       <label>
-        Lokasi
+        Location
         <select
           value={values.city}
           onChange={(event) => update("city", event.target.value)}
         >
-          <option value="">Semua lokasi</option>
+          <option value="">All locations</option>
           {locations.map((city) => (
             <option key={city}>{city}</option>
           ))}
         </select>
       </label>
       <fieldset>
-        <legend>Rentang harga (IDR)</legend>
+        <legend>Price range (IDR)</legend>
         <label>
           Minimum
           <input
@@ -43,31 +44,31 @@ export default function Filters({ values, update, reset }) {
           />
         </label>
         <label>
-          Maksimum
+          Maximum
           <input
             inputMode="numeric"
             type="number"
             min="0"
             step="1"
-            placeholder="Tanpa batas"
+            placeholder="No limit"
             value={values.max}
             onChange={(event) => update("max", event.target.value)}
           />
         </label>
       </fieldset>
       <label>
-        Ketersediaan
+        Availability
         <select
           value={values.availability}
           onChange={(event) => update("availability", event.target.value)}
         >
-          <option value="">Semua layanan</option>
-          <option>Open</option>
-          <option>Full-book</option>
+          <option value="">Any availability</option>
+          <option value="Open">Available</option>
+          <option value="Full-book">Fully booked</option>
         </select>
       </label>
       <button className="market-reset" type="button" onClick={reset}>
-        Reset semua filter
+        Reset all filters
       </button>
     </aside>
   );

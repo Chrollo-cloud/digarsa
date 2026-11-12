@@ -58,11 +58,11 @@ export function validateProfilePatch(input) {
   }
   if (
     "gender" in result &&
-    !["", "Perempuan", "Laki-laki", "Tidak ingin menyebutkan"].includes(
+    !["", "Female", "Male", "Prefer not to say"].includes(
       result.gender,
     )
   )
-    throw new Error("Pilih jenis kelamin dari pilihan yang tersedia.");
+    throw new Error("Select a gender from the available options.");
   return result;
 }
 
@@ -72,7 +72,7 @@ export function validateNewPassword(password, confirmation) {
     password.length < 8 ||
     password.length > 128
   )
-    throw new Error("Kata sandi baru harus 8–128 karakter.");
+    throw new Error("Password baru harus 8–128 karakter.");
   if (password !== confirmation)
     throw new Error("Konfirmasi kata sandi baru tidak cocok.");
 }

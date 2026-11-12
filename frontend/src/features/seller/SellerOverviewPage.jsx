@@ -23,44 +23,44 @@ export default function SellerOverviewPage() {
   return (
     <SellerFrame
       title={profile ? `Halo, ${profile.name}.` : "Seller Center."}
-      description="Pantau permintaan masuk, kelola layanan, dan lihat estimasi pendapatanmu di satu tempat."
+      description="Pantau permintaan masuk, kelola services, dan lihat estimasi pendapatanmu di satu tempat."
     >
-      <div className="ws-stats seller-kpis" aria-label="Statistik Seller">
+      <div className="ws-stats seller-kpis" aria-label="Seller statistics">
         <Stat
           to="/seller-dashboard/orders?status=Requested"
-          label="Permintaan masuk"
+          label="Incoming requests"
           value={kpis.requested}
-          note="Menunggu keputusanmu"
+          note="Pending keputusanmu"
         />
         <Stat
           to="/seller-dashboard/services"
-          label="Layanan aktif"
+          label="Active services"
           value={kpis.activeServices}
-          note={`${live} Open · Full-book tetap aktif`}
+          note={`${live} available · fully booked remain active`}
         />
         <Stat
           to="/seller-dashboard/orders?status=Accepted"
-          label="Booking diterima"
+          label="Accepted bookings"
           value={kpis.accepted}
-          note="Diterima Seller · belum dibayar"
+          note="Accepted · unpaid"
         />
         <Stat
           to="/seller-dashboard/orders?status=Completed"
-          label="Booking selesai"
+          label="Completed bookings"
           value={kpis.completed}
-          note="Status Selesai"
+          note="Status Completed"
         />
         <Stat
           to="/seller-dashboard/orders"
-          label="Total booking"
+          label="Total bookings"
           value={kpis.total}
-          note="Seluruh status permintaan"
+          note="All request statuses"
         />
         <Stat
           to="/seller-dashboard/earnings"
-          label="Estimasi booking selesai"
+          label="Estimated completed bookings"
           value={money(kpis.estimatedCompleted)}
-          note="Harga awal · bukan pembayaran diterima"
+          note="Starting price · not a received payment"
         />
       </div>
       <BookingTrend bookings={bookings} />
@@ -71,31 +71,30 @@ export default function SellerOverviewPage() {
         </header>
         <div className="ws-stats">
           <Stat
-            label="Respons pesanan"
+            label="Order response rate"
             value={`${performance.responseRate}%`}
-            note="pesanan yang sudah diputuskan"
+            note="orders with a decision"
           />
           <Stat
-            label="Permintaan diterima"
+            label="Accepted requests"
             value={`${performance.acceptanceRate}%`}
-            note="dari pesanan yang diputuskan"
+            note="of orders yang diputuskan"
           />
           <Stat
-            label="Penyelesaian"
+            label="Completion rate"
             value={`${performance.completionRate}%`}
-            note="dari pesanan yang diterima"
+            note="of accepted orders"
           />
         </div>
         <p className="ws-note">
-          Statistik dihitung dari status booking yang tersedia; belum mencakup
-          ulasan atau pembayaran.
+          Statistics use available booking statuses; reviews and payments are not included.
         </p>
       </section>
 
       <section className="ws-section" aria-labelledby="waiting-heading">
         <header>
-          <h2 id="waiting-heading">Aktivitas booking terbaru.</h2>
-          <Link to="/seller-dashboard/orders">Semua pesanan →</Link>
+          <h2 id="waiting-heading">Recent booking activity.</h2>
+          <Link to="/seller-dashboard/orders">All orders </Link>
         </header>
         {recent.length ? (
           <ul className="ws-list">
@@ -104,9 +103,9 @@ export default function SellerOverviewPage() {
                 <div>
                   <h3>{booking.serviceTitle}</h3>
                   <p>
-                    {customers[booking.customerId] || "Pelanggan"} · diajukan{" "}
+                    {customers[booking.customerId] || "Customer"} · requested{" "}
                     {dateOnly(booking.createdAt)} ·{" "}
-                    {booking.deliveryMode === "onsite" ? "Onsite" : "Remote"}
+                    {booking.deliveryMode === "onsite" ? "On-site" : "Remote"}
                   </p>
                 </div>
                 <div className="ws-row__side">
@@ -115,24 +114,23 @@ export default function SellerOverviewPage() {
                   </span>
                   <StatusBadge status={booking.status} />
                   <Link to={`/seller-dashboard/orders/${booking.id}`}>
-                    {booking.status === "Requested" ? "Tinjau →" : "Detail →"}
+                    {booking.status === "Requested" ? "Review " : "Details "}
                   </Link>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <Empty title="Belum ada aktivitas booking.">
-            Permintaan dari pelanggan muncul di sini begitu mereka mengirim
-            booking untuk layananmu.
+          <Empty title="No booking activity yet.">
+            Customer requests appear here when they submit a booking for your services.
           </Empty>
         )}
       </section>
 
       <section className="ws-section" aria-labelledby="profile-heading">
         <header>
-          <h2 id="profile-heading">Profil publikmu.</h2>
-          <Link to="/seller-dashboard/profile">Ubah profil →</Link>
+          <h2 id="profile-heading">Your public profile.</h2>
+          <Link to="/seller-dashboard/profile">Edit profile </Link>
         </header>
         {profile && (
           <div className="ws-panel ws-profile-card">
@@ -149,7 +147,7 @@ export default function SellerOverviewPage() {
                 {profile.category} · {profile.city}
               </p>
               <Link className="ws-link" to={`/seller/${profile.id}`}>
-                Lihat sebagai pelanggan ↗
+                View as a customer
               </Link>
             </div>
           </div>
@@ -159,20 +157,20 @@ export default function SellerOverviewPage() {
             className="button button--secondary"
             to="/seller-dashboard/services"
           >
-            Kelola layanan ↗
+            Manage services
           </Link>
           <Link
             className="button button--secondary"
             to="/seller-dashboard/services/new"
           >
-            Tambah layanan +
+            Add service
           </Link>
         </div>
         {services.length === 0 && (
           <p className="ws-notice">
-            Kamu belum punya layanan. Pelanggan baru bisa memesan setelah kamu{" "}
+            You do not have any services yet. New customers can book after you{" "}
             <Link className="ws-link" to="/seller-dashboard/services/new">
-              menambahkan layanan pertama
+              add your first service
             </Link>
             .
           </p>

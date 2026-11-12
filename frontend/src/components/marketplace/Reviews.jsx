@@ -6,8 +6,8 @@ export default function Reviews({ reviews }) {
         Testimoni demo <span>({reviews.length})</span>
       </h2>
       <p>
-        Ilustrasi dari prototipe, bukan ulasan pelanggan terverifikasi. Tidak
-        termasuk rata-rata atau jumlah ulasan terverifikasi.
+        Ilustrasi of prototipe, bukan ulasan pelanggan terverifikasi. Tidak
+        termasuk rata-rata atau jumlah verified reviews.
       </p>
       <div className="market-review-grid">
         {reviews.map((review) => (

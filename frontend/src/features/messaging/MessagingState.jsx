@@ -9,17 +9,17 @@ export default function MessagingState({
   return (
     <section className="messaging-empty" role={error ? "alert" : undefined}>
       <span className="messaging-symbol" aria-hidden="true">
-        ↗
+
       </span>
-      <h2>{error ? "Data tidak tersedia." : title}</h2>
+      <h2>{error ? "Data unavailable." : title}</h2>
       <p>
         {error ||
           children ||
-          "Mulai diskusi tentang layanan yang menarik perhatianmu."}
+          "Start a conversation about a service that interests you."}
       </p>
       {showLink && (
         <Link to={error ? "/messages" : "/marketplace"}>
-          {error ? "Kembali ke inbox" : "Jelajahi marketplace ↗"}
+          {error ? "Back to inbox" : "Explore the marketplace "}
         </Link>
       )}
       {error && (

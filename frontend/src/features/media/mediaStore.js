@@ -3,7 +3,7 @@ export const photoTypes = ["image/jpeg", "image/png", "image/webp"];
 export const isMediaId = value => typeof value === "string" && /^local-photo-[a-zA-Z0-9-]{1,100}$/.test(value);
 export function validatePhoto(file) {
   if (!(file instanceof Blob) || !photoTypes.includes(file.type)) throw new Error("Pilih foto JPEG, PNG, atau WebP.");
-  if (!file.size || file.size > MAX_PHOTO_BYTES) throw new Error("Ukuran foto harus lebih dari 0 dan maksimal 5 MB.");
+  if (!file.size || file.size > MAX_PHOTO_BYTES) throw new Error("Ukuran foto harus lebih of 0 dan maksimal 5 MB.");
 }
 export async function preparePhoto(file, { decode = createImageBitmap, canvas = () => document.createElement("canvas") } = {}) {
   validatePhoto(file);

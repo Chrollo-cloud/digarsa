@@ -16,7 +16,7 @@ export default function EditorialSection() {
           kreator lokal untuk menunjukkan karya terbaiknya.
         </p>
         <div className="home-editorial__note">
-          KOLABORASI YANG TERASA LEBIH DEKAT <span aria-hidden="true">↗</span>
+          KOLABORASI YANG TERASA LEBIH DEKAT <span aria-hidden="true"></span>
         </div>
       </div>
     </section>

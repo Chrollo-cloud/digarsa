@@ -21,7 +21,7 @@ export default function PasswordChangeForm({ user }) {
       await store.changePassword(values, { expectedUserId: user.id });
       form.reset();
       setSuccess(
-        "Kata sandi demo berhasil diubah. Gunakan kata sandi baru saat masuk berikutnya.",
+        "Demo password berhasil diubah. Gunakan kata sandi baru saat masuk berikutnya.",
       );
     } catch (failure) {
       setError(failure.message);
@@ -48,14 +48,14 @@ export default function PasswordChangeForm({ user }) {
           disabled={busy}
         >
           <PasswordInput
-            label="Kata sandi saat ini"
+            label="Password saat ini"
             name="currentPassword"
             required
             maxLength={128}
             autoComplete="current-password"
           />
           <PasswordInput
-            label="Kata sandi baru"
+            label="Password baru"
             name="newPassword"
             required
             minLength={8}
@@ -75,7 +75,7 @@ export default function PasswordChangeForm({ user }) {
             kata sandi saat ini.
           </p>
           <button type="submit" className="button button--primary">
-            {busy ? "Memverifikasi…" : "Ubah Kata Sandi"} ↗
+            {busy ? "Verifying…" : "Change password"}
           </button>
         </fieldset>
         {error && (

@@ -20,9 +20,9 @@ export default function AdminModerationPage() {
       : filter === "live"
         ? !item.hidden && item.active
         : true;
-    const query = search.trim().toLocaleLowerCase("id-ID");
+    const query = search.trim().toLocaleLowerCase("en-US");
     return matchesFilter && [item.title, item.category, creatorName(item.creatorId), item.creatorId]
-      .join(" ").toLocaleLowerCase("id-ID").includes(query);
+      .join(" ").toLocaleLowerCase("en-US").includes(query);
   });
 
   function run(action, success) {
@@ -39,23 +39,23 @@ export default function AdminModerationPage() {
   }
   return (
     <AdminFrame
-      title="Moderasi layanan."
-      description="Layanan yang disembunyikan hilang dari marketplace dan tidak bisa dipesan baru. Booking yang sudah ada tetap berjalan, dan seller melihat alasannya."
+      title="Moderasi services."
+      description="Service yang disembunyikan hilang of marketplace dan tidak bisa dipesan baru. Booking yang sudah ada tetap berjalan, dan seller melihat alasannya."
     >
       <div className="ws-toolbar">
         <div className="field">
-          <label htmlFor="mod-search">Cari layanan</label>
-          <input id="mod-search" className="field__control" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nama layanan, kategori, seller" />
+          <label htmlFor="mod-search">Search services</label>
+          <input id="mod-search" className="field__control" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nama services, kategori, seller" />
         </div>
         <div className="field">
           <label htmlFor="mod-filter">Tampilkan</label>
           <select id="mod-filter" className="field__control" value={filter} onChange={(event) => setFilter(event.target.value)}>
-            <option value="all">Semua layanan</option>
-            <option value="live">Tayang</option>
-            <option value="hidden">Tidak tayang / nonaktif</option>
+            <option value="all">All services</option>
+            <option value="live">Published</option>
+            <option value="hidden">Unpublished / nonaktif</option>
           </select>
         </div>
-        <p>{rows.length} layanan</p>
+        <p>{rows.length} services</p>
       </div>
       {done && (
         <p className="ws-success" role="status">
@@ -68,9 +68,9 @@ export default function AdminModerationPage() {
         </p>
       )}
       {dataError ? (
-        <Empty title="Daftar layanan belum tersedia.">Data tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
+        <Empty title="Sign up services belum tersedia.">Data could not be read. Check demo storage, then reload.</Empty>
       ) : rows.length === 0 ? (
-        <Empty title="Tidak ada layanan untuk filter ini.">Ubah filter untuk melihat layanan lain.</Empty>
+        <Empty title="No services match this filter.">Adjust your filters to see more services.</Empty>
       ) : (
         <ul className="ws-list">
           {rows.map((service) => (
@@ -83,14 +83,14 @@ export default function AdminModerationPage() {
                   {money(service.price)}
                 </p>
                 <details className="admin-service-details">
-                  <summary>Detail layanan</summary>
+                  <summary>Details services</summary>
                   <dl>
-                    <dt>ID layanan</dt><dd>{service.id}</dd>
-                    <dt>Status publikasi</dt><dd>{service.hidden ? "Disembunyikan Admin" : service.active ? "Tayang" : "Nonaktif oleh Seller"}</dd>
-                    <dt>Ketersediaan</dt><dd>{service.availability || "Tidak tersedia"}</dd>
-                    <dt>Mode pengerjaan</dt><dd>{service.delivery || "Tidak tercatat"}</dd>
-                    <dt>Estimasi pengerjaan</dt><dd>{service.turnaround || "Tidak tercatat"}</dd>
-                    <dt>Deskripsi</dt><dd>{service.description || "Tidak tersedia"}</dd>
+                    <dt>ID services</dt><dd>{service.id}</dd>
+                    <dt>Status publikasi</dt><dd>{service.hidden ? "Hidden by Admin" : service.active ? "Published" : "Inactive by Seller"}</dd>
+                    <dt>Availability</dt><dd>{service.availability || "Tidak tersedia"}</dd>
+                    <dt>Work mode</dt><dd>{service.delivery || "Tidak tercatat"}</dd>
+                    <dt>Estimated turnaround</dt><dd>{service.turnaround || "Tidak tercatat"}</dd>
+                    <dt>Description</dt><dd>{service.description || "Tidak tersedia"}</dd>
                     <dt>Workflow persetujuan</dt><dd>Tidak tersedia pada model moderasi demo.</dd>
                   </dl>
                 </details>
@@ -116,14 +116,14 @@ export default function AdminModerationPage() {
                         onClick={() =>
                           run(
                             () => catalog.moderate(service.id, { hidden: true, reason }),
-                            "Layanan disembunyikan dari marketplace.",
+                            "Service disembunyikan of marketplace.",
                           )
                         }
                       >
-                        Sembunyikan layanan
+                        Hide services
                       </button>
                       <button type="button" className="button button--secondary" onClick={() => setHiding("")}>
-                        Batal
+                        Cancel
                       </button>
                     </div>
                   </div>
@@ -131,7 +131,7 @@ export default function AdminModerationPage() {
               </div>
               <div className="ws-row__side">
                 <StatusBadge status={service.hidden || !service.active ? "hidden" : "live"}>
-                  {service.hidden ? "Disembunyikan admin" : service.active ? "Tayang" : "Nonaktif seller"}
+                  {service.hidden ? "Disembunyikan admin" : service.active ? "Published" : "Inactive by Seller"}
                 </StatusBadge>
                 {service.hidden ? (
                   <button
@@ -140,7 +140,7 @@ export default function AdminModerationPage() {
                     onClick={() =>
                       run(
                         () => catalog.moderate(service.id, { hidden: false }),
-                        "Layanan dipulihkan ke marketplace.",
+                        "Service dipulihkan ke marketplace.",
                       )
                     }
                   >
@@ -149,7 +149,7 @@ export default function AdminModerationPage() {
                 ) : service.active ? (
                   <>
                     <Link className="ws-link" to={`/service/${service.id}`}>
-                      Lihat ↗
+                      Show
                     </Link>
                     <button
                       type="button"
@@ -160,11 +160,11 @@ export default function AdminModerationPage() {
                         setHiding(service.id);
                       }}
                     >
-                      Sembunyikan
+                      Hide
                     </button>
                   </>
                 ) : (
-                  <span className="ws-note">Seller menonaktifkan layanan ini.</span>
+                  <span className="ws-note">Seller menonaktifkan services ini.</span>
                 )}
               </div>
             </li>

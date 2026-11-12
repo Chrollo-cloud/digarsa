@@ -42,7 +42,7 @@ export default function PersonalInfoForm({ user }) {
     try {
       const updated = store.updateProfile({ ...draft, ...(draft.avatarUrl ? { avatarMediaId: "" } : {}) }, { expectedUserId: user.id });
       setValues(fieldsFor(updated));
-      setSuccess("Data diri berhasil disimpan!");
+      setSuccess("Profile saved.");
       setError("");
     } catch (failure) {
       setError(failure.message);
@@ -56,8 +56,8 @@ export default function PersonalInfoForm({ user }) {
         <Avatar user={user} />
         <div>
           <span className="market-kicker">PROFIL AKUN</span>
-          <h2>Data diri</h2>
-          <p>Informasi untuk kebutuhan akun dan komunikasi pesanan.</p>
+          <h2>Personal information</h2>
+          <p>Account and order contact information.</p>
         </div>
       </div>
       <PhotoEditor key={user.id} ownerUserId={user.id} scope="account"
@@ -69,7 +69,7 @@ export default function PersonalInfoForm({ user }) {
       <form onSubmit={review}>
         <div className="personal-fields">
           <Input
-            label="Nama lengkap"
+            label="Full name"
             name="name"
             value={values.name}
             onChange={edit}
@@ -79,14 +79,14 @@ export default function PersonalInfoForm({ user }) {
             autoComplete="name"
           />
           <Input
-            label="Email"
+            label="Email address"
             value={user.email}
             readOnly
             disabled
-            hint="Email akun belum dapat diubah dari halaman ini."
+            hint="Account email address belum dapat diubah of halaman ini."
           />
           <Input
-            label="Nomor telepon (opsional)"
+            label="Phone number (optional)"
             name="phone"
             type="tel"
             value={values.phone}
@@ -95,7 +95,7 @@ export default function PersonalInfoForm({ user }) {
             autoComplete="tel"
           />
           <Input
-            label="Tanggal lahir (opsional)"
+            label="Date of birth (optional)"
             name="birthDate"
             type="date"
             value={values.birthDate}
@@ -103,28 +103,19 @@ export default function PersonalInfoForm({ user }) {
             autoComplete="bday"
           />
           <label className="field">
-            Jenis kelamin (opsional)
+            Gender (optional)
             <select
               className="field__control"
               name="gender"
               value={values.gender}
               onChange={edit}
             >
-              <option value="">Pilih jenis kelamin</option>
-              <option>Perempuan</option>
-              <option>Laki-laki</option>
-              <option>Tidak ingin menyebutkan</option>
+              <option value="">Select a gender</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Prefer not to say</option>
             </select>
           </label>
-          <Input
-            label="URL foto profil (opsional)"
-            name="avatarUrl"
-            type="url"
-            value={values.avatarUrl}
-            onChange={edit}
-            maxLength={2048}
-            hint="URL http/https. Kosongkan untuk memakai inisial. Foto dimuat setelah disimpan."
-          />
         </div>
         {error && (
           <p className="personal-feedback is-error" role="alert">
@@ -137,9 +128,9 @@ export default function PersonalInfoForm({ user }) {
           </p>
         )}
         <div className="personal-form-actions">
-          <p>Pastikan data diri kamu sudah benar.</p>
+          <p>Make sure your profile details are correct.</p>
           <button type="submit" className="button button--primary">
-            Simpan Data Diri ↗
+            Save Data Diri
           </button>
         </div>
       </form>
@@ -149,8 +140,8 @@ export default function PersonalInfoForm({ user }) {
         aria-labelledby="profile-confirm-title"
         onCancel={() => setDraft(null)}
       >
-        <h3 id="profile-confirm-title">Konfirmasi perubahan data</h3>
-        <p>Periksa kembali informasi akun sebelum menyimpan perubahan.</p>
+        <h3 id="profile-confirm-title">Confirm profile changes</h3>
+        <p>Review your account information before saving changes.</p>
         <strong>{draft?.name}</strong>
         <div>
           <button
@@ -161,14 +152,14 @@ export default function PersonalInfoForm({ user }) {
               setDraft(null);
             }}
           >
-            Periksa Kembali
+            Review again
           </button>
           <button
             type="button"
             className="button button--primary"
             onClick={save}
           >
-            Ya, Simpan
+            Ya, Save
           </button>
         </div>
       </dialog>

@@ -15,6 +15,22 @@ const credentials = {
   password: "Demo-password-123",
 };
 const newPassword = "New-demo-password-456";
+const addressInput = (overrides = {}) => ({
+  recipientName: "Buyer One",
+  phone: "+62 812-3456-7890",
+  province: { id: "32", name: "West Java" },
+  regency: { id: "32.73", name: "Bandung City" },
+  district: { id: "32.73.01", name: "Sukasari" },
+  village: { id: "32.73.01.1001", name: "Sukarasa" },
+  postalCode: "40152",
+  street: "Example Street",
+  houseNumber: "12A",
+  rtRw: "02/05",
+  unit: "Block C",
+  landmark: "Near the public library",
+  isPrimary: false,
+  ...overrides,
+});
 function setup() {
   const values = new Map();
   const storage = {
@@ -106,6 +122,41 @@ test("another user cannot be selected by ID and protected account fields cannot 
   assert.throws(() =>
     store.updateProfile({ name: "Nama Baru" }, { expectedUserId: second.id }),
   );
+});
+
+test("shipping addresses persist per account and support edit, primary changes, and delete", async () => {
+  const { store, storage } = setup();
+  const first = await store.register(credentials);
+  const second = await store.register({ ...credentials, email: "other-address@example.test" });
+  await store.login(credentials.email, credentials.password);
+  const primary = store.saveShippingAddress(addressInput({ isPrimary: true }), { expectedUserId: first.id })[0];
+  assert.equal(primary.isPrimary, true);
+  const secondAddress = store.saveShippingAddress(addressInput({ recipientName: "Buyer Two", postalCode: "40153", village: { id: "32.73.01.1002", name: "Gegerkalong" } }), { expectedUserId: first.id })[1];
+  store.setPrimaryShippingAddress(secondAddress.id, { expectedUserId: first.id });
+  assert.deepEqual(store.getShippingAddresses().map((row) => row.isPrimary), [false, true]);
+  store.saveShippingAddress(addressInput({ ...secondAddress, street: "Updated Street" }), { expectedUserId: first.id });
+  assert.equal(store.getShippingAddresses()[1].street, "Updated Street");
+  assert.equal(JSON.parse(storage.getItem(ACCOUNT_KEY)).accounts.find((row) => row.id === first.id).discoveryLocation, undefined);
+  store.deleteShippingAddress(secondAddress.id, { expectedUserId: first.id });
+  assert.deepEqual(store.getShippingAddresses().map((row) => row.isPrimary), [true]);
+  await store.login("other-address@example.test", credentials.password);
+  assert.deepEqual(store.getShippingAddresses(), []);
+  assert.throws(() => store.saveShippingAddress(addressInput(), { expectedUserId: first.id }), /session changed/i);
+});
+
+test("shipping address validation rejects bad postal codes and corrupt address books without overwriting data", async () => {
+  const { store, storage } = setup();
+  const user = await store.register(credentials);
+  const before = storage.getItem(ACCOUNT_KEY);
+  assert.throws(() => store.saveShippingAddress(addressInput({ postalCode: "1234" }), { expectedUserId: user.id }), /Postal code/);
+  assert.equal(storage.getItem(ACCOUNT_KEY), before);
+  const db = JSON.parse(before);
+  db.accounts[0].shippingAddresses = [{ id: "broken", isPrimary: true }];
+  storage.setItem(ACCOUNT_KEY, JSON.stringify(db));
+  assert.throws(() => store.getShippingAddresses(), /Recipient/);
+  const damaged = storage.getItem(ACCOUNT_KEY);
+  assert.throws(() => store.saveShippingAddress(addressInput(), { expectedUserId: user.id }));
+  assert.equal(storage.getItem(ACCOUNT_KEY), damaged);
 });
 
 test("profile validation rejects invalid values and supports clearing optional fields", async () => {

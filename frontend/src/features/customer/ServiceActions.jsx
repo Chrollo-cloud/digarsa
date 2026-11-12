@@ -22,12 +22,12 @@ export default function ServiceActions({ service }) {
       if (kind === "favorite") {
         if (saved) store.removeFavorite(service.id);
         else store.addFavorite(service.id);
-        setMessage(saved ? "Favorit dihapus." : "Layanan disimpan.");
+        setMessage(saved ? "Favorites dihapus." : "Service disimpan.");
       } else {
         if (added) store.removeFromCart(service.id);
         else store.addToCart(service.id);
         setMessage(
-          added ? "Dihapus dari keranjang." : "Ditambahkan ke keranjang.",
+          added ? "Dihapus of keranjang." : "Ditambahkan ke keranjang.",
         );
       }
       setError(false);
@@ -41,11 +41,11 @@ export default function ServiceActions({ service }) {
       <div>
         <button
           type="button"
-          aria-label={`${saved ? "Hapus dari" : "Simpan ke"} favorit: ${service.title}`}
+          aria-label={`${saved ? "Hapus dari" : "Save ke"} favorit: ${service.title}`}
           aria-pressed={saved}
           onClick={() => act("favorite")}
         >
-          {saved ? "♥ Disimpan" : "♡ Simpan"}
+          {saved ? "♥ Disimpan" : "♡ Save"}
         </button>
         <button
           type="button"
@@ -53,7 +53,7 @@ export default function ServiceActions({ service }) {
           aria-pressed={added}
           onClick={() => act("cart")}
         >
-          {added ? "✓ Di keranjang" : "+ Keranjang"}
+          {added ? "✓ Di keranjang" : "+ Cart"}
         </button>
       </div>
       <span role={error ? "alert" : "status"}>{message}</span>

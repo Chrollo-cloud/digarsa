@@ -1,128 +1,26 @@
 import { Link } from "react-router-dom";
 import { money } from "../../data/marketplace";
-import { Empty, Stat, StatusBadge } from "../workspace/WorkspaceFrame";
-import { dateOnly, monthLabel } from "../workspace/format";
+import { Empty, Stat } from "../workspace/WorkspaceFrame";
 import SellerFrame from "./SellerFrame";
 import { useSeller } from "./useSeller";
-import { summarizeEarnings } from "./earnings";
+import { getAvailableBalance, getDigarsaCommission, getEarningsHistory, getGrossEarnings, getPendingBalance, getSellerNetEarnings, getTotalPayout } from "./earnings";
+import { payoutStore } from "./payoutStore";
 
 export default function EarningsPage() {
-  const { bookings, customers } = useSeller();
-  const totals = summarizeEarnings(bookings);
-  const history = [...bookings].sort((a, b) =>
-    (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt),
-  );
-  return (
-    <SellerFrame
-      title="Pendapatan."
-      description="Estimasi dari harga awal pada booking. Belum ada pembayaran, potongan, atau pencairan di Digarsa demo ini."
-    >
-      <div className="ws-stats">
-        <Stat label="Selesai" value={money(totals.completed.total)} note={`${totals.completed.count} pesanan`} />
-        <Stat label="Sedang dikerjakan" value={money(totals.inProgress.total)} note={`${totals.inProgress.count} pesanan`} />
-        <Stat label="Menunggu respons" value={money(totals.pending.total)} note={`${totals.pending.count} permintaan`} />
-        <Stat label="Ditolak / dibatalkan" value={totals.declined} note="Tidak dihitung sebagai pendapatan" />
-      </div>
-
-      <section className="ws-section" aria-labelledby="months-heading">
-        <header>
-          <h2 id="months-heading">Per bulan.</h2>
-        </header>
-        {totals.months.length ? (
-          <div className="ws-table-wrap">
-            <table className="ws-table">
-              <thead>
-                <tr>
-                  <th scope="col">Bulan</th>
-                  <th scope="col">Pesanan selesai</th>
-                  <th scope="col">Estimasi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {totals.months.map((row) => (
-                  <tr key={row.month}>
-                    <td>{monthLabel(row.month)}</td>
-                    <td>{row.count}</td>
-                    <td>{money(row.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <Empty title="Belum ada pesanan selesai.">
-            Estimasi muncul setelah kamu menandai pesanan sebagai selesai.
-          </Empty>
-        )}
-      </section>
-
-      <section className="ws-section" aria-labelledby="history-heading">
-        <header>
-          <h2 id="history-heading">Riwayat booking.</h2>
-        </header>
-        {history.length > 0 ? (
-          <div className="ws-table-wrap">
-            <table className="ws-table">
-              <thead>
-                <tr>
-                  <th scope="col">Tanggal</th>
-                  <th scope="col">Layanan</th>
-                  <th scope="col">Pelanggan</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Estimasi awal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((booking) => (
-                  <tr key={booking.id}>
-                    <td>{dateOnly(booking.updatedAt || booking.createdAt)}</td>
-                    <td><Link className="ws-link" to={`/seller-dashboard/orders/${booking.id}`}>{booking.serviceTitle}</Link></td>
-                    <td>{customers[booking.customerId] || "Pelanggan"}</td>
-                    <td><StatusBadge status={booking.status} /></td>
-                    <td>{money(booking.estimatedPrice)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <Empty title="Belum ada riwayat booking.">Booking akan muncul setelah pelanggan mengajukan layananmu.</Empty>
-        )}
-      </section>
-
-      {totals.completed.rows.length > 0 && (
-        <section className="ws-section" aria-labelledby="done-heading">
-          <header>
-            <h2 id="done-heading">Rincian estimasi selesai.</h2>
-          </header>
-          <div className="ws-table-wrap">
-            <table className="ws-table">
-              <thead>
-                <tr>
-                  <th scope="col">Layanan</th>
-                  <th scope="col">Pelanggan</th>
-                  <th scope="col">Selesai</th>
-                  <th scope="col">Estimasi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {totals.completed.rows.map((booking) => (
-                  <tr key={booking.id}>
-                    <td>
-                      <Link className="ws-link" to={`/seller-dashboard/orders/${booking.id}`}>
-                        {booking.serviceTitle}
-                      </Link>
-                    </td>
-                    <td>{customers[booking.customerId] || "Pelanggan"}</td>
-                    <td>{dateOnly(booking.updatedAt || booking.createdAt)}</td>
-                    <td>{money(booking.estimatedPrice)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-    </SellerFrame>
-  );
+  const { profile, bookings, customers } = useSeller();
+  const payouts = profile ? payoutStore.list(profile.id) : [];
+  const history = getEarningsHistory(bookings);
+  return <SellerFrame title="Earnings." description="Earnings are calculated from demo payments. Sellers receive 95%; Digarsa's commission is 5%.">
+    <div className="ws-stats">
+      <Stat label="Available balance" value={money(getAvailableBalance(bookings, payouts))} note="Paid dan pekerjaan selesai" />
+      <Stat label="Pending balance" value={money(getPendingBalance(bookings))} note="Paid, menunggu pekerjaan selesai" />
+      <Stat label="Total earnings" value={money(getSellerNetEarnings(bookings))} note="Setelah komisi" />
+      <Stat label="Total payouts" value={money(getTotalPayout(payouts))} note="Payout berstatus Paid Out" />
+      <Stat label="Gross earnings" value={money(getGrossEarnings(bookings))} note="Payment total Paid" />
+      <Stat label="Digarsa commission" value={money(getDigarsaCommission(bookings))} note="5% of gross" />
+    </div>
+    <section className="ws-section"><header><h2>Earnings history.</h2><Link to="/seller-dashboard/wallet">Open wallet </Link></header>
+      {!history.length ? <Empty title="No earnings yet." >Paid transactions appear here. Accepted or Completed bookings without payment are excluded.</Empty> : <div className="ws-table-wrap"><table className="ws-table"><thead><tr><th>Payment date</th><th>Service</th><th>Customer</th><th>Gross</th><th>Komisi 5%</th><th>Seller 95%</th></tr></thead><tbody>{history.map(row => <tr key={row.demoPayment?.id || row.id}><td>{new Date(row.paidAt).toLocaleString("en-US")}</td><td>{row.serviceTitle}</td><td>{customers[row.customerId] || "Customer"}</td><td>{money(row.gross)}</td><td>{money(row.commission)}</td><td>{money(row.net)}</td></tr>)}</tbody></table></div>}
+    </section>
+  </SellerFrame>;
 }

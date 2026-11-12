@@ -19,7 +19,7 @@ export default function HeroSection() {
         </h1>
         <p className="home-hero__tagline">Where Ideas Meet Talent.</p>
         <Button variant="aqua" to="/marketplace">
-          Jelajahi kreator <span aria-hidden="true">→</span>
+          Explore creators
         </Button>
       </div>
       <span className="home-hero__asterisk" aria-hidden="true">

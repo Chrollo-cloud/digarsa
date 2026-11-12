@@ -63,7 +63,7 @@ export default function PortfolioRail() {
       </div>
       <div className="home-portfolio__controls">
         <Button variant="aqua" to="/marketplace">
-          Lihat semua karya <span aria-hidden="true">↗</span>
+          Show semua karya <span aria-hidden="true"></span>
         </Button>
         <span className="home-portfolio__progress" aria-hidden="true">
           <i style={{ left: `${position * 72}%` }} />

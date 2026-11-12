@@ -17,12 +17,12 @@ export default function SellerOrdersPage() {
     : bookings;
   return (
     <SellerFrame
-      title="Pesanan masuk."
-      description="Ini adalah booking yang sama dengan yang dilihat pelanggan. Keputusanmu langsung tampil di halaman pesanan mereka."
+      title="Orders masuk."
+      description="Ini adalah bookings that customers see. Your decision appears on their orders page."
     >
       <div className="ws-toolbar">
         <div className="field">
-          <label htmlFor="order-status">Filter status</label>
+          <label htmlFor="order-status">Filter by status</label>
           <select
             id="order-status"
             className="field__control"
@@ -31,14 +31,14 @@ export default function SellerOrdersPage() {
               setParams(event.target.value ? { status: event.target.value } : {})
             }
           >
-            <option value="">Semua status</option>
+            <option value="">All status</option>
             {statuses.map((item) => (
               <option key={item} value={item}>{bookingStatusLabel(item)}</option>
             ))}
           </select>
         </div>
         <p>
-          {rows.length} dari {bookings.length} pesanan
+          {rows.length} of {bookings.length} orders
         </p>
       </div>
       {rows.length ? (
@@ -48,26 +48,28 @@ export default function SellerOrdersPage() {
               <div>
                 <h3>{booking.serviceTitle}</h3>
                 <p>
-                  {customers[booking.customerId] || "Pelanggan"} · diajukan{" "}
+                  <Link to={`/seller-dashboard/buyers/${encodeURIComponent(booking.customerId)}?bookingId=${encodeURIComponent(booking.id)}`}>
+                    {customers[booking.customerId] || "Customer"}
+                  </Link>{" "}· requested{" "}
                   {dateOnly(booking.createdAt)} ·{" "}
-                  {booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}
+                  {booking.deliveryMode === "onsite" ? "On-site" : "Remote"}
                 </p>
               </div>
               <div className="ws-row__side">
                 <span className="ws-price">{money(booking.finalPrice ?? booking.estimatedPrice)}</span>
                 <StatusBadge status={booking.status} />
                 <Link to={`/seller-dashboard/orders/${booking.id}`}>
-                  {booking.status === "Requested" ? "Tinjau →" : "Detail →"}
+                  {booking.status === "Requested" ? "Review " : "Details "}
                 </Link>
               </div>
             </li>
           ))}
         </ul>
       ) : (
-        <Empty title={status ? `Tidak ada pesanan ${bookingStatusLabel(status)}.` : "Belum ada pesanan."}>
+        <Empty title={status ? `No orders ${bookingStatusLabel(status)}.` : "No orders yet."}>
           {status
-            ? "Ubah filter untuk melihat status lain."
-            : "Pesanan akan muncul saat pelanggan mengajukan booking untuk layananmu."}
+            ? "Change the filter to see other statuses."
+            : "Orders akan muncul saat pelanggan mengajukan booking untuk servicesmu."}
         </Empty>
       )}
     </SellerFrame>

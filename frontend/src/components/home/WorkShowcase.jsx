@@ -31,7 +31,7 @@ export default function WorkShowcase() {
               <h3>{project.title}</h3>
             </div>
             <span className="home-work__arrow" aria-hidden="true">
-              ↗
+
             </span>
           </Link>
         ))}

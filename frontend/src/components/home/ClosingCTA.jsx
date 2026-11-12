@@ -5,12 +5,12 @@ export default function ClosingCTA() {
     <section className="home-closing" aria-labelledby="closing-title">
       <span className="home-label">/collaborate</span>
       <h2 id="closing-title" data-reveal>
-        Ide kamu
+        Your ideas
         <br />
-        layak <em>jadi karya.</em>
+        deserve to <em>become reality.</em>
       </h2>
       <Button variant="aqua" to="/marketplace">
-        Temukan talent <span aria-hidden="true">↗</span>
+        Find creative talent
       </Button>
     </section>
   );

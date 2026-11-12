@@ -3,14 +3,14 @@ import { ADMIN_PERMISSION } from "./demoStore.js";
 
 export const buyerLinks = [
   ["/dashboard", "Dashboard"],
-  ["/profile", "Profil Saya"],
-  ["/settings", "Pengaturan"],
-  ["/favorites", "Favorit"],
-  ["/cart", "Keranjang"],
-  ["/orders", "Pesanan"],
-  ["/reviews", "Beri Penilaian"],
-  ["/messages", "Pesan Saya"],
-  ["/notifications", "Notifikasi Saya"],
+  ["/profile", "My Profile"],
+  ["/settings", "Settings"],
+  ["/favorites", "Favorites"],
+  ["/cart", "Cart"],
+  ["/orders", "Orders"],
+  ["/reviews", "My Reviews"],
+  ["/messages", "My Messages"],
+  ["/notifications", "My Notifications"],
 ];
 
 export function accountLinks(user) {

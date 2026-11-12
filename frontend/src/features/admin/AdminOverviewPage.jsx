@@ -28,33 +28,33 @@ export default function AdminOverviewPage() {
   return (
     <AdminFrame
       title="Admin Dashboard."
-      description="Pantau akun, layanan, dan pesanan lintas pelanggan serta seller. Halaman ini hanya untuk izin admin internal."
+      description="Monitor accounts, services, and orders across customers and sellers. This page requires internal Admin permission."
     >
-      {error ? <div className="ws-empty"><h2>Data dashboard belum tersedia.</h2><p>Periksa penyimpanan demo, lalu muat ulang halaman.</p></div> : <>
+      {error ? <div className="ws-empty"><h2>Dashboard data unavailable.</h2><p>Check demo storage, then reload the page.</p></div> : <>
       <div className="ws-stats">
-        <Stat to="/admin/accounts" label="Total pengguna" value={accounts.length} note="Akun terdaftar" />
+        <Stat to="/admin/accounts" label="Total users" value={accounts.length} note="Registered accounts" />
         <Stat to="/admin/accounts?role=customer" label="Customer" value={customers} note="Akun dengan akses pemesanan" />
-        <Stat to="/admin/accounts?role=seller" label="Seller" value={sellers} note="Profil Seller aktif" />
-        <Stat to="/admin/moderation" label="Total layanan" value={services.length} note={`${hidden} disembunyikan Admin`} />
-        <Stat to="/admin/orders" label="Total booking" value={bookings.length} note={`${activeBookings} masih berjalan`} />
-        <Stat label="Nilai booking selesai" value={money(volume)} note={`${completedBookings} booking · estimasi, bukan transaksi`} />
+        <Stat to="/admin/accounts?role=seller" label="Seller" value={sellers} note="Active Seller Profiles" />
+        <Stat to="/admin/moderation" label="Total services" value={services.length} note={`${hidden} hidden by Admin`} />
+        <Stat to="/admin/orders" label="Total bookings" value={bookings.length} note={`${activeBookings} in progress`} />
+        <Stat label="Completed booking value" value={money(volume)} note={`${completedBookings} bookings · estimates, not transactions`} />
       </div>
       <section className="ws-section" aria-labelledby="activity-heading">
         <header>
-          <h2 id="activity-heading">Aktivitas marketplace.</h2>
-          <Link to="/admin/orders">Buka monitor pesanan →</Link>
+          <h2 id="activity-heading">Marketplace activity.</h2>
+          <Link to="/admin/orders">Open order monitor</Link>
         </header>
         <div className="ws-stats admin-activity-stats">
-          <Stat label="Booking 7 hari terakhir" value={recentBookings} note="Berdasarkan tanggal permintaan" />
-          <Stat label="Booking aktif" value={activeBookings} note="Requested, Accepted, atau Paid" />
-          <Stat label="Layanan tayang" value={services.filter((item) => item.active && !item.hidden).length} note="Aktif dan tidak dimoderasi" />
-          <Stat label="Layanan nonaktif" value={services.filter((item) => !item.active && !item.hidden).length} note="Dinonaktifkan Seller" />
+          <Stat label="Bookings in the last 7 days" value={recentBookings} note="Based on request date" />
+          <Stat label="Active bookings" value={activeBookings} note="Requested, Accepted, or Paid" />
+          <Stat label="Published services" value={services.filter((item) => item.active && !item.hidden).length} note="Active and not moderated" />
+          <Stat label="Inactive services" value={services.filter((item) => !item.active && !item.hidden).length} note="Disabled by Seller" />
         </div>
       </section>
       <section className="ws-section" aria-labelledby="status-heading">
         <header>
-          <h2 id="status-heading">Pesanan per status.</h2>
-          <Link to="/admin/orders">Monitor pesanan →</Link>
+          <h2 id="status-heading">Orders by status.</h2>
+          <Link to="/admin/orders">Monitor orders</Link>
         </header>
         <ul className="ws-list">
           {statuses.map((status) => (
@@ -69,11 +69,11 @@ export default function AdminOverviewPage() {
       </section>
       <section className="ws-section" aria-labelledby="recent-bookings-heading">
         <header>
-          <h2 id="recent-bookings-heading">Booking terbaru.</h2>
-          <Link to="/admin/orders">Semua booking →</Link>
+          <h2 id="recent-bookings-heading">Recent bookings.</h2>
+          <Link to="/admin/orders">All bookings</Link>
         </header>
         {!bookings.length ? (
-          <Empty title="Belum ada booking.">Aktivitas akan tercatat setelah Customer mengirim permintaan booking.</Empty>
+          <Empty title="No bookings yet.">Activity will appear after a Customer submits a booking request.</Empty>
         ) : (
           <ul className="ws-list">
             {bookings.slice(0, 5).map((booking) => (

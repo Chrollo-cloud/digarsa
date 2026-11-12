@@ -4,7 +4,7 @@ export default function ReviewSummary({ summary, personal = false }) {
   return (
     <aside
       className="review-summary"
-      aria-label="Ringkasan penilaian terverifikasi"
+      aria-label="Verified rating summary"
     >
       <span className="review-kicker">
         {personal
@@ -16,7 +16,7 @@ export default function ReviewSummary({ summary, personal = false }) {
         <strong>
           {summary.average === null
             ? "—"
-            : summary.average.toLocaleString("id-ID", {
+            : summary.average.toLocaleString("en-US", {
                 minimumFractionDigits: 1,
                 maximumFractionDigits: 2,
               })}
@@ -25,7 +25,7 @@ export default function ReviewSummary({ summary, personal = false }) {
       </div>
       <RatingStars value={summary.average} size={23} />
       <p>
-        <b>{summary.total}</b> ulasan terverifikasi
+        <b>{summary.total}</b> verified reviews
         {personal ? " ditulis olehmu" : ""}
       </p>
       <div className="review-distribution">
@@ -37,16 +37,16 @@ export default function ReviewSummary({ summary, personal = false }) {
             <progress
               max={summary.total || 1}
               value={count}
-              aria-label={`${rating} bintang: ${count} dari ${summary.total} ulasan`}
+              aria-label={`${rating} bintang: ${count} of ${summary.total} ulasan`}
             />
             <small>{Math.round(percentage)}%</small>
           </div>
         ))}
       </div>
       <p className="review-verified-note">
-        <span aria-hidden="true">✓</span> Hanya dari booking Completed.
+        <span aria-hidden="true">✓</span> Hanya of booking Completed.
         <br />
-        Testimoni demo tidak termasuk hitungan.
+        Demo testimonials are not included in the count.
       </p>
     </aside>
   );

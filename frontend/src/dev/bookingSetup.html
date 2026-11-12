@@ -1,30 +1,30 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Penyiapan booking demo — Digarsa</title>
+<title>Demo booking setup — Digarsa</title>
 <style>body{background:#F2F2ED;color:#464B71;font:16px/1.6 system-ui;margin:0;padding:24px}main{max-width:720px;margin:auto;background:white;padding:28px;border:1px solid #ddd;border-radius:10px}label{display:grid;margin:16px 0;gap:8px}input,button{font:inherit;padding:12px;border:1px solid #464B71;border-radius:5px;max-width:100%}button{cursor:pointer;background:#7CD5C7;color:#26314F;margin:5px}a{color:#118AB2}</style>
 </head>
 <body>
 <main>
-<h1>Penyiapan booking demo lokal.</h1>
-<p>Opt-in, localhost saja. Membuat dua akun terpisah dan dua layanan milik seller yang sah. Tidak memerlukan verifikasi identitas. Tidak membuat booking atau pembayaran. Titik peta adalah area QA sintetis, bukan GPS atau alamat pengguna.</p>
-<p>Gunakan sandi khusus demo. Sandi tidak disimpan pada registri fixture. Halaman ini mengganti sesi aktif pada origin ini.</p>
-<label>Sandi seller demo<input id="seller-password" type="password" minlength="8" autocomplete="new-password">
+<h1>Local demo booking setup.</h1>
+<p>Optional and limited to localhost. Creates two separate accounts and two services owned by the seller. No identity verification is required. It does not create bookings or payments. The map point is a synthetic QA area, not a user's GPS location or address.</p>
+<p>Use a password dedicated to this demo. Passwords are not stored in the fixture registry. This page changes the active session for this origin.</p>
+<label>Demo seller password<input id="seller-password" type="password" minlength="8" autocomplete="new-password">
 </label>
-<label>Sandi buyer demo<input id="buyer-password" type="password" minlength="8" autocomplete="new-password">
+<label>Demo buyer password<input id="buyer-password" type="password" minlength="8" autocomplete="new-password">
 </label>
-<label style="display:flex;align-items:flex-start;gap:10px"><input id="editorial-samples" type="checkbox">Aktifkan booking untuk layanan editorial contoh yang berstatus Open. Pesanan akan ditangani Studio Demo Booking; kreator editorial tetap contoh dan tidak terverifikasi.</label>
-<button id="random">Isi sandi uji acak</button>
-<button id="setup">Siapkan akun dan layanan demo</button>
-<button id="buyer">Masuk sebagai Buyer</button>
-<button id="seller">Masuk sebagai Seller</button>
-<button id="reset">Reset katalog demo (arsipkan)</button>
-<p>Reset mengarsipkan layanan milik fixture dan menonaktifkan pemetaan booking editorial. Akun, booking dan percakapan tetap dipertahankan. Penyiapan berikutnya membuat layanan baru. Jika memakai sandi acak, pertahankan tab ini untuk berganti akun.</p>
+<label style="display:flex;align-items:flex-start;gap:10px"><input id="editorial-samples" type="checkbox">Enable bookings for sample editorial services marked Available. Orders will be handled by Studio Demo Booking; editorial creators remain samples and are not verified.</label>
+<button id="random">Fill random test passwords</button>
+<button id="setup">Set up demo accounts and services</button>
+<button id="buyer">Log in as Buyer</button>
+<button id="seller">Log in as Seller</button>
+<button id="reset">Reset demo catalog (archive)</button>
+<p>Reset archives fixture-owned services and disables editorial booking mappings. Accounts, bookings, and conversations are preserved. The next setup creates new services. If you use random passwords, keep this tab open to switch accounts.</p>
 <p id="status" role="status">
 </p>
-<a href="/marketplace" target="_blank" rel="noopener">Buka Marketplace di tab baru</a> · <a href="/nearby" target="_blank" rel="noopener">Nearby</a> · <a href="/seller-dashboard/orders" target="_blank" rel="noopener">Pesanan Seller</a>
+<a href="/marketplace" target="_blank" rel="noopener">Open Marketplace in a new tab</a> · <a href="/nearby" target="_blank" rel="noopener">Nearby services</a> · <a href="/seller-dashboard/orders" target="_blank" rel="noopener">Seller orders</a> · <a href="/orders" target="_blank" rel="noopener">Customer bookings</a>
 <script type="module" src="./bookingSetup.js">
 </script>
 </main>

@@ -11,7 +11,7 @@ export default function AdminAccountsPage() {
   const [search, setSearch] = useState("");
   const role = searchParams.get("role") || "all";
   const rows = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("id-ID");
+    const query = search.trim().toLocaleLowerCase("en-US");
     return accounts.filter((account) => {
       const matchesRole =
         role === "customer"
@@ -23,7 +23,7 @@ export default function AdminAccountsPage() {
               : true;
       const text = [account.name, account.email, account.sellerName, account.sellerProfileId]
         .join(" ")
-        .toLocaleLowerCase("id-ID");
+        .toLocaleLowerCase("en-US");
       return matchesRole && text.includes(query);
     });
   }, [accounts, role, search]);
@@ -38,11 +38,11 @@ export default function AdminAccountsPage() {
   return (
     <AdminFrame
       title="Manajemen akun."
-      description="Cari dan tinjau akun Customer serta Seller dari model akun terpadu. Informasi kredensial tidak tersedia di tampilan Admin."
+      description="Search dan tinjau akun Customer serta Seller of model akun terpadu. Informasi kredensial tidak tersedia di tampilan Admin."
     >
       <div className="ws-toolbar admin-toolbar">
         <div className="field">
-          <label htmlFor="admin-account-search">Cari akun</label>
+          <label htmlFor="admin-account-search">Search akun</label>
           <input
             id="admin-account-search"
             className="field__control"
@@ -55,19 +55,19 @@ export default function AdminAccountsPage() {
         <div className="field">
           <label htmlFor="admin-account-role">Peran akun</label>
           <select id="admin-account-role" className="field__control" value={role} onChange={(event) => changeRole(event.target.value)}>
-            <option value="all">Semua akun</option>
+            <option value="all">All akun</option>
             <option value="customer">Customer-capable</option>
             <option value="seller">Seller</option>
             <option value="admin">Admin</option>
           </select>
         </div>
-        <p>{rows.length} dari {accounts.length} akun</p>
+        <p>{rows.length} of {accounts.length} akun</p>
       </div>
       <p className="ws-notice admin-capability-note">
         Akun Digarsa dapat berperan sebagai Customer; Seller adalah kemampuan tambahan melalui Seller Profile. Model demo belum memiliki status suspend akun atau status verifikasi Seller.
       </p>
       {error ? (
-        <Empty title="Daftar akun belum tersedia.">Data akun tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
+        <Empty title="Sign up akun belum tersedia.">Data akun tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
       ) : rows.length === 0 ? (
         <Empty title={accounts.length ? "Akun tidak ditemukan." : "Belum ada akun."}>
           {accounts.length ? "Ubah kata pencarian atau filter peran." : "Akun akan muncul setelah pengguna mendaftar."}
@@ -90,7 +90,7 @@ export default function AdminAccountsPage() {
                     <strong>{account.name}</strong>{account.isSelf && <small>Akun Admin aktif</small>}
                     <small>{account.email}</small>
                     <details className="admin-account-details">
-                      <summary>Lihat detail akun</summary>
+                      <summary>View details akun</summary>
                       <dl>
                         <dt>ID akun</dt><dd>{account.id}</dd>
                         <dt>Tanggal dibuat</dt><dd>{account.createdAt ? dateTime(account.createdAt) : "Tidak tercatat"}</dd>

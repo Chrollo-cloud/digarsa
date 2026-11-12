@@ -58,13 +58,13 @@ function BookingForm({ service, creator }) {
       <section className="customer-form-panel">
         <form onSubmit={review} hidden={!!draft}>
           <h2 tabIndex={-1} ref={formHeading}>
-            Ceritakan rencanamu.
+            Tell us about your project.
           </h2>
           <p>
-            Lengkapi ringkasan kebutuhan untuk membantu kreator memahami kebutuhan proyekmu.
+            Describe what you need so the creator can understand your project.
           </p>
           <label className="field">
-            Kebutuhan proyek
+            Project requirements
             <textarea
               className="field__control"
               name="requirements"
@@ -72,11 +72,11 @@ function BookingForm({ service, creator }) {
               minLength={10}
               maxLength={2000}
               rows={4}
-              placeholder="Hasil, format, dan kebutuhan utama…"
+              placeholder="Deliverables, format, and key requirements…"
             />
           </label>
           <label className="field">
-            Deskripsi proyek
+            Project description
             <textarea
               className="field__control"
               name="description"
@@ -84,11 +84,11 @@ function BookingForm({ service, creator }) {
               minLength={20}
               maxLength={5000}
               rows={5}
-              placeholder="Ceritakan tujuan, konteks, dan arah kreatif…"
+              placeholder="Describe your goals, context, and creative direction…"
             />
           </label>
           <Input
-            label={`Tanggal yang diminta${onsite || service.requiresSchedule ? "" : " (opsional)"}`}
+            label={`Requested date${onsite || service.requiresSchedule ? "" : " (optional)"}`}
             name="requestedDate"
             type="date"
             min={localToday()}
@@ -96,7 +96,7 @@ function BookingForm({ service, creator }) {
           />
           {onsite && (
             <Input
-              label="Lokasi / alamat proyek"
+              label="Project location / address"
               name="location"
               required
               minLength={10}
@@ -104,7 +104,7 @@ function BookingForm({ service, creator }) {
             />
           )}
           <button type="submit" className="button button--primary">
-            Tinjau permintaan →
+            Review request
           </button>
         </form>
         {draft && (
@@ -116,30 +116,28 @@ function BookingForm({ service, creator }) {
                 node?.focus();
               }}
             >
-              Tinjau sebelum mengirim.
+              Review sebelum mengirim.
             </h2>
             <dl>
-              <dt>Kebutuhan proyek</dt>
+              <dt>Project requirements</dt>
               <dd>{draft.requirements}</dd>
-              <dt>Deskripsi</dt>
+              <dt>Description</dt>
               <dd>{draft.description}</dd>
-              <dt>Tanggal</dt>
+              <dt>Date</dt>
               <dd>
-                {draft.requestedDate || "Fleksibel, dibahas bersama kreator"}
+                {draft.requestedDate || "Flexible, to be discussed with the creator"}
               </dd>
               {onsite && (
                 <>
-                  <dt>Lokasi</dt>
+                  <dt>Location</dt>
                   <dd>{draft.location}</dd>
                 </>
               )}
-              <dt>Estimasi harga awal</dt>
+              <dt>Starting price estimate</dt>
               <dd>{money(service.price)}</dd>
             </dl>
             <p>
-              Dengan konfirmasi ini kamu mengirim permintaan berstatus
-              Menunggu Persetujuan. Seller belum menerima proyek dan tidak ada biaya yang
-              ditagihkan.
+              By confirming, you submit a booking request with the status Awaiting Review. The seller has not accepted the project and no charge will be made.
             </p>
             <div className="customer-confirm-actions">
               <button
@@ -153,14 +151,14 @@ function BookingForm({ service, creator }) {
                   );
                 }}
               >
-                Ubah kebutuhan
+                Edit request
               </button>
               <button
                 type="button"
                 className="button button--primary"
                 onClick={confirm}
               >
-                Konfirmasi dan kirim permintaan
+                Confirm and submit request
               </button>
             </div>
           </div>
@@ -185,22 +183,22 @@ export default function BookingRequestPage() {
   const demoSeller = service && store.getDemoBookingSellerProfile(service.id);
   return (
     <CustomerFrame
-      title="Mulai dari kebutuhan yang jelas."
-      description="Ajukan satu layanan, lalu tunggu tinjauan kreator."
+      title="Start with a clear brief."
+      description="Request a service, lalu tunggu tinjauan kreator."
     >
       <Link
         className="customer-back"
         to={service ? `/service/${service.id}` : "/marketplace"}
       >
-        ← Kembali ke {service ? "layanan" : "marketplace"}
+        Back to {service ? "service" : "marketplace"}
       </Link>
       {reason ? (
         <EmptyState title={reason}>
-          Pilih layanan lain yang tersedia untuk memulai kolaborasi.
+          Select another available service to start a collaboration.
         </EmptyState>
       ) : (
         <>
-          {demoSeller && <p className="customer-warning">Contoh editorial ini akan dipesan melalui akun Seller demo {demoSeller.name}. Kreator contoh tidak dinyatakan terverifikasi.</p>}
+          {demoSeller && <p className="customer-warning">This editorial sample is booked through the demo Seller account {demoSeller.name}. The sample creator is not represented as verified.</p>}
           <BookingForm
             key={`${user.id}-${service.id}`}
             service={service}

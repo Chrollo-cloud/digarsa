@@ -50,7 +50,7 @@ export function createCatalogSync({
         )
       )
         throw new Error(
-          "Asosiasi layanan dan pemilik Seller Profile belum dapat diverifikasi.",
+          "Asosiasi services dan pemilik Seller Profile belum dapat diverifikasi.",
         );
       // Complete all reads/building before touching the published arrays.
       const overlay = build({
@@ -65,7 +65,7 @@ export function createCatalogSync({
       status.update({
         error:
           error instanceof TypeError
-            ? "Data profil atau layanan katalog tidak lengkap."
+            ? "Data profil atau services katalog tidak lengkap."
             : error.message || "Katalog belum dapat diverifikasi.",
         hasValidCatalog: status.snapshot().hasValidCatalog,
       });

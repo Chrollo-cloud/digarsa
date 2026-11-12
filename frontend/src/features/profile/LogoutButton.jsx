@@ -18,9 +18,9 @@ export default function LogoutButton() {
     <section className="personal-card personal-session">
       <div>
         <span className="market-kicker">SESI AKUN</span>
-        <h2>Selesai untuk sekarang?</h2>
+        <h2>Completed untuk sekarang?</h2>
         <p>
-          Keluar mengakhiri sesi di browser ini. Data demo akunmu tetap
+          Log out mengakhiri sesi di browser ini. Data demo akunmu tetap
           tersimpan.
         </p>
       </div>
@@ -29,7 +29,7 @@ export default function LogoutButton() {
         type="button"
         onClick={logout}
       >
-        Keluar dari akun ↗
+        Log out
       </button>
       {error && (
         <p className="personal-feedback is-error" role="alert">

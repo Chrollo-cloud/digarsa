@@ -9,34 +9,33 @@ export default function HowItWorksPage() {
   const [audience, setAudience] = useState("customer");
   const creator = audience === "creator";
   return (
-    <MarketingPage title="Cara Kerja" animationKey={audience}>
+    <MarketingPage title="How It Works" animationKey={audience}>
       <header className="marketing-container marketing-how-hero">
         <div>
           <span className="marketing-label marketing-pill">
-            CARA KERJA DIGARSA
+            HOW DIGARSA WORKS
           </span>
           <h1>
-            Langkah kecil.
+            Small steps.
             <br />
-            <em>Karya berarti.</em>
+            <em>Meaningful work.</em>
           </h1>
           <p>
-            Dari menemukan talenta sampai membangun kolaborasi. Kenali
-            langkahnya, lalu mulai dari idemu sendiri.
+            From finding talent to building collaborations. Learn the steps and start bringing your own idea to life.
           </p>
           <a className="marketing-text-link" href="#langkah">
-            Temukan langkahmu <span aria-hidden="true">↓</span>
+            Explore the steps <span aria-hidden="true">↓</span>
           </a>
         </div>
         <ProcessIllustration />
       </header>
       <div className="marketing-how-band">
         <div className="marketing-container">
-          <span>IDE YANG BAIK</span>
+          <span>GOOD IDEAS</span>
           <span aria-hidden="true">✳</span>
-          <span>PERTEMUAN YANG TEPAT</span>
-          <span aria-hidden="true">↗</span>
-          <span>KARYA YANG BERARTI</span>
+          <span>THE RIGHT CONNECTIONS</span>
+          <span aria-hidden="true"></span>
+          <span>MEANINGFUL WORK</span>
         </div>
       </div>
       <section
@@ -52,7 +51,7 @@ export default function HowItWorksPage() {
             ingin <em>mulai?</em>
           </h2>
           <p>
-            Satu akun, dua kemungkinan. Cari bantuan kreatif atau tawarkan
+            Satu akun, dua kemungkinan. Search bantuan kreatif atau tawarkan
             keahlianmu melalui Seller Profile.
           </p>
           <div
@@ -62,7 +61,7 @@ export default function HowItWorksPage() {
           >
             {[
               ["customer", "Sebagai Customer"],
-              ["creator", "Sebagai Kreator"],
+              ["creator", "Sebagai Creator"],
             ].map(([value, label]) => (
               <button
                 key={value}
@@ -86,7 +85,7 @@ export default function HowItWorksPage() {
               height="1500"
               loading="lazy"
             />
-            <figcaption>Mulai dari satu percakapan yang baik.</figcaption>
+            <figcaption>Mulai of satu percakapan yang baik.</figcaption>
           </figure>
         </div>
         <ol
@@ -109,7 +108,7 @@ export default function HowItWorksPage() {
                 <h3>{step.title}</h3>
                 <p>{step.copy}</p>
                 <Link className="marketing-text-link" to={step.to}>
-                  {step.link} <span aria-hidden="true">↗</span>
+                  {step.link} <span aria-hidden="true"></span>
                 </Link>
               </div>
             </li>
@@ -120,21 +119,16 @@ export default function HowItWorksPage() {
         className="marketing-container marketing-process-note"
         aria-labelledby="demo-title"
       >
-        <span className="marketing-label">SEBELUM MEMULAI</span>
-        <h2 id="demo-title">Kenali ruang demo ini.</h2>
+        <span className="marketing-label">BEFORE YOU BEGIN</span>
+        <h2 id="demo-title">About this demo.</h2>
         <p>
-          Akun, percakapan, dan aktivitas tersimpan secara lokal di browser yang
-          kamu gunakan. Pembayaran, escrow, dan sinkronisasi lintas perangkat
-          belum tersedia. Permintaan berstatus Accepted tidak otomatis dibayar
-          atau diselesaikan.
+          Accounts, conversations, and activity are stored locally in this browser. Payments, escrow, and cross-device sync are not available. Accepted requests are not automatically paid or completed.
         </p>
         <p>
-          Ulasan terverifikasi hanya berasal dari booking berstatus Completed.
-          Informasi ini membantu kamu memahami kemampuan demo saat mencoba
-          alurnya.
+          Verified reviews come only from completed bookings. This explains what you can test in the demo.
         </p>
       </aside>
-      <MarketingCTA title="Sekarang, giliran idemu." />
+      <MarketingCTA title="Now, bring your idea." />
     </MarketingPage>
   );
 }

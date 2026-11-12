@@ -7,16 +7,15 @@ export default function BookingSummary({ service, creator }) {
       <img src={service.image} alt={service.alt} />
       <span className="market-kicker">RINGKASAN LAYANAN</span>
       <h2>{service.title}</h2>
-      <Link to={`/seller/${creator.id}`}>{creator.name} ↗</Link>
+      <Link to={`/seller/${creator.id}`}>{creator.name}</Link>
       <p>
-        {service.delivery === "Onsite" ? "Di lokasi" : "Daring"} · {service.turnaround}
+        {service.delivery === "Onsite" ? "On-site" : "Remote"} · {service.turnaround}
       </p>
       <Availability value={service.availability} />
-      <p>Estimasi harga mulai dari</p>
+      <p>Starting price estimate</p>
       <strong>{money(service.price)}</strong>
       <p>
-        Harga awal, bukan tagihan. Ruang lingkup dan harga akhir dibahas dengan
-        kreator. Mengirim permintaan tidak memicu pembayaran.
+        This is an estimate, not a charge. Discuss the scope and final price with the creator. Submitting a request does not trigger a payment.
       </p>
     </aside>
   );

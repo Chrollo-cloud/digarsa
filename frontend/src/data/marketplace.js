@@ -1,7 +1,7 @@
 import { creators as editorialCreators, railProjects } from "./home";
 
 export const money = (value) =>
-  new Intl.NumberFormat("id-ID", {
+  new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
@@ -13,12 +13,12 @@ const categoriesById = {
   illustration: "Illustration & Motion",
 };
 const descriptions = [
-  "Bangun identitas yang mencerminkan karakter bisnismu. Paket mencakup eksplorasi logo, palet warna, tipografi, dan panduan penggunaan untuk media digital maupun cetak.",
-  "Ceritakan brand dan momen penting lewat film pendek. Kami membantu penyusunan konsep, pengambilan gambar, hingga penyuntingan akhir dengan pendekatan yang personal.",
-  "Rancang rumah digital yang nyaman untuk pelangganmu. Layanan mencakup riset kebutuhan, desain responsif, dan prototipe interaktif untuk halaman utama serta halaman pendukung.",
-  "Satukan bahasa visual kampanye lewat art direction yang terarah. Kami menyiapkan moodboard, konsep kreatif, dan arahan produksi sesuai karakter brand.",
-  "Fotografi editorial untuk cerita yang punya sudut pandang. Termasuk diskusi konsep, sesi pemotretan, pemilihan foto, dan penyuntingan warna.",
-  "Ilustrasi khusus untuk kampanye dan konten digital. Mulai dari sketsa konsep hingga karya akhir beresolusi tinggi dengan warna yang disesuaikan untuk brand kamu.",
+  "Build an identity that reflects your business. This package includes logo exploration, a color palette, typography, and usage guidelines for digital and print media.",
+  "Tell your brand's story and capture important moments in a short film. We help with the concept, filming, and final edit through a personal approach.",
+  "Create a welcoming digital home for your customers. This service includes user research, responsive design, and interactive prototypes for key pages.",
+  "Bring a campaign's visual language together with thoughtful art direction. We prepare moodboards, creative concepts, and production guidance for your brand.",
+  "Editorial photography for stories with a point of view. Includes concept discussions, a photo session, image selection, and color editing.",
+  "Custom illustrations for campaigns and digital content. From concept sketches to high-resolution final artwork, with colors tailored to your brand.",
 ];
 export const services = railProjects.map((project, index) => ({
   ...project,
@@ -48,13 +48,13 @@ export const services = railProjects.map((project, index) => ({
       id: `${project.id}-1`,
       name: "Nadia P.",
       score: 5,
-      text: "Komunikasinya jelas dan hasilnya sesuai arah kreatif yang kami diskusikan.",
+      text: "Communication was clear and the results matched the creative direction we discussed.",
     },
     {
       id: `${project.id}-2`,
       name: "Bagas R.",
       score: index % 2 ? 4 : 5,
-      text: "Proses kolaborasi rapi. Masukan kami ditanggapi dengan baik sepanjang pengerjaan.",
+      text: "The collaboration was well organized. Our login was handled thoughtfully throughout the project.",
     },
   ],
 }));
@@ -66,7 +66,7 @@ export const rating = (reviews) =>
     : "—";
 export const creators = editorialCreators.map((creator) => ({
   ...creator,
-  bio: `${creator.description} Kami mendampingi bisnis lokal dari percakapan pertama, eksplorasi konsep, hingga hasil akhir yang siap digunakan. Setiap proyek dimulai dengan memahami kebutuhan dan karakter klien.`,
+  bio: `${creator.description} We support local businesses from the first conversation and concept exploration through to a polished final result. Every project starts by understanding the client's needs and character.`,
   portfolio: services
     .filter((service) => service.creatorId === creator.id)
     .map((service) => ({

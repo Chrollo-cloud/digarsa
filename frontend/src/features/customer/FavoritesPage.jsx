@@ -15,14 +15,14 @@ export default function FavoritesPage() {
     catch (failure) { setError(failure.message); }
   }
   return (
-    <CustomerFrame title="Favoritmu, pilihanmu." description="Kumpulan layanan yang menginspirasi langkah kreatif berikutnya.">
+    <CustomerFrame title="Your favorites, your choice." description="A collection of services to inspire your next creative step.">
       {error && <p className="customer-warning" role="alert">{error}</p>}
       {favorites.length ? (
-        <section className="saved-services" aria-label="Layanan favorit">
-          <p className="customer-list-caption">{favorites.length} layanan disimpan</p>
+        <section className="saved-services" aria-label="Service favorit">
+          <p className="customer-list-caption">{favorites.length} services disimpan</p>
           {favorites.map((id) => <SavedServiceCard key={id} id={id} service={services.find((row) => row.id === id)} onRemove={remove} />)}
         </section>
-      ) : <EmptyState title="Simpan yang menginspirasimu.">Gunakan tombol Simpan pada layanan untuk mengumpulkan pilihan. Favorit tetap terpisah dari keranjang.</EmptyState>}
+      ) : <EmptyState title="Save what inspires you.">Use the Save button on services to collect your choices. Favorites are separate from your cart.</EmptyState>}
     </CustomerFrame>
   );
 }

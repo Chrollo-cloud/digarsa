@@ -1,4 +1,5 @@
 import { useAuth } from "../account/authContext";
+import { useAutoComplete } from "../customer/useCustomer";
 import { customerStore } from "../customer/customerClient";
 import { useStoreSync } from "../workspace/useStoreSync";
 import { sellerStore } from "./sellerClient";
@@ -8,6 +9,7 @@ import { sellerStore } from "./sellerClient";
 export function useSeller() {
   const { user, store } = useAuth();
   useStoreSync();
+  useAutoComplete();
   const attempt = (read, fallback) => {
     try {
       return [read(), ""];

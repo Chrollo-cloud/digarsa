@@ -14,21 +14,21 @@ export default function BookingCard({ booking }) {
         >
           {bookingStatusLabel(booking.status)}
         </span>
-        <small>{new Date(booking.createdAt).toLocaleDateString("id-ID")}</small>
+        <small>{new Date(booking.createdAt).toLocaleDateString("en-US")}</small>
       </header>
       <h3>
         <Link to={`/orders/${booking.id}`}>{booking.serviceTitle}</Link>
       </h3>
       <p>
         {booking.creatorName} ·{" "}
-        {booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}
+        {booking.deliveryMode === "onsite" ? "On-site" : "Remote"}
       </p>
       <p>{bookingDate(booking.requestedDate)}</p>
-      {declineReason && <p className="customer-order-decline"><strong>Alasan ditolak:</strong> {declineReason}</p>}
+        {declineReason && <p className="customer-order-decline"><strong>Decline reason:</strong> {declineReason}</p>}
       <footer>
-        <strong><small>{Number.isSafeInteger(booking.finalPrice) ? "Harga akhir Seller" : "Estimasi mulai dari"}</small>{money(booking.finalPrice ?? booking.estimatedPrice)}</strong>
-        <Link to={`/orders/${booking.id}`}>Lihat detail →</Link>
-        {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) && <Link to={`/payment/${booking.id}`}>Pembayaran demo →</Link>}
+        <strong><small>{Number.isSafeInteger(booking.finalPrice) ? "Seller's final price" : "Starting estimate"}</small>{money(booking.finalPrice ?? booking.estimatedPrice)}</strong>
+        <Link to={`/orders/${booking.id}`}>View details</Link>
+        {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) && <Link to={`/payment/${booking.id}`}>Demo payment</Link>}
       </footer>
     </article>
   );

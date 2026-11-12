@@ -10,7 +10,7 @@ function MobileBack() {
     <Link
       className="workspace-back"
       to="/messages"
-      aria-label="Kembali ke inbox"
+      aria-label="Back to inbox"
     >
       <svg
         aria-hidden="true"
@@ -27,9 +27,9 @@ function MobileBack() {
     </Link>
   );
 }
-const dayKey = (time) => new Date(time).toLocaleDateString("id-ID");
+const dayKey = (time) => new Date(time).toLocaleDateString("en-US");
 const dayLabel = (time) =>
-  new Date(time).toLocaleDateString("id-ID", {
+  new Date(time).toLocaleDateString("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -157,7 +157,7 @@ export default function ConversationThread({ id }) {
             {conversation.service_title}
             <span>
               {" "}
-              · {conversation.booking_id ? "Booking" : "Diskusi layanan"}
+              · {conversation.booking_id ? "Booking" : "Service discussion"}
             </span>
           </p>
         </div>
@@ -166,15 +166,15 @@ export default function ConversationThread({ id }) {
             className="workspace-service-link"
             to={`/service/${conversation.service_id}`}
           >
-            <span>Lihat layanan</span>
-            <span aria-hidden="true">↗</span>
+            <span>Show services</span>
+            <span aria-hidden="true"></span>
           </Link>
         )}
       </header>
       <div
         className="workspace-history"
         role="log"
-        aria-label="Riwayat pesan"
+        aria-label="Message history"
         aria-live="polite"
         aria-relevant="additions"
         tabIndex={0}
@@ -215,7 +215,7 @@ export default function ConversationThread({ id }) {
               )}
               <article
                 className={`workspace-bubble ${mine ? "is-mine" : ""}`}
-                aria-label={`Pesan dari ${mine ? "kamu" : conversation.seller_name}`}
+                aria-label={`Pesan of ${mine ? "kamu" : conversation.seller_name}`}
               >
                 <p>{message.content}</p>
                 {safety.off_platform_payment_suspected && (
@@ -224,16 +224,16 @@ export default function ConversationThread({ id }) {
                 <footer>
                   <time
                     dateTime={message.created_at}
-                    title={new Date(message.created_at).toLocaleString("id-ID")}
+                    title={new Date(message.created_at).toLocaleString("en-US")}
                   >
-                    {new Date(message.created_at).toLocaleTimeString("id-ID", {
+                    {new Date(message.created_at).toLocaleTimeString("en-US", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </time>
                   {mine && (
                     <span>
-                      {message.read_at ? "Dibaca" : "Terkirim · belum dibaca"}
+                      {message.read_at ? "Dibaca" : "Terkirim · unread"}
                     </span>
                   )}
                 </footer>
@@ -275,7 +275,7 @@ export default function ConversationThread({ id }) {
             rows={1}
             maxLength={4000}
             readOnly={sending}
-            placeholder="Bagikan ide atau tulis pesan…"
+            placeholder="Share an idea or write a message…"
             aria-describedby="workspace-composer-help workspace-payment-note"
             onChange={(event) => {
               setText(event.target.value);
@@ -296,7 +296,7 @@ export default function ConversationThread({ id }) {
           <button
             type="submit"
             disabled={sending || !text.trim()}
-            aria-label="Kirim pesan"
+            aria-label="Send message"
           >
             {sending ? (
               <span aria-hidden="true">…</span>

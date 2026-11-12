@@ -41,7 +41,7 @@ function ServiceForm({ initial, serviceId, catalog }) {
   return (
     <form className="ws-panel ws-form" onSubmit={submit} noValidate>
       <Input
-        label="Judul layanan"
+        label="Service title"
         name="title"
         defaultValue={initial.title}
         maxLength={100}
@@ -62,20 +62,20 @@ function ServiceForm({ initial, serviceId, catalog }) {
           </select>
         </div>
         <Input
-          label="Harga mulai dari (Rp)"
+          label="Starting price (IDR)"
           name="price"
           type="number"
           inputMode="numeric"
           min="10000"
           step="1000"
           defaultValue={initial.price}
-          hint="Rp 10.000 – Rp 100.000.000. Jadi acuan awal; harga akhir dibahas dengan pelanggan."
+          hint="IDR 10,000–100,000,000. This is a starting estimate; agree on the final price with the customer."
           required
         />
       </div>
       <div className="field-pair">
         <div className="field">
-          <label htmlFor="svc-delivery">Mode pengerjaan</label>
+          <label htmlFor="svc-delivery">Work mode</label>
           <select
             id="svc-delivery"
             name="delivery"
@@ -83,11 +83,11 @@ function ServiceForm({ initial, serviceId, catalog }) {
             defaultValue={initial.delivery}
           >
             <option>Remote</option>
-            <option>Onsite</option>
+          <option value="Onsite">On-site</option>
           </select>
         </div>
         <Input
-          label="Estimasi pengerjaan"
+          label="Estimated turnaround"
           name="turnaround"
           defaultValue={initial.turnaround}
           placeholder="mis. 7–10 hari kerja"
@@ -96,7 +96,7 @@ function ServiceForm({ initial, serviceId, catalog }) {
         />
       </div>
       <div className="field">
-        <label htmlFor="svc-description">Deskripsi</label>
+        <label htmlFor="svc-description">Description</label>
         <textarea
           id="svc-description"
           name="description"
@@ -106,27 +106,27 @@ function ServiceForm({ initial, serviceId, catalog }) {
           required
         />
         <span className="field__hint">
-          Jelaskan apa yang pelanggan dapatkan (30–1500 karakter).
+          Describe what customers will receive (30–1500 karakter).
         </span>
       </div>
       <Input
-        label="Gambar layanan (URL, opsional)"
+        label="Service image (URL, opsional)"
         name="image"
         type="url"
         defaultValue={initial.image}
         placeholder="https://…"
-        hint="Kosongkan untuk memakai gambar bawaan Digarsa."
+        hint="Leave blank to use the default Digarsa image."
       />
       <div className="field">
-        <label htmlFor="svc-availability">Ketersediaan</label>
+        <label htmlFor="svc-availability">Availability</label>
         <select
           id="svc-availability"
           name="availability"
           className="field__control"
           defaultValue={initial.availability}
         >
-          <option value="Open">Open — menerima permintaan</option>
-          <option value="Full-book">Full-book — jadwal penuh</option>
+          <option value="Open">Available — accepting requests</option>
+          <option value="Full-book">Fully booked</option>
         </select>
       </div>
       <PublicLocationFields initial={initial.serviceLocation} inherit />
@@ -137,13 +137,13 @@ function ServiceForm({ initial, serviceId, catalog }) {
       )}
       <div className="ws-actions">
         <button className="button button--primary" type="submit">
-          {serviceId ? "Simpan perubahan" : "Terbitkan layanan"}
+          {serviceId ? "Save perubahan" : "Publish service"}
         </button>
         <Link
           className="button button--secondary"
           to="/seller-dashboard/services"
         >
-          Batal
+          Cancel
         </Link>
       </div>
     </form>
@@ -158,22 +158,22 @@ export default function ServiceFormPage() {
     : null;
   if (serviceId && !existing)
     return (
-      <SellerFrame title="Layanan tidak ditemukan.">
-        <Empty title="Layanan ini bukan milikmu atau sudah dihapus.">
-          Kembali ke daftar layananmu.
+      <SellerFrame title="Service not found.">
+        <Empty title="This service does not belong to you or has been deleted.">
+          Back ke daftar servicesmu.
         </Empty>
         <Link className="ws-link" to="/seller-dashboard/services">
-          ← Layanan saya
+          ← Service saya
         </Link>
       </SellerFrame>
     );
   return (
     <SellerFrame
-      title={serviceId ? "Ubah layanan." : "Layanan baru."}
-      description="Layanan yang terbit langsung muncul di marketplace dan dapat dipesan lewat booking Digarsa."
+      title={serviceId ? "Edit service." : "Service baru."}
+      description="Published services appear in the marketplace and can be booked through Digarsa."
     >
       <Link className="ws-back" to="/seller-dashboard/services">
-        ← Layanan saya
+        ← Service saya
       </Link>
       <ServiceForm
         key={`${user.id}-${serviceId || "new"}`}

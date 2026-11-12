@@ -16,7 +16,7 @@ export function createDemoAdminProvisioner({
       !["localhost", "127.0.0.1", "[::1]"].includes(hostname)
     )
       throw new Error(
-        "Provisioning admin hanya tersedia pada development localhost.",
+        "Admin provisioning is only available during local development.",
       );
   }
   function currentAccount() {
@@ -24,20 +24,20 @@ export function createDemoAdminProvisioner({
     const user = accounts.current();
     if (!user)
       throw new Error(
-        "Masuk dengan akun demo yang akan diprovisikan terlebih dahulu.",
+        "Log in with the demo account before provisioning it.",
       );
     return { id: user.id, name: user.name, email: user.email };
   }
   function changePermission(expectedUserId, grant) {
     const user = currentAccount();
     if (!expectedUserId || expectedUserId !== user.id)
-      throw new Error("ID harus sama dengan akun demo yang sedang aktif.");
+      throw new Error("The ID must match the active demo account.");
     let db;
     try {
       db = JSON.parse(storage.getItem(ACCOUNT_KEY));
     } catch {
       throw new Error(
-        "Data akun demo tidak dapat dibaca; data tidak diubah.",
+        "Demo account data could not be read; no data was changed.",
       );
     }
     if (
@@ -48,11 +48,11 @@ export function createDemoAdminProvisioner({
       db.session.userId !== user.id
     )
       throw new Error(
-        "Data atau sesi akun demo tidak valid; data tidak diubah.",
+        "Demo account data or session is invalid; no data was changed.",
       );
     const matches = db.accounts.filter((row) => row?.id === user.id);
     if (matches.length !== 1 || !Array.isArray(matches[0].permissions))
-      throw new Error("Asosiasi akun demo tidak valid; data tidak diubah.");
+      throw new Error("Demo account association is invalid; no data was changed.");
     const account = matches[0];
     if (account.permissions.includes(ADMIN_PERMISSION) !== grant) {
       account.permissions = grant
@@ -62,7 +62,7 @@ export function createDemoAdminProvisioner({
         storage.setItem(ACCOUNT_KEY, JSON.stringify(db));
       } catch {
         throw new Error(
-          "Izin admin demo belum tersimpan. Periksa penyimpanan browser.",
+          "Demo admin permission was not saved. Check browser storage.",
         );
       }
     }

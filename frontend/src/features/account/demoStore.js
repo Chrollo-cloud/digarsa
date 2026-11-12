@@ -8,8 +8,13 @@ import {
   validateProfilePatch,
   validateNewPassword,
 } from "./profileValidation.js";
+import {
+  validateAddressBook,
+  validateShippingAddress,
+} from "../profile/addressBookModel.js";
 
 export const ACCOUNT_KEY = "digarsa.demo.accounts.v1";
+export const ACCOUNT_REPORTS_KEY = "digarsa.demo.account-reports.v1";
 export const ADMIN_PERMISSION = "admin:access";
 const blank = () => ({ version: 1, accounts: [], profiles: [], session: null });
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +44,7 @@ function optionalUrl(value, name) {
       throw new Error();
     return url.href;
   } catch {
-    throw new Error(`${name} harus URL http atau https yang valid.`);
+    throw new Error(`${name} must be a valid HTTP or HTTPS URL.`);
   }
 }
 const hasAdmin = (account) => account?.permissions?.includes(ADMIN_PERMISSION);
@@ -177,20 +182,20 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     },
     async register(input) {
       const name = text(input.name, "Nama", 2, 80);
-      const email = text(input.email, "Email", 3, 254).toLowerCase();
+      const email = text(input.email, "Email address", 3, 254).toLowerCase();
       if (!emailPattern.test(email))
-        throw new Error("Masukkan email yang valid.");
+        throw new Error("Enter a valid email address.");
       if (
         typeof input.password !== "string" ||
         input.password.length < 8 ||
         input.password.length > 128
       )
-        throw new Error("Kata sandi harus 8–128 karakter.");
+        throw new Error("Password harus 8–128 karakter.");
       const salt = hex(cryptoApi.getRandomValues(new Uint8Array(16)));
       const passwordVerifier = await verifier(input.password, salt);
       const db = read();
       if (db.accounts.some((account) => account.email === email))
-        throw new Error("Email sudah terdaftar. Silakan masuk.");
+        throw new Error("Email address sudah terdaftar. Silakan masuk.");
       const account = {
         id: cryptoApi.randomUUID(),
         name,
@@ -214,13 +219,13 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         typeof password !== "string" ||
         password.length > 128
       )
-        throw new Error("Email atau kata sandi tidak cocok.");
+        throw new Error("Email address atau kata sandi tidak cocok.");
       const account = read().accounts.find((item) => item.email === email);
       if (
         !account ||
         (await verifier(password, account.salt)) !== account.passwordVerifier
       )
-        throw new Error("Email atau kata sandi tidak cocok.");
+        throw new Error("Email address atau kata sandi tidak cocok.");
       const db = read();
       const latest = db.accounts.find((item) => item.id === account.id);
       if (!latest) throw new Error("Akun demo tidak tersedia.");
@@ -233,7 +238,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const account = accountForSession(db);
       if (!account || account.id !== expectedUserId)
         throw new Error(
-          "Sesi berubah. Muat ulang profil akun aktif sebelum menyimpan.",
+          "Your session changed. Reload the active account profile before saving.",
         );
       const patch = validateProfilePatch(input);
       Object.assign(account, patch);
@@ -249,7 +254,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         db.accounts.filter((row) => row.id === account.id).length !== 1
       )
         throw new Error(
-          "Masuk untuk membaca lokasi akunmu dengan asosiasi yang valid.",
+          "Log in untuk membaca lokasi akunmu dengan asosiasi yang valid.",
         );
       return validateBuyerLocation(account.discoveryLocation);
     },
@@ -278,6 +283,67 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       delete account.discoveryLocation;
       write(db);
     },
+    getShippingAddresses() {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account)
+        throw new Error("Log in to view your saved addresses.");
+      if (db.accounts.filter((row) => row.id === account.id).length !== 1)
+        throw new Error("The active account could not be verified.");
+      return validateAddressBook(account.shippingAddresses);
+    },
+    saveShippingAddress(input, { expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || account.id !== expectedUserId || db.accounts.filter((row) => row.id === account.id).length !== 1)
+        throw new Error("Your session changed. Reload the active account before saving an address.");
+      const addresses = validateAddressBook(account.shippingAddresses);
+      const editing = typeof input?.id === "string" && input.id ? addresses.find((row) => row.id === input.id) : null;
+      if (input?.id && !editing) throw new Error("This address does not belong to the active account.");
+      if (!editing && addresses.length >= 30) throw new Error("You can save up to 30 addresses.");
+      let address = validateShippingAddress({
+        ...input,
+        id: editing?.id || cryptoApi.randomUUID(),
+        isPrimary: addresses.length === 0 || input.isPrimary === true,
+        createdAt: editing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { requireId: true });
+      let next = addresses.filter((row) => row.id !== address.id);
+      if (address.isPrimary) next = next.map((row) => ({ ...row, isPrimary: false }));
+      else if (!next.some((row) => row.isPrimary)) {
+        address = { ...address, isPrimary: true };
+      }
+      next.push(address);
+      account.shippingAddresses = validateAddressBook(next);
+      write(db);
+      return account.shippingAddresses.map((row) => ({ ...row }));
+    },
+    setPrimaryShippingAddress(addressId, { expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || account.id !== expectedUserId || db.accounts.filter((row) => row.id === account.id).length !== 1)
+        throw new Error("Your session changed. Reload the active account before changing your primary address.");
+      const addresses = validateAddressBook(account.shippingAddresses);
+      if (!addresses.some((row) => row.id === addressId))
+        throw new Error("This address does not belong to the active account.");
+      account.shippingAddresses = addresses.map((row) => ({ ...row, isPrimary: row.id === addressId }));
+      write(db);
+      return account.shippingAddresses.map((row) => ({ ...row }));
+    },
+    deleteShippingAddress(addressId, { expectedUserId } = {}) {
+      const db = read();
+      const account = accountForSession(db);
+      if (!account || account.id !== expectedUserId || db.accounts.filter((row) => row.id === account.id).length !== 1)
+        throw new Error("Your session changed. Reload the active account before deleting an address.");
+      const addresses = validateAddressBook(account.shippingAddresses);
+      const removed = addresses.find((row) => row.id === addressId);
+      if (!removed) throw new Error("This address does not belong to the active account.");
+      const next = addresses.filter((row) => row.id !== addressId);
+      if (removed.isPrimary && next.length) next[0] = { ...next[0], isPrimary: true };
+      account.shippingAddresses = validateAddressBook(next);
+      write(db);
+      return account.shippingAddresses.map((row) => ({ ...row }));
+    },
     async changePassword(
       { currentPassword, newPassword, confirmation },
       { expectedUserId } = {},
@@ -286,7 +352,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const account = accountForSession(db);
       if (!account || account.id !== expectedUserId)
         throw new Error(
-          "Sesi berubah. Masuk kembali untuk mengubah kata sandi.",
+          "Sesi berubah. Log in kembali untuk mengubah kata sandi.",
         );
       const sessionToken = db.session.token;
       if (
@@ -300,7 +366,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         (await verifier(currentPassword, account.salt)) !==
         account.passwordVerifier
       )
-        throw new Error("Kata sandi saat ini tidak cocok.");
+        throw new Error("Password saat ini tidak cocok.");
       if (newPassword === currentPassword)
         throw new Error("Gunakan kata sandi baru yang berbeda.");
       const salt = hex(cryptoApi.getRandomValues(new Uint8Array(16)));
@@ -314,7 +380,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         owner.passwordVerifier !== account.passwordVerifier
       )
         throw new Error(
-          "Sesi atau kata sandi berubah. Masuk kembali dan coba lagi.",
+          "Sesi atau kata sandi berubah. Log in kembali dan coba lagi.",
         );
       owner.salt = salt;
       owner.passwordVerifier = passwordVerifier;
@@ -330,14 +396,14 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const db = read();
       const account = accountForSession(db);
       if (!account)
-        throw new Error("Masuk sebelum mengaktifkan Seller Profile.");
+        throw new Error("Log in sebelum mengaktifkan Seller Profile.");
       if (
         account.sellerProfileId ||
         db.profiles.some((profile) => profile.ownerUserId === account.id)
       )
-        throw new Error("Seller Profile sudah diaktifkan.");
+        throw new Error("Seller Profile is already active.");
       if (!sellerCategories.includes(input.category))
-        throw new Error("Pilih kategori layanan yang tersedia.");
+    throw new Error("Choose an available category.");
       const profile = {
         id: `creator-${cryptoApi.randomUUID()}`,
         ownerUserId: account.id,
@@ -346,7 +412,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
           : {}),
         name: text(input.name, "Nama kreator", 2, 80),
         category: input.category,
-        city: text(input.city, "Kota", 2, 80),
+        city: text(input.city, "City", 2, 80),
         bio: text(input.bio, "Bio", 30, 500),
         image: optionalUrl(input.image, "Foto profil"),
         portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
@@ -364,7 +430,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const db = read();
       const profile = ownedProfile(db, accountForSession(db));
       if (!profile || profile.id !== profileId)
-        throw new Error("Seller Profile ini bukan milik akun aktif.");
+        throw new Error("This Seller Profile does not belong to the active account.");
       return { ...profile, specialties: [...profile.specialties] };
     },
     // --- Phase 7 additions (Seller Center / Admin). Additive only. ---
@@ -372,11 +438,11 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     updateSellerProfile(input) {
       const db = read();
       const account = accountForSession(db);
-      if (!account) throw new Error("Masuk sebelum mengubah Seller Profile.");
+      if (!account) throw new Error("Log in sebelum mengubah Seller Profile.");
       const profile = ownedProfile(db, account);
-      if (!profile) throw new Error("Akun ini belum memiliki Seller Profile.");
+      if (!profile) throw new Error("This account does not have a Seller Profile yet.");
       if (!sellerCategories.includes(input.category))
-        throw new Error("Pilih kategori layanan yang tersedia.");
+        throw new Error("Select a category services yang tersedia.");
       if (input.imageMediaId && !isMediaId(input.imageMediaId)) throw new Error("Referensi foto lokal tidak valid.");
       const next = {
         ...(Object.hasOwn(input, "imageMediaId") ? { imageMediaId: input.imageMediaId || "" } : {}),
@@ -385,7 +451,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
           : {}),
         name: text(input.name, "Nama kreator", 2, 80),
         category: input.category,
-        city: text(input.city, "Kota", 2, 80),
+        city: text(input.city, "City", 2, 80),
         bio: text(input.bio, "Bio", 30, 500),
         image: optionalUrl(input.image, "Foto profil"),
         portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
@@ -455,7 +521,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const db = read();
       const account = accountForSession(db);
       if (!account || !(ownedProfile(db, account) || hasAdmin(account)))
-        throw new Error("Akses ditolak.");
+        throw new Error("Access denied.");
       const names = {};
       for (const id of Array.isArray(ids) ? ids : []) {
         const match = db.accounts.find((item) => item.id === id);
@@ -469,7 +535,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const db = read();
       const account = accountForSession(db);
       if (!account || !(ownedProfile(db, account) || hasAdmin(account)))
-        throw new Error("Akses ditolak.");
+        throw new Error("Access denied.");
       const identities = {};
       for (const id of Array.isArray(ids) ? ids : []) {
         const match = db.accounts.find((item) => item.id === id);
@@ -491,6 +557,86 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         identities[id] = { id: match.id, name: match.name, avatarUrl };
       }
       return identities;
+    },
+    buyerProfileForSeller(targetBuyerId) {
+      const db = read();
+      const seller = accountForSession(db);
+      const sellerProfile = ownedProfile(db, seller);
+      if (!seller || !sellerProfile || typeof targetBuyerId !== "string")
+        throw new Error("Access denied.");
+      let orders;
+      try {
+        orders = JSON.parse(storage.getItem("digarsa.demo.customer.v1") || "null");
+      } catch {
+        throw new Error("Buyer access could not be verified from the order records.");
+      }
+      if (!orders || orders.version !== 1 || !Array.isArray(orders.bookings))
+        throw new Error("Buyer access could not be verified from the order records.");
+      const related = orders.bookings.some((booking) =>
+        booking && booking.creatorId === sellerProfile.id && booking.customerId === targetBuyerId &&
+        typeof booking.id === "string" && booking.id.length > 0,
+      );
+      if (!related) throw new Error("This Buyer has no order associated with your Seller Profile.");
+      const matches = db.accounts.filter((row) => row.id === targetBuyerId);
+      if (matches.length !== 1) throw new Error("Buyer profile was not found or could not be verified.");
+      const buyer = matches[0];
+      let avatarUrl = "";
+      if (typeof buyer.avatarUrl === "string" && buyer.avatarUrl) {
+        try {
+          const url = new URL(buyer.avatarUrl);
+          if (["http:", "https:"].includes(url.protocol) && !url.username && !url.password) avatarUrl = url.href;
+        } catch { /* Use the initials avatar for invalid legacy URLs. */ }
+      }
+      return {
+        id: buyer.id,
+        name: buyer.name,
+        avatarUrl,
+        avatarMediaId: isMediaId(buyer.avatarMediaId) ? buyer.avatarMediaId : "",
+        bio: typeof buyer.publicBuyerBio === "string" ? buyer.publicBuyerBio : "",
+        city: typeof buyer.publicBuyerCity === "string" ? buyer.publicBuyerCity : "",
+        phone: buyer.sharePhoneWithSellers === true && typeof buyer.phone === "string" ? buyer.phone : "",
+        joinedAt: typeof buyer.createdAt === "string" && Number.isFinite(Date.parse(buyer.createdAt)) ? buyer.createdAt : null,
+        status: ["Active", "Suspended", "Pending"].includes(buyer.accountStatus) ? buyer.accountStatus : "",
+      };
+    },
+    submitBuyerReport(targetBuyerId, bookingId, reason, details, { expectedUserId } = {}) {
+      const db = read();
+      const seller = accountForSession(db);
+      const sellerProfile = ownedProfile(db, seller);
+      if (!seller || seller.id !== expectedUserId || !sellerProfile)
+        throw new Error("Only the active Seller on this account can report a Buyer.");
+      if (typeof bookingId !== "string" || !bookingId || typeof targetBuyerId !== "string")
+        throw new Error("A related booking and Buyer are required.");
+      let orders;
+      try { orders = JSON.parse(storage.getItem("digarsa.demo.customer.v1") || "null"); }
+      catch { throw new Error("The order could not be verified. The report was not saved."); }
+      const related = orders?.version === 1 && Array.isArray(orders.bookings) && orders.bookings.some((booking) =>
+        booking?.id === bookingId && booking.creatorId === sellerProfile.id && booking.customerId === targetBuyerId,
+      );
+      if (!related) throw new Error("The Buyer is not associated with this Seller order.");
+      if (!db.accounts.some((row) => row.id === targetBuyerId)) throw new Error("Buyer account not found.");
+      const allowedReasons = ["Fraud or suspicious activity", "Harassment or inappropriate communication", "False identity or profile", "Spam or platform abuse", "Other"];
+      if (!allowedReasons.includes(reason)) throw new Error("Choose a report reason.");
+      const note = typeof details === "string" ? details.trim() : "";
+      if (note.length < 10 || note.length > 1000) throw new Error("Report details must be 10–1,000 characters.");
+      let reportData;
+      try {
+        reportData = JSON.parse(storage.getItem(ACCOUNT_REPORTS_KEY) || '{"version":1,"reports":[]}');
+        if (reportData.version !== 1 || !Array.isArray(reportData.reports)) throw new Error();
+      } catch { throw new Error("Local report storage could not be verified. Nothing was saved."); }
+      const report = {
+        id: `RPT-${cryptoApi.randomUUID()}`,
+        reporterId: seller.id,
+        targetAccountId: targetBuyerId,
+        bookingId,
+        reason,
+        details: note,
+        submittedAt: new Date().toISOString(),
+      };
+      reportData.reports.push(report);
+      try { storage.setItem(ACCOUNT_REPORTS_KEY, JSON.stringify(reportData)); }
+      catch { throw new Error("Report was not saved because browser storage is unavailable."); }
+      return { id: report.id, submittedAt: report.submittedAt };
     },
     // Admin-only. Never returns salts or password verifiers.
     listAccountsForAdmin() {

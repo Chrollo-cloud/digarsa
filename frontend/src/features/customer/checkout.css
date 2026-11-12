@@ -56,3 +56,31 @@
   .checkout-cart-info { flex-basis: calc(100% - 104px); }
   .checkout-row-actions .button { width: 100%; }
 }
+.payment-status {
+  display: grid;
+  gap: 5px;
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-line, #dedee8);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+}
+.payment-status--success { border-color: #a6d8c1; background: #effaf4; }
+.payment-status--pending { border-color: #e6d39c; background: #fff9e8; }
+.payment-status--danger { border-color: #e9b4b4; background: #fff1f1; }
+.qris-demo {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  width: min(220px, 100%);
+  min-height: 170px;
+  margin: 16px auto;
+  padding: 16px;
+  border: 2px dashed currentColor;
+  border-radius: 14px;
+  color: var(--color-indigo, #4541a8);
+  text-align: center;
+  background: repeating-linear-gradient(135deg, #f7f6ff, #f7f6ff 8px, #efedff 8px, #efedff 16px);
+}
+.qris-demo strong { font-size: 28px; letter-spacing: .12em; }
+.qris-demo small { font-size: 10px; font-weight: 800; }

@@ -140,6 +140,11 @@ test("precise coordinates require explicit consent; city text never creates a po
     consent: false,
   });
   assert.equal(city.coordinates, null);
+  const withLegacyAddress = validateBuyerLocation({
+    ...buyerLocation,
+    address: { province: "West Java", regency: "Bandung", district: "Coblong", postalCode: "40132", detail: "Legacy private address" },
+  });
+  assert.equal(Object.hasOwn(withLegacyAddress, "address"), false);
   assert.throws(() =>
     validateBuyerLocation({ ...buyerLocation, city: "bad\ncity" }),
   );

@@ -20,7 +20,7 @@ export default function BuyerLocationForm() {
   const [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useState(true);
   const [accuracy, setAccuracy] = useState(null);
   const active = useRef(true);
   const request = useRef(0);
@@ -178,7 +178,7 @@ export default function BuyerLocationForm() {
             aria-expanded={picker}
             onClick={() => setPicker(!picker)}
           >
-            Pilih titik manual di peta
+            {picker ? "Sembunyikan peta" : "Pilih titik manual di peta"}
           </button>
         </div>
         {accuracy !== null && <p role="status">Akurasi perkiraan ±{Math.round(accuracy).toLocaleString("id-ID")} meter. Posisi Wi-Fi desktop dapat meleset; koreksi titik sebelum menyimpan.</p>}

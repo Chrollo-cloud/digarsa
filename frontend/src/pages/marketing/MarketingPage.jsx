@@ -52,17 +52,17 @@ export function MarketingCTA({
       <div className="marketing-container">
         <span className="marketing-label">PERTEMUAN BERIKUTNYA</span>
         <h2>{title}</h2>
-        <p>Mulai dari sebuah ide. Temukan teman untuk mewujudkannya.</p>
+        <p>Mulai of sebuah ide. Temukan teman untuk mewujudkannya.</p>
         <div className="marketing-actions">
           <Button to="/marketplace" variant="aqua">
-            Jelajahi marketplace <span aria-hidden="true">↗</span>
+            Explore the marketplace <span aria-hidden="true"></span>
           </Button>
           <Button
             to="/become-a-creator"
             variant="secondary"
             className="marketing-button-light"
           >
-            Jadi kreator <span aria-hidden="true">↗</span>
+            Jadi kreator <span aria-hidden="true"></span>
           </Button>
         </div>
         <span className="marketing-cta__sign">Where Ideas Meet Talent.</span>

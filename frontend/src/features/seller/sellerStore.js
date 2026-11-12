@@ -3,6 +3,7 @@ import {
   validStoredPublicLocation,
 } from "../location/locationModel.js";
 import { ADMIN_PERMISSION, sellerCategories } from "../account/demoStore.js";
+import { categoryValue } from "./categoryLabels.js";
 
 export const SELLER_KEY = "digarsa.demo.seller.v1";
 export const availabilityValues = ["Open", "Full-book"];
@@ -47,28 +48,28 @@ function optionalUrl(value, label) {
       throw new Error();
     return url.href;
   } catch {
-    throw new Error(`${label} harus URL http atau https yang valid.`);
+    throw new Error(`${label} must be a valid HTTP or HTTPS URL.`);
   }
 }
 function fields(input) {
   const price = Number(input.price);
   if (!Number.isInteger(price) || price < 10000 || price > 100000000)
-    throw new Error("Harga harus bilangan bulat Rp 10.000–Rp 100.000.000.");
+    throw new Error("Price must be a whole number from IDR 10,000 to IDR 100,000,000.");
   if (!sellerCategories.includes(input.category))
-    throw new Error("Pilih kategori layanan yang tersedia.");
+    throw new Error("Choose an available category.");
   if (!deliveryValues.includes(input.delivery))
-    throw new Error("Pilih mode pengerjaan Remote atau Onsite.");
+    throw new Error("Choose Remote or On-site work mode.");
   if (!availabilityValues.includes(input.availability))
-    throw new Error("Pilih status ketersediaan yang valid.");
+    throw new Error("Choose a valid availability status.");
   return {
-    title: text(input.title, "Judul layanan", 5, 100),
+    title: text(input.title, "Service title", 5, 100),
     category: input.category,
-    description: text(input.description, "Deskripsi", 30, 1500),
+    description: text(input.description, "Description", 30, 1500),
     price,
     delivery: input.delivery,
-    turnaround: text(input.turnaround, "Estimasi pengerjaan", 2, 60),
+    turnaround: text(input.turnaround, "Estimated turnaround", 2, 60),
     availability: input.availability,
-    image: optionalUrl(input.image, "Gambar layanan"),
+    image: optionalUrl(input.image, "Service image"),
     ...(Object.hasOwn(input, "serviceLocation")
       ? { serviceLocation: validatePublicLocation(input.serviceLocation) }
       : {}),
@@ -81,7 +82,7 @@ function validService(row) {
       isText(row[key], 200),
     ) &&
     isText(row.description, 1500) &&
-    sellerCategories.includes(row.category) &&
+    sellerCategories.includes(categoryValue(row.category)) &&
     deliveryValues.includes(row.delivery) &&
     availabilityValues.includes(row.availability) &&
     Number.isInteger(row.price) &&
@@ -116,7 +117,7 @@ export function createSellerStore({
   currentUser,
   baseServices = () => [],
   activeBookingCount = () => {
-    throw new Error("Jumlah booking aktif belum dapat diverifikasi.");
+    throw new Error("The number of active bookings could not be verified.");
   },
   randomId = () => globalThis.crypto.randomUUID(),
   now = () => new Date().toISOString(),
@@ -148,9 +149,7 @@ export function createSellerStore({
       let bad = false;
       // Backward-compatible normalization for services saved before active status existed.
       const services = parsed.services
-        .map((row) =>
-          row && row.active === undefined ? { ...row, active: true } : row,
-        )
+        .map((row) => row ? { ...row, category: categoryValue(row.category), ...(row.active === undefined ? { active: true } : {}) } : row)
         .filter((row) => {
           const ok = validService(row) && !ids.has(row.id);
           if (ok) ids.add(row.id);
@@ -191,14 +190,14 @@ export function createSellerStore({
       return {
         data: { version: 1, services, schedules, moderation },
         error: bad
-          ? "Sebagian data layanan demo tidak valid dan tidak ditampilkan. Perubahan dinonaktifkan agar data lama tidak tertimpa."
+          ? "Sebagian data services demo tidak valid dan tidak ditampilkan. Perubahan dinonaktifkan agar data lama tidak tertimpa."
           : "",
       };
     } catch {
       return {
         data: empty(),
         error:
-          "Data layanan demo tidak dapat dibaca. Perubahan dinonaktifkan; periksa penyimpanan browser sebelum melanjutkan.",
+          "Data services demo tidak dapat dibaca. Perubahan dinonaktifkan; periksa penyimpanan browser sebelum melanjutkan.",
       };
     }
   }
@@ -212,7 +211,7 @@ export function createSellerStore({
       storage.setItem(SELLER_KEY, JSON.stringify(data));
     } catch {
       throw new Error(
-        "Data belum tersimpan. Penyimpanan browser tidak tersedia atau penuh.",
+        "Data was not saved. Browser storage is unavailable or full.",
       );
     }
     listeners.forEach((listener) => listener());
@@ -224,7 +223,7 @@ export function createSellerStore({
       !account.capabilities?.includes("seller") ||
       !account.sellerProfileId
     )
-      throw new Error("Seller Center memerlukan Seller Profile aktif.");
+      throw new Error("Seller Center requires an active Seller Profile.");
     return account;
   }
   function admin() {
@@ -241,7 +240,7 @@ export function createSellerStore({
         item.creatorId === account.sellerProfileId,
     );
     if (!service)
-      throw new Error("Layanan tidak ditemukan atau bukan milikmu.");
+      throw new Error("Service not found atau bukan milikmu.");
     return service;
   }
   const withModeration = (service, moderation) => ({
@@ -296,7 +295,7 @@ export function createSellerStore({
         data.services.some((item) => item.id === service.id) ||
         baseServices().some((item) => item.id === service.id)
       )
-        throw new Error("ID layanan bertabrakan. Silakan coba lagi.");
+        throw new Error("Service ID collision. Please try again.");
       data.services.push(service);
       write(data);
       return { ...service };
@@ -312,7 +311,7 @@ export function createSellerStore({
     setAvailability(id, availability) {
       const account = seller();
       if (!availabilityValues.includes(availability))
-        throw new Error("Pilih status ketersediaan yang valid.");
+        throw new Error("Choose a valid availability status.");
       const data = writable();
       const service = owned(data, account, id);
       service.availability = availability;
@@ -323,7 +322,7 @@ export function createSellerStore({
     setActive(id, active) {
       const account = seller();
       if (typeof active !== "boolean")
-        throw new Error("Pilih status layanan aktif atau nonaktif.");
+        throw new Error("Select a status services aktif atau nonaktif.");
       const data = writable();
       const service = owned(data, account, id);
       service.active = active;
@@ -361,9 +360,9 @@ export function createSellerStore({
       const endTime = typeof input.endTime === "string" ? input.endTime : "";
       const note = typeof input.note === "string" ? input.note.trim() : "";
       if (!isDate(date) || date < today())
-        throw new Error("Pilih tanggal yang valid dan tidak di masa lalu.");
+        throw new Error("Choose a valid date that is not in the past.");
       if (!isTime(startTime) || !isTime(endTime) || startTime >= endTime)
-        throw new Error("Waktu selesai harus setelah waktu mulai.");
+        throw new Error("The end time must be after the start time.");
       if (note.length > 160) throw new Error("Catatan maksimal 160 karakter.");
       const conflicts = data.schedules.some(
         (item) =>
@@ -373,7 +372,7 @@ export function createSellerStore({
           item.startTime < endTime,
       );
       if (conflicts)
-        throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+        throw new Error("This schedule overlaps an existing slot.");
       const timestamp = now();
       const schedule = {
         id: `availability-${randomId()}`,
@@ -403,16 +402,16 @@ export function createSellerStore({
           item.creatorId === account.sellerProfileId,
       );
       if (!schedule)
-        throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+        throw new Error("Schedule not found or not owned by you.");
       const date = typeof input.date === "string" ? input.date.trim() : "";
       const startTime =
         typeof input.startTime === "string" ? input.startTime : "";
       const endTime = typeof input.endTime === "string" ? input.endTime : "";
       const note = typeof input.note === "string" ? input.note.trim() : "";
       if (!isDate(date) || date < today())
-        throw new Error("Pilih tanggal yang valid dan tidak di masa lalu.");
+        throw new Error("Choose a valid date that is not in the past.");
       if (!isTime(startTime) || !isTime(endTime) || startTime >= endTime)
-        throw new Error("Waktu selesai harus setelah waktu mulai.");
+        throw new Error("The end time must be after the start time.");
       if (note.length > 160) throw new Error("Catatan maksimal 160 karakter.");
       const conflicts = data.schedules.some(
         (item) =>
@@ -423,7 +422,7 @@ export function createSellerStore({
           item.startTime < endTime,
       );
       if (conflicts)
-        throw new Error("Jadwal bertabrakan dengan slot yang sudah dibuat.");
+        throw new Error("This schedule overlaps an existing slot.");
       Object.assign(schedule, {
         date,
         startTime,
@@ -446,7 +445,7 @@ export function createSellerStore({
           item.creatorId === account.sellerProfileId,
       );
       if (!schedule)
-        throw new Error("Jadwal tidak ditemukan atau bukan milikmu.");
+        throw new Error("Schedule not found or not owned by you.");
       data.schedules = data.schedules.filter((item) => item.id !== scheduleId);
       write(data);
     },
@@ -457,11 +456,11 @@ export function createSellerStore({
       const activeCount = activeBookingCount(service.id);
       if (!Number.isSafeInteger(activeCount) || activeCount < 0)
         throw new Error(
-          "Jumlah booking aktif belum dapat diverifikasi. Layanan tidak dihapus.",
+          "The number of active bookings could not be verified. The service was not deleted.",
         );
       if (activeCount > 0)
         throw new Error(
-          "Layanan masih punya booking aktif. Selesaikan atau tolak dulu, atau ubah status menjadi Full-book.",
+          "This service has active bookings. Complete or decline them first, or mark it as fully booked.",
         );
       data.services = data.services.filter((item) => item.id !== id);
       data.schedules = data.schedules.filter((item) => item.serviceId !== id);
@@ -514,7 +513,7 @@ export function createSellerStore({
       const known =
         data.services.some((item) => item.id === id) ||
         baseServices().some((item) => item.id === id);
-      if (!known) throw new Error("Layanan tidak ditemukan.");
+      if (!known) throw new Error("Service not found.");
       if (hidden) {
         data.moderation[id] = {
           reason: text(reason, "Alasan moderasi", 5, 300),

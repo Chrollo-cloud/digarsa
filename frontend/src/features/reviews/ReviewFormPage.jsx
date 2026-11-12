@@ -69,7 +69,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
     return (
       <section
         className="review-form-card review-confirmation"
-        aria-label="Konfirmasi ulasan"
+        aria-label="Confirm review"
       >
         <span className="review-success-symbol" aria-hidden="true">
           ✓
@@ -84,7 +84,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           Terima kasih, ceritamu berarti.
         </h2>
         <p role="status">
-          {editing ? "Penilaianmu berhasil diperbarui." : "Ulasanmu tersimpan dan tampil sebagai ulasan booking terverifikasi."}
+          {editing ? "Your review has been updated." : "Your review is saved and shown as a verified booking review."}
         </p>
         <RatingStars value={result.review.rating} size={25} />
         <p className="review-comment">{result.review.comment}</p>
@@ -108,7 +108,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
         )}
         {failure && <p role="alert">{failure}</p>}
         <Link className="button button--primary" to="/reviews?tab=history">
-          Lihat ulasan saya ↗
+          View my reviews
         </Link>
       </section>
     );
@@ -117,12 +117,12 @@ function ReviewEditor({ bookingId, user, data, editing }) {
       <section className="review-form-card review-empty">
         <h2>
           {data.review
-            ? "Ceritamu sudah tercatat."
-            : "Booking belum dapat diulas."}
+            ? "Your story has been recorded."
+            : "This booking is not eligible for a review yet."}
         </h2>
         <p>{data.reason}</p>
         <Link to={data.review ? `/review/${bookingId}?edit=1` : `/orders/${bookingId}`}>
-          {data.review ? "Ubah Penilaian ↗" : "Kembali ke pesanan ↗"}
+          {data.review ? "Edit review " : "Back to orders "}
         </Link>
       </section>
     );
@@ -132,7 +132,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
         <span className="review-kicker">KOLABORASI SELESAI</span>
         <h2>{data.booking.service_title}</h2>
         <p>{data.booking.seller_name}</p>
-        <span className="review-verified">✓ Completed · milik akunmu</span>
+        <span className="review-verified">✓ Completed · belongs to your account</span>
         <hr />
         <p>
           Ulasan yang jujur membantu pelanggan lain menemukan partner kreatif
@@ -146,16 +146,16 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           }
         >
           {serviceAvailable
-            ? "Lihat layanan ↗"
-            : "Lihat booking layanan arsip ↗"}
+            ? "Show services "
+            : "Show booking services arsip "}
         </Link>
       </aside>
       <form className="review-form-card" onSubmit={submit} aria-busy={busy}>
         <h2>Bagaimana kolaborasimu?</h2>
-        <p>Bagikan pengalaman tentang proses dan hasil yang kamu terima.</p>
+        <p>Share your experience with the process and results.</p>
         <fieldset className="review-star-picker" disabled={busy}>
           <legend>
-            Penilaian <span>(wajib)</span>
+            Review <span>(required)</span>
           </legend>
           <div>
             {[1, 2, 3, 4, 5].map((star) => (
@@ -175,8 +175,8 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           </div>
           <p aria-live="polite">
             {rating
-              ? `${rating} dari 5 · ${["", "Kurang memuaskan", "Perlu ditingkatkan", "Cukup baik", "Memuaskan", "Sangat memuaskan"][rating]}`
-              : "Pilih 1–5 bintang. Gunakan tombol panah untuk mengubah pilihan."}
+              ? `${rating} of 5 · ${["", "Poor", "Needs improvement", "Fair", "Good", "Excellent"][rating]}`
+              : "Choose 1–5 stars. Use the arrow keys to change your selection."}
           </p>
         </fieldset>
         <label className="review-comment-label" htmlFor="review-comment">
@@ -190,7 +190,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           minLength={10}
           maxLength={2000}
           rows={6}
-          placeholder="Ceritakan proses komunikasi, pengerjaan, dan hasil kolaborasi…"
+          placeholder="Describe the communication, process, and outcome of your collaboration…"
           disabled={busy}
           aria-describedby="review-comment-help"
         />
@@ -199,7 +199,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           <span>{comment.length}/2000</span>
         </div>
         <p className="review-public-note">
-          Nama akun dan ulasanmu akan tampil di halaman layanan serta profil
+          Nama akun dan ulasanmu akan tampil di halaman services serta profil
           kreator. Satu booking memiliki satu penilaian yang dapat kamu perbarui.
         </p>
         {failure && (
@@ -212,7 +212,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
           type="submit"
           disabled={busy}
         >
-          {busy ? "Menyimpan…" : editing ? "Simpan Penilaian ↗" : "Bagikan ulasan ↗"}
+          {busy ? "Menyimpan…" : editing ? "Save Review " : "Share review "}
         </button>
       </form>
     </div>
@@ -220,7 +220,7 @@ function ReviewEditor({ bookingId, user, data, editing }) {
 }
 export default function ReviewFormPage() {
   useEffect(() => {
-    document.title = "Tulis ulasan — Digarsa";
+    document.title = "Write a review — Digarsa";
   }, []);
   const { bookingId } = useParams();
   const [params] = useSearchParams();
@@ -236,10 +236,10 @@ export default function ReviewFormPage() {
           <div>
             <span className="review-kicker">DIGARSA / CERITA KOLABORASI</span>
             <h1>
-              Ceritakan pengalamanmu<span>.</span>
+              Share your experience<span>.</span>
             </h1>
           </div>
-          <Link to="/reviews?tab=history">← Beri Penilaian</Link>
+          <Link to="/reviews?tab=history">← My Reviews</Link>
         </header>
         <ReviewComposer key={`${user.id}-${bookingId}-${editing}`} bookingId={bookingId} editing={editing} />
       </div>

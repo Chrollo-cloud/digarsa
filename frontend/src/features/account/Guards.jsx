@@ -29,9 +29,9 @@ export function RequireAdmin() {
     <Outlet />
   ) : (
     <div className="container route-shell">
-      <h1 className="type-heading">Akses terbatas.</h1>
-      <p>Halaman ini memerlukan izin admin internal.</p>
-      <Button to="/dashboard">Kembali ke akun</Button>
+      <h1 className="type-heading">Restricted access.</h1>
+      <p>This page requires internal admin permission.</p>
+      <Button to="/dashboard">Back to account</Button>
     </div>
   );
 }

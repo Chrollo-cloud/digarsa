@@ -24,14 +24,14 @@ export default function SellerServicesPage() {
   }
   return (
     <SellerFrame
-      title="Layanan saya."
-      description="Layanan yang tayang muncul di marketplace dan bisa dipesan pelanggan. Full-book menutup pemesanan baru tanpa menghapus layananmu."
+      title="Service saya."
+      description="Published services appear in the marketplace and can be booked. Marking a service Fully booked prevents new bookings without removing it."
     >
       <div className="ws-toolbar">
         <Link className="button button--primary" to="/seller-dashboard/services/new">
-          Tambah layanan +
+          Add service +
         </Link>
-        <p>{services.length} layanan</p>
+        <p>{services.length} services</p>
       </div>
       {done && (
         <p className="ws-success" role="status">
@@ -44,8 +44,8 @@ export default function SellerServicesPage() {
         </p>
       )}
       {services.length === 0 ? (
-        <Empty title="Belum ada layanan.">
-          Tambahkan layanan pertamamu agar pelanggan bisa menemukan dan memesannya.
+        <Empty title="No services yet.">
+          Add your first service so customers can find and book it.
         </Empty>
       ) : (
         <ul className="ws-list">
@@ -71,14 +71,14 @@ export default function SellerServicesPage() {
                   <StatusBadge
                     status={service.availability === "Open" ? "Open" : "Full-book"}
                   >
-                    {service.availability === "Open" ? "Open" : "Full-book"}
+                    {service.availability === "Open" ? "Available" : "Fully booked"}
                   </StatusBadge>
                   {!service.active ? (
-                    <StatusBadge status="hidden">Tidak tayang</StatusBadge>
+                    <StatusBadge status="hidden">Unpublished</StatusBadge>
                   ) : service.hidden ? (
                     <StatusBadge status="hidden">Disembunyikan admin</StatusBadge>
                   ) : (
-                    <StatusBadge status="live">Tayang</StatusBadge>
+                    <StatusBadge status="live">Published</StatusBadge>
                   )}
                 </div>
                 {service.hidden && (
@@ -86,7 +86,7 @@ export default function SellerServicesPage() {
                 )}
               </div>
               <div className="ws-service__actions">
-                <div className="ws-switch" role="group" aria-label={`Status layanan ${service.title}`}>
+                <div className="ws-switch" role="group" aria-label={`Status services ${service.title}`}>
                   {[true, false].map((active) => (
                     <button
                       key={String(active)}
@@ -96,7 +96,7 @@ export default function SellerServicesPage() {
                         service.active !== active &&
                         run(
                           () => catalog.setActive(service.id, active),
-                          `Layanan ${active ? "diaktifkan" : "dinonaktifkan"}.`,
+                          `Service ${active ? "diaktifkan" : "dinonaktifkan"}.`,
                         )
                       }
                     >
@@ -104,8 +104,8 @@ export default function SellerServicesPage() {
                     </button>
                   ))}
                 </div>
-                <div className="ws-switch" role="group" aria-label={`Ketersediaan ${service.title}`}>
-                  {["Open", "Full-book"].map((value) => (
+                <div className="ws-switch" role="group" aria-label={`Availability ${service.title}`}>
+                  {[["Open", "Available"], ["Full-book", "Fully booked"]].map(([value, label]) => (
                     <button
                       key={value}
                       type="button"
@@ -114,11 +114,11 @@ export default function SellerServicesPage() {
                         service.availability !== value &&
                         run(
                           () => catalog.setAvailability(service.id, value),
-                          `Ketersediaan diubah menjadi ${value}.`,
+                          `Availability diubah menjadi ${value}.`,
                         )
                       }
                     >
-                      {value === "Open" ? "Open" : "Full-book"}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -137,7 +137,7 @@ export default function SellerServicesPage() {
                   </Link>
                   {service.active && !service.hidden && (
                     <Link className="ws-link" to={`/service/${service.id}`}>
-                      Lihat ↗
+                      Show
                     </Link>
                   )}
                   <button
@@ -156,7 +156,7 @@ export default function SellerServicesPage() {
                         type="button"
                         className="button button--danger"
                         onClick={() =>
-                          run(() => catalog.remove(service.id), "Layanan dihapus.")
+                          run(() => catalog.remove(service.id), "Service dihapus.")
                         }
                       >
                         Ya, hapus
@@ -166,7 +166,7 @@ export default function SellerServicesPage() {
                         className="button button--secondary"
                         onClick={() => setConfirming("")}
                       >
-                        Batal
+                        Cancel
                       </button>
                     </div>
                   </div>

@@ -3,33 +3,33 @@ export const processSteps = {
   customer: [
     {
       title: "Jelajahi kemungkinan.",
-      copy: "Mulai dari marketplace. Lihat layanan dan kreator di berbagai bidang, dari branding sampai kebutuhan digital.",
+      copy: "Mulai of marketplace. Show services dan kreator di berbagai bidang, of branding sampai kebutuhan digital.",
       to: "/marketplace",
-      link: "Jelajahi layanan",
+      link: "Jelajahi services",
     },
     {
       title: "Temukan yang sesuai.",
-      copy: "Baca detail layanan, estimasi harga awal, cara pengerjaan, dan portofolio kreator. Perhatikan status Open atau Full-book sebelum menentukan pilihan.",
+      copy: "Baca detail services, estimasi harga awal, cara pengerjaan, dan portofolio kreator. Perhatikan status Available atau Fully booked sebelum menentukan pilihan.",
       to: "/marketplace",
-      link: "Temukan kreator",
+      link: "Find creators",
     },
     {
       title: "Ceritakan idemu.",
-      copy: "Pada layanan yang bisa dipesan, masuk ke akunmu lalu kirim permintaan booking dengan brief yang jelas. Permintaan berstatus Requested dan menunggu keputusan kreator.",
+      copy: "Choose an available service, sign in, and submit a booking request with a clear brief. Your request starts as Requested and awaits the creator's decision.",
       to: "/marketplace",
-      link: "Pilih layanan untuk booking",
+      link: "Select a service untuk booking",
     },
     {
       title: "Samakan arah lewat percakapan.",
-      copy: "Hubungi kreator yang memiliki akun aktif melalui Chat Kreator atau detail pesanan. Diskusikan ruang lingkup, jadwal, dan harapan proyek melalui Messaging.",
+      copy: "Contact creator yang memiliki akun aktif melalui Chat with creator atau detail orders. Diskusikan ruang lingkup, jadwal, dan harapan proyek melalui Messaging.",
       to: "/messages",
       link: "Buka pesan",
     },
     {
-      title: "Ikuti perjalanan pesanan.",
-      copy: "Lihat keputusan kreator dan status booking di halaman Pesanan. Accepted berarti permintaan diterima; pembayaran belum tersedia dalam demo sehingga status ini tidak otomatis menjadi Paid atau Completed.",
+      title: "Ikuti perjalanan orders.",
+      copy: "Show keputusan kreator dan status booking di halaman Orders. Accepted berarti permintaan diterima; pembayaran belum tersedia dalam demo sehingga status ini tidak otomatis menjadi Paid atau Completed.",
       to: "/orders",
-      link: "Lihat pesanan",
+      link: "View orders",
     },
     {
       title: "Bagikan pengalamanmu.",
@@ -41,27 +41,27 @@ export const processSteps = {
   creator: [
     {
       title: "Satu akun untuk mulai.",
-      copy: "Daftar atau masuk ke akun Digarsa. Kamu tetap bisa menjelajahi dan memesan layanan sebagai pelanggan, termasuk setelah menjadi kreator.",
+      copy: "Sign up atau masuk ke akun Digarsa. Kamu tetap bisa menjelajahi dan memesan services sebagai pelanggan, termasuk setelah menjadi kreator.",
       to: "/register",
-      link: "Buat akun Digarsa",
+      link: "Create an account Digarsa",
     },
     {
       title: "Aktifkan ruang kreatormu.",
-      copy: "Pilih Jadi Kreator dan buat Seller Profile. Isi nama kreator atau studio, kategori, kota, dan bio agar pelanggan bisa mengenal keahlianmu.",
+      copy: "Pilih Become a creator dan buat Seller Profile. Isi nama kreator atau studio, kategori, kota, dan bio agar pelanggan bisa mengenal keahlianmu.",
       to: "/become-a-creator",
       link: "Aktifkan Seller Profile",
     },
     {
       title: "Tunjukkan yang kamu tawarkan.",
-      copy: "Lengkapi profil dan tautan portofolio, lalu publikasikan layanan dengan deskripsi, estimasi harga, serta cara pengerjaan yang jelas.",
+      copy: "Lengkapi profil dan tautan portofolio, lalu publikasikan services dengan deskripsi, estimasi harga, serta cara pengerjaan yang jelas.",
       to: "/seller-dashboard/services",
-      link: "Kelola layanan",
+      link: "Kelola services",
     },
     {
-      title: "Tinjau setiap kesempatan.",
-      copy: "Baca brief pada Pesanan Masuk. Terima atau tolak permintaan sesuai kemampuan dan ketersediaanmu. Pelanggan dapat melihat keputusan pada booking yang sama.",
+      title: "Review setiap kesempatan.",
+      copy: "Review the brief in Orders. Accept or decline the request based on your capacity and availability. Customers can see your decision on the same booking.",
       to: "/seller-dashboard/orders",
-      link: "Lihat pesanan masuk",
+      link: "View orders masuk",
     },
     {
       title: "Bangun pemahaman bersama.",
@@ -71,7 +71,7 @@ export const processSteps = {
     },
     {
       title: "Rawat ruang berkaryamu.",
-      copy: "Kelola layanan, ketersediaan, pesanan, dan profil dari Seller Center. Angka pendapatan yang ditampilkan adalah estimasi dari harga awal booking, bukan pembayaran yang diterima.",
+      copy: "Manage services, availability, orders, and your profile in Seller Center. Earnings are estimates based on starting prices, not payments received.",
       to: "/seller-dashboard",
       link: "Buka Seller Center",
     },

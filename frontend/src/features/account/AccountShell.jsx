@@ -16,7 +16,7 @@ export default function AccountShell({ title = "Dashboard", seller = false }) {
         DIGARSA / {seller ? "SELLER CENTER" : "AKUN"}
       </span>
       <h1 className="type-display">{title}.</h1>
-      <p>Halo, {user.name}. Halaman ini sedang dalam pengembangan.</p>
+      <p>Halo, {user.name}. This page is under development.</p>
       {profile && (
         <div className="account-feedback">
           <strong>Seller Profile aktif: {profile.name}</strong>
@@ -24,15 +24,14 @@ export default function AccountShell({ title = "Dashboard", seller = false }) {
             {profile.category} · {profile.city}
           </p>
           <p>
-            Profil ini milik akunmu. Fitur pengelolaan layanan belum tersedia.
+            This profile belongs to your account. Service management is not available.
           </p>
         </div>
       )}
       <p>
-        Akunmu tetap dapat menggunakan marketplace sebagai pembeli. Booking,
-        checkout, dan pesan belum tersedia.
+        You can still use the marketplace as a customer. Bookings, checkout, and messaging are not available.
       </p>
-      <Link to="/marketplace">Jelajahi marketplace →</Link>
+      <Link to="/marketplace">Explore the marketplace</Link>
       <DemoNotice />
     </section>
   );

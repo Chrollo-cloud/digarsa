@@ -13,15 +13,15 @@ export default function VerifiedRating({
         : { seller_profile_id: sellerProfileId },
     ),
   );
-  if (error) return <span title={error}>Rating belum tersedia</span>;
+  if (error) return <span title={error}>Rating unavailable</span>;
   const average =
     data.average === null
       ? "—"
-      : data.average.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+      : data.average.toLocaleString("en-US", { maximumFractionDigits: 2 });
   if (compact)
     return (
       <span
-        aria-label={`${average} dari 5, ${data.total} ulasan terverifikasi`}
+        aria-label={`${average} of 5, ${data.total} verified reviews`}
       >
         ★ {average} <small>({data.total} terverifikasi)</small>
       </span>
@@ -31,10 +31,10 @@ export default function VerifiedRating({
       ★{" "}
       {data.average === null
         ? "—"
-        : data.average.toLocaleString("id-ID", {
+        : data.average.toLocaleString("en-US", {
             maximumFractionDigits: 2,
           })}{" "}
-      · {data.total} ulasan terverifikasi
+      · {data.total} verified reviews
     </span>
   );
 }

@@ -36,8 +36,8 @@ export default function CreatorFlipCard({ creator, index }) {
         aria-controls={`creator-${creator.id}`}
         onClick={toggle}
       >
-        {flipped ? "Balik" : `Lihat detail ${creator.name}`}{" "}
-        <span aria-hidden="true">{flipped ? "↶" : "↗"}</span>
+        {flipped ? "Balik" : `View details ${creator.name}`}{" "}
+        <span aria-hidden="true">{flipped ? "↶" : ""}</span>
       </button>
       <div className="creator-card__inner">
         <div
@@ -69,7 +69,7 @@ export default function CreatorFlipCard({ creator, index }) {
           <span className="type-metadata">CREATIVE PARTNER</span>
           <h3>{creator.name}</h3>
           <p>{creator.description}</p>
-          <span className="creator-card__city">↗ {creator.city}</span>
+          <span className="creator-card__city"> {creator.city}</span>
           <ul>
             {creator.skills.map((skill) => (
               <li key={skill}>{skill}</li>
@@ -77,9 +77,9 @@ export default function CreatorFlipCard({ creator, index }) {
           </ul>
           <Link
             to={`/seller/${creator.id}`}
-            aria-label={`Lihat profil ${creator.name}`}
+            aria-label={`View profile ${creator.name}`}
           >
-            Lihat profil <span aria-hidden="true">↗</span>
+            View profile
           </Link>
         </div>
       </div>

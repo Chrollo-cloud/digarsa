@@ -25,8 +25,8 @@ function NearbyWorkspace() {
     [mode, setMode] = useState("onsite");
   const [radius, setRadius] = useState("25"),
     [selected, setSelected] = useState("");
-  const [locationOpen, setLocationOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [locationAvailable, setLocationAvailable] = useState(false);
+  const [filtersAvailable, setFiltersAvailable] = useState(false);
   const city =
     cityOverride ?? (mode === "onsite" && !device.point ? (saved.location?.city ?? "") : "");
   const origin = device.point || saved.location?.coordinates || null;
@@ -64,12 +64,12 @@ function NearbyWorkspace() {
             Talenta di <em>sekitarmu.</em>
           </h1>
           <p>
-            Temukan layanan kreatif dengan wilayah publik yang dipilih
+            Discover services kreatif dengan wilayah publik yang dipilih
             kreatornya.
           </p>
         </div>
         <Link className="button button--secondary" to="/marketplace">
-          Semua marketplace ↗
+          All marketplace services
         </Link>
       </header>
       <DeviceLocationPanel
@@ -83,25 +83,25 @@ function NearbyWorkspace() {
           if (user) store.clearBuyerLocation({ expectedUserId: user.id });
         }}
       />
-      <div className={`nearby-controls${filtersOpen ? " is-expanded" : ""}`}>
+      <div className={`nearby-controls${filtersAvailable ? " is-expanded" : ""}`}>
         <label className="nearby-search">
-          Cari layanan
+          Search services
           <input
             type="search"
             className="field__control"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nama layanan atau kreator…"
+            placeholder="Nama services atau kreator…"
           />
         </label>
         <button
           className="nearby-filter-toggle"
           type="button"
           aria-controls="nearby-filter-fields"
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen(!filtersOpen)}
+          aria-expanded={filtersAvailable}
+          onClick={() => setFiltersAvailable(!filtersAvailable)}
         >
-          {filtersOpen ? "Tutup −" : "Filter +"}
+          {filtersAvailable ? "Tutup −" : "Filter +"}
         </button>
         <div id="nearby-filter-fields" className="nearby-filter-fields">
           <label>
@@ -111,20 +111,20 @@ function NearbyWorkspace() {
               value={category}
               onChange={(event) => setCategory(event.target.value)}
             >
-              <option value="">Semua kategori</option>
+              <option value="">All kategori</option>
               {categories.map((value) => (
                 <option key={value}>{value}</option>
               ))}
             </select>
           </label>
           <label>
-            Wilayah layanan
+            Wilayah services
             <input
               className="field__control"
               value={city}
               maxLength={120}
               onChange={(event) => setCity(event.target.value)}
-              placeholder="Semua wilayah"
+              placeholder="All wilayah"
             />
           </label>
           <label>
@@ -145,13 +145,13 @@ function NearbyWorkspace() {
         </div>
       </div>
       <div className="nearby-context">
-        <div className="nearby-mode" role="group" aria-label="Jenis layanan">
+        <div className="nearby-mode" role="group" aria-label="Jenis services">
           <button
             type="button"
             aria-pressed={mode === "onsite"}
             onClick={() => setMode("onsite")}
           >
-            Onsite / area lokal
+            On-site / area lokal
           </button>
           <button
             type="button"
@@ -165,28 +165,28 @@ function NearbyWorkspace() {
           <button
             className="location-link"
             type="button"
-            aria-expanded={locationOpen}
-            onClick={() => setLocationOpen(!locationOpen)}
+            aria-expanded={locationAvailable}
+            onClick={() => setLocationAvailable(!locationAvailable)}
           >
-            Pengaturan lokasi tersimpan ↗
+            Saved location settings
           </button>
         ) : (
           <Link className="location-link" to="/login?returnTo=%2Fnearby">
-            Masuk untuk menyimpan lokasi ↗
+            Log in to save your location
           </Link>
         )}
       </div>
-      {locationOpen && user && (
+      {locationAvailable && user && (
         <Suspense fallback={<p role="status">Memuat pengaturan lokasi…</p>}>
           <BuyerLocationForm key={user.id} />
         </Suspense>
       )}
       <p className="nearby-disclaimer">
         {mode === "remote"
-          ? "Layanan daring ditampilkan terpisah, tanpa pin atau peringkat jarak."
+          ? "Service daring ditampilkan terpisah, tanpa pin atau peringkat jarak."
           : origin
-            ? "Jarak dihitung di browser dari titik privatmu: perkiraan garis lurus, bukan jarak jalan atau waktu tempuh."
-            : "Atur titik privat untuk jarak garis lurus. Kota tidak menentukan titik peta."}{" "}
+            ? "Jarak dihitung di browser of titik privatmu: perkiraan garis lurus, bukan jarak jalan atau waktu tempuh."
+            : "Atur titik privat untuk jarak garis lurus. City tidak menentukan titik peta."}{" "}
         Pin dikonfirmasi kreator, bukan hasil verifikasi lapangan.
       </p>
       {error && (
@@ -202,13 +202,13 @@ function NearbyWorkspace() {
         </div>
       )}
       <div className={`nearby-layout${mode === "remote" ? " is-remote" : ""}`}>
-        <section className="nearby-results" aria-label="Hasil layanan">
+        <section className="nearby-results" aria-label="Hasil services">
           <header>
             <h2>
-              Layanan pilihan<span>.</span>
+              Service pilihan<span>.</span>
             </h2>
             <p role="status">
-              {rows.length} layanan · {pins.length} pin publik
+              {rows.length} services · {pins.length} pin publik
             </p>
           </header>
           {!rows.length ? (
@@ -217,12 +217,12 @@ function NearbyWorkspace() {
               <h3>
                 {error
                   ? "Data belum dapat diverifikasi."
-                  : "Belum ada layanan yang sesuai."}
+                  : "Belum ada services yang sesuai."}
               </h3>
               <p>
                 {mode === "remote"
                   ? "Coba kategori atau kata pencarian lain."
-                  : "Layanan onsite perlu dimiliki akun kreator aktif dan tersedia untuk booking. Tidak semua kreator memilih mempublikasikan pin."}
+                  : "Service onsite perlu dimiliki akun kreator aktif dan tersedia untuk booking. Tidak semua kreator memilih mempublikasikan pin."}
               </p>
               <button
                 className="button button--secondary"
@@ -270,7 +270,7 @@ function NearbyWorkspace() {
                       </span>
                       <span>
                         {row.distance !== null
-                          ? `≈ ${row.distance.toLocaleString("id-ID", { maximumFractionDigits: 1 })} km garis lurus`
+                          ? `≈ ${row.distance.toLocaleString("en-US", { maximumFractionDigits: 1 })} km garis lurus`
                           : mode === "remote"
                             ? "Dikerjakan secara daring"
                             : "Jarak belum tersedia"}
@@ -284,7 +284,7 @@ function NearbyWorkspace() {
                         Pin di peta ↑
                       </a>
                     )}
-                    <Link to={`/service/${row.id}`}>Lihat layanan ↗</Link>
+                    <Link to={`/service/${row.id}`}>Show services </Link>
                   </div>
                   <span className="location-sr-only">Hasil {index + 1}</span>
                 </li>
@@ -296,13 +296,13 @@ function NearbyWorkspace() {
           <section
             id="nearby-map"
             className="nearby-map-panel"
-            aria-label="Peta dan layanan terpilih"
+            aria-label="Peta dan services terpilih"
           >
             <Suspense fallback={<p role="status">Memuat peta interaktif…</p>}>
               <LocationMap
                 center={origin}
                 selection={picking ? origin : null}
-                selectionLabel="Titik privat pencarian (bukan pin layanan publik)"
+                selectionLabel="Titik privat pencarian (bukan pin services publik)"
                 focusId={selected}
                 onPick={picking ? (point) => { device.controller.useManual(point); } : undefined}
                 points={pins}
@@ -323,9 +323,9 @@ function NearbyWorkspace() {
                 <p>
                   {active.coordinates
                     ? active.area
-                    : "Kreator belum membagikan pin layanan ini."}
+                    : "Creator belum membagikan pin services ini."}
                 </p>
-                <Link to={`/service/${active.id}`}>Buka detail layanan ↗</Link>
+                <Link to={`/service/${active.id}`}>Open service details </Link>
               </div>
             )}
           </section>
@@ -333,7 +333,7 @@ function NearbyWorkspace() {
       </div>
       <p className="nearby-footnote">
         Demo lokal · titik pencarian hanya untuk sesi ini kecuali disimpan secara eksplisit.
-        Peta memerlukan internet dan tile OpenStreetMap; tidak ada pelacakan
+        Peta memerlukan internet dan tile AvailableStreetMap; tidak ada pelacakan
         langsung, geocoding, atau sinkronisasi lintas perangkat.
       </p>
     </div>
@@ -342,7 +342,7 @@ function NearbyWorkspace() {
 export default function NearbyServicesPage() {
   const { user } = useAuth();
   useEffect(() => {
-    document.title = "Layanan Sekitar — Digarsa";
+    document.title = "Service Sekitar — Digarsa";
   }, []);
   return <NearbyWorkspace key={user?.id || "guest"} />;
 }

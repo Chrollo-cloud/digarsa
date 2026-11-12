@@ -12,7 +12,7 @@ export default function BookingTrend({ bookings }) {
   );
   const label = (row) =>
     new Date(row.date).toLocaleDateString(
-      "id-ID",
+      "en-US",
       period === "year"
         ? { month: "short", year: "2-digit" }
         : { day: "numeric", month: "short" },
@@ -27,8 +27,8 @@ export default function BookingTrend({ bookings }) {
       <header>
         <div>
           <span className="ws-kicker">ANALITIK BOOKING</span>
-          <h2 id={titleId}>Ruang untuk bertumbuh.</h2>
-          <p>Permintaan masuk berdasarkan tanggal pengajuan.</p>
+          <h2 id={titleId}>Room to grow.</h2>
+          <p>Incoming requests berdasarkan tanggal pengajuan.</p>
         </div>
         <div
           className="seller-period"
@@ -54,7 +54,7 @@ export default function BookingTrend({ bookings }) {
       <div className="seller-trend__summary" aria-live="polite">
         <strong>{total}</strong>
         <span>permintaan dalam periode ini</span>
-        <small>Semua status · bukan nilai pembayaran</small>
+        <small>All status · bukan nilai pembayaran</small>
       </div>
       {total ? (
         <>
@@ -111,7 +111,7 @@ export default function BookingTrend({ bookings }) {
             ))}
           </svg>
           <details className="seller-trend__data">
-            <summary>Lihat data grafik</summary>
+            <summary>Show data grafik</summary>
             <div
               className="ws-table-wrap"
               tabIndex={0}
@@ -139,11 +139,10 @@ export default function BookingTrend({ bookings }) {
         </>
       ) : (
         <div className="seller-trend__empty">
-          <span aria-hidden="true">↗</span>
+          <span aria-hidden="true"></span>
           <h3>Belum ada permintaan pada periode ini.</h3>
           <p>
-            Grafik akan terbentuk dari booking layananmu. Coba periode lain
-            untuk melihat data sebelumnya.
+            The chart will appear when you have bookings. Try another period to view earlier data.
           </p>
         </div>
       )}

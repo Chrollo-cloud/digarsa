@@ -19,7 +19,7 @@ export default function ReviewCard({ review }) {
         <div>
           <h3>{review.reviewer_name}</h3>
           <time dateTime={review.created_at}>
-            {new Date(review.created_at).toLocaleDateString("id-ID", {
+            {new Date(review.created_at).toLocaleDateString("en-US", {
               day: "numeric",
               month: "long",
               year: "numeric",
@@ -32,11 +32,11 @@ export default function ReviewCard({ review }) {
       <footer>
         {serviceAvailable ? (
           <Link to={`/service/${review.service_id}`}>
-            {review.service_title} ↗
+            {review.service_title}
           </Link>
         ) : (
           <span className="review-archived-service">
-            {review.service_title} · Arsip layanan
+            {review.service_title} · Arsip services
           </span>
         )}
         <span className="review-verified">✓ Booking terverifikasi</span>

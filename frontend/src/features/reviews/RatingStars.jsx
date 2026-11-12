@@ -9,7 +9,7 @@ export default function RatingStars({ value, size = 18 }) {
       aria-label={
         value === null
           ? "Belum ada penilaian"
-          : `${value.toLocaleString("id-ID", { maximumFractionDigits: 2 })} dari 5 bintang`
+          : `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} of 5 bintang`
       }
     >
       {[0, 1, 2, 3, 4].map((index) => (

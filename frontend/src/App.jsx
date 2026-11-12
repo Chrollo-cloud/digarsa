@@ -34,14 +34,11 @@ const CheckoutPage = lazy(() => import("./features/customer/CheckoutPage"));
 const PaymentPage = lazy(() => import("./features/customer/PaymentPage"));
 const RecoveryPage = lazy(() => import("./features/account/RecoveryPage"));
 
-const NearbyServicesPage = lazy(
-  () => import("./features/location/NearbyServicesPage"),
-);
 const AboutPage = lazy(() => import("./pages/marketing/AboutPage"));
 const HowItWorksPage = lazy(() => import("./pages/marketing/HowItWorksPage"));
 const publicPageLoading = (
   <p className="container route-shell" role="status">
-    Memuat halaman…
+    Loading page…
   </p>
 );
 
@@ -58,7 +55,7 @@ function MessagingLoading({ children }) {
     <Suspense
       fallback={
         <p className="container route-shell" role="status">
-          Memuat ruang personal…
+          Loading your workspace…
         </p>
       }
     >
@@ -137,14 +134,6 @@ export default function App() {
                 <Route path="/admin/*" element={<AdminCenter />} />
               </Route>
             </Route>
-            <Route
-              path="/nearby"
-              element={
-                <Suspense fallback={publicPageLoading}>
-                  <NearbyServicesPage />
-                </Suspense>
-              }
-            />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/service/:id" element={<ServiceDetailPage />} />
             <Route path="/seller/:id" element={<CreatorProfilePage />} />
@@ -167,7 +156,7 @@ export default function App() {
             <Route
               path="*"
               element={
-                <RouteShell title="Halaman tidak ditemukan" label="404" />
+                <RouteShell title="Page not found" label="404" />
               }
             />
           </Route>

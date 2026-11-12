@@ -62,3 +62,14 @@
     margin-bottom: 8px;
   }
 }
+.admin-payment-table,
+.admin-payout-table { min-width: 980px; }
+.admin-payment-table details,
+.admin-payout-table details { min-width: 130px; }
+.admin-payout-table td:last-child { display: flex; flex-wrap: wrap; gap: 6px; min-width: 190px; }
+.admin-payout-table .button { padding: 8px 10px; font-size: 12px; }
+.payment-status { border-radius: 10px; }
+@media (max-width: 640px) {
+  .admin-payment-table,
+  .admin-payout-table { min-width: 900px; }
+}

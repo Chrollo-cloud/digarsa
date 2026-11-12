@@ -19,11 +19,11 @@ function OrderList({ bookings }) {
   );
   return (
     <CustomerFrame
-      title="Setiap ide, satu perjalanan."
-      description="Pantau permintaan dan riwayat kolaborasimu."
+      title="Every idea has its own journey."
+      description="Track your requests and collaboration history."
     >
-      <div className="customer-order-tabs" role="group" aria-label="Status pesanan">
-        {[["", "Semua"], ...statuses.map((value) => [value, bookingStatusLabel(value)])].map(([value, label]) => (
+      <div className="customer-order-tabs" role="group" aria-label="Order status">
+        {[["", "All"], ...statuses.map((value) => [value, bookingStatusLabel(value)])].map(([value, label]) => (
           <button key={label} type="button" aria-pressed={status === value} onClick={() => setStatus(value)}>
             {label} <span>{value ? bookings.filter((row) => row.status === value).length : bookings.length}</span>
           </button>
@@ -39,11 +39,11 @@ function OrderList({ bookings }) {
         <EmptyState
           title={
             bookings.length
-              ? "Tidak ada pesanan pada status ini."
-              : "Belum ada permintaan pesanan."
+              ? "No orders with this status."
+              : "No order requests yet."
           }
         >
-          Setelah mengirim ringkasan kebutuhan, kamu dapat mengikuti prosesnya di sini.
+          After submitting your project brief, you can track its progress here.
         </EmptyState>
       )}
     </CustomerFrame>

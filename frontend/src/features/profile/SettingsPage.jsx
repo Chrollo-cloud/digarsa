@@ -13,8 +13,8 @@ export default function SettingsPage() {
         <h2>Aksesmu, dalam kendalimu.</h2>
         <p>Gunakan kata sandi khusus demo. Data akun dan sesi disimpan pada browser ini; belum ada otorisasi server atau sinkronisasi lintas perangkat.</p>
         <dl className="settings-facts">
-          <div><dt>Notifikasi</dt><dd>Pesan dan status booking tersedia di dalam aplikasi. Email dan push notification belum tersedia.</dd></div>
-          <div><dt>Lokasi privat</dt><dd>Lokasi pencarian dikelola melalui Profil Saya. Koordinat hanya disimpan setelah tindakan dan persetujuanmu.</dd></div>
+          <div><dt>Notifikasi</dt><dd>Pesan dan status booking tersedia di dalam aplikasi. Email address dan push notification belum tersedia.</dd></div>
+          <div><dt>Lokasi privat</dt><dd>Lokasi pencarian dikelola melalui My Profile. Koordinat hanya disimpan setelah tindakan dan persetujuanmu.</dd></div>
         </dl>
       </section>
       <div>

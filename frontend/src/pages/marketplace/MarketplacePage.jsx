@@ -1,6 +1,6 @@
 import { useCatalog } from "../../features/catalog/useCatalog";
-import { useDeferredValue, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   services,
   getCreator,
@@ -10,14 +10,42 @@ import {
 import ServiceCard from "../../components/marketplace/ServiceCard";
 import Filters from "../../components/marketplace/Filters";
 import { useReviews } from "../../features/reviews/useReviews";
+import { useAuth } from "../../features/account/authContext";
+import { useBuyerLocation } from "../../features/location/useBuyerLocation";
 import {
   reviewStore,
   summarizeReviews,
 } from "../../features/reviews/reviewClient";
 import "./marketplace.css";
 
+const SEARCH_HISTORY_LIMIT = 8;
+function historyKey(userId) {
+  return `digarsa.marketplace.search-history.v1:${userId || "guest"}`;
+}
+function readSearchHistory(key) {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(key) || "[]");
+    return Array.isArray(value)
+      ? value.filter((item) => typeof item === "string").slice(0, SEARCH_HISTORY_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+const normalize = (value) => String(value || "").trim().toLocaleLowerCase("en-US");
+
 export default function MarketplacePage() {
   useCatalog();
+  const { user } = useAuth();
+  const { location: buyerLocation } = useBuyerLocation();
+  const searchHistoryStorageKey = historyKey(user?.id);
+  const [historyState, setHistoryState] = useState(() => ({
+    key: searchHistoryStorageKey,
+    entries: readSearchHistory(searchHistoryStorageKey),
+  }));
+  const searchHistory = historyState.key === searchHistoryStorageKey
+    ? historyState.entries
+    : readSearchHistory(searchHistoryStorageKey);
   const { data: verifiedReviews, error: reviewError } = useReviews(() =>
     reviewStore.listPublic(),
   );
@@ -48,6 +76,54 @@ export default function MarketplacePage() {
       { replace: true },
     );
   }
+
+  function rememberSearch() {
+    const term = values.q.trim();
+    if (!term) return;
+    const next = [term, ...searchHistory.filter((item) => normalize(item) !== normalize(term))]
+      .slice(0, SEARCH_HISTORY_LIMIT);
+    setHistoryState({ key: searchHistoryStorageKey, entries: next });
+    try {
+      window.localStorage.setItem(searchHistoryStorageKey, JSON.stringify(next));
+    } catch {
+      // Search still works if browser storage is unavailable.
+    }
+  }
+
+  function clearSearchHistory() {
+    setHistoryState({ key: searchHistoryStorageKey, entries: [] });
+    try {
+      window.localStorage.removeItem(searchHistoryStorageKey);
+    } catch {
+      // Clearing the current view is still useful if storage is unavailable.
+    }
+  }
+
+  const recommendations = useMemo(() => {
+    const terms = [...new Set(searchHistory.flatMap((entry) => normalize(entry).split(/\s+/).filter((word) => word.length > 1)))];
+    const city = normalize(buyerLocation?.city);
+    if (!terms.length && !city) return [];
+    return services
+      .filter((service) => service.availability === "Open")
+      .map((service) => {
+        const creator = getCreator(service.creatorId);
+        const haystack = normalize([
+          service.title,
+          service.description,
+          service.category,
+          creator?.name,
+          creator?.city,
+          ...(creator?.skills || []),
+        ].join(" "));
+        const searchScore = terms.reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0);
+        const locationMatch = Boolean(city && normalize(creator?.city).includes(city));
+        return { service, score: searchScore + (locationMatch ? 1 : 0), locationMatch };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.service.title.localeCompare(b.service.title, "en-US"))
+      .slice(0, 4)
+      .map((item) => item.service);
+  }, [searchHistory, buyerLocation?.city]);
 
   const badPrice =
     [values.min, values.max].some(
@@ -102,16 +178,16 @@ export default function MarketplacePage() {
           <h1>
             Temukan <em>talenta</em>
             <br />
-            untuk ide besarmu.
+            for your big ideas.
           </h1>
-          <p>Partner kreatif lokal untuk langkah berikutnya.</p>
+          <p>Local creative partners for your next step.</p>
           <form
             className="market-search"
             role="search"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={(event) => { event.preventDefault(); rememberSearch(); }}
           >
             <label className="market-sr-only" htmlFor="service-search">
-              Cari layanan, kreator, atau keahlian
+              Search services, kreator, atau keahlian
             </label>
             <span aria-hidden="true">⌕</span>
             <input
@@ -119,15 +195,40 @@ export default function MarketplacePage() {
               type="search"
               value={values.q}
               onChange={(event) => update("q", event.target.value)}
-              placeholder="Cari layanan, kreator, atau keahlian…"
+              placeholder="Search services, creators, or skills…"
             />
-            <button type="submit">Cari →</button>
+            <button type="submit">Search </button>
           </form>
-          <Link className="market-nearby-link" to="/nearby">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
-            Temukan layanan di dekatmu <span aria-hidden="true">↗</span>
-          </Link>
         </div>
+      </section>
+      <section className="market-shell market-recommendations" aria-labelledby="recommendations-title">
+        <div className="market-recommendations__heading">
+          <div>
+            <span className="market-kicker">PERSONALIZED FOR YOU</span>
+            <h2 id="recommendations-title">My Recommendations<span>.</span></h2>
+            <p>
+              {searchHistory.length && buyerLocation?.city
+                ? `Based on your recent searches and saved area: ${buyerLocation.city}.`
+                : searchHistory.length
+                  ? "Based on services and skills in your recent searches."
+                  : buyerLocation?.city
+                    ? `Based on available services around your saved area: ${buyerLocation.city}.`
+                    : "Search for services or save a city in your profile to get recommendations."}
+            </p>
+          </div>
+          {searchHistory.length > 0 && (
+            <button className="market-reset" type="button" onClick={clearSearchHistory}>Clear search history</button>
+          )}
+        </div>
+        {recommendations.length ? (
+          <div className="market-service-grid">
+            {recommendations.map((service) => <ServiceCard key={service.id} service={service} />)}
+          </div>
+        ) : (
+          <p className="market-recommendations__empty">
+            Recommendations will appear here when your recent searches or saved area match currently available services.
+          </p>
+        )}
       </section>
       <div className="market-shell market-discovery">
         <Filters values={values} update={update} reset={() => setParams({})} />
@@ -136,12 +237,12 @@ export default function MarketplacePage() {
             <div>
               <span className="market-kicker">PILIHAN KREATIF</span>
               <h2>
-                Layanan untukmu<span>.</span>
+                Services for you<span>.</span>
               </h2>
               <p role="status" aria-live="polite">
                 {searching
-                  ? "Mencari layanan…"
-                  : `${results.length} layanan ditemukan`}
+                  ? "Searching services…"
+                  : `${results.length} services ditemukan`}
               </p>
             </div>
             <label>
@@ -150,16 +251,16 @@ export default function MarketplacePage() {
                 value={values.sort}
                 onChange={(event) => update("sort", event.target.value)}
               >
-                <option value="">Pilihan editor</option>
-                <option value="price-up">Harga terendah</option>
-                <option value="price-down">Harga tertinggi</option>
+                <option value="">Editor's picks</option>
+                <option value="price-up">Lowest price</option>
+                <option value="price-down">Highest price</option>
                 <option value="rating">Rating terverifikasi tertinggi</option>
               </select>
             </label>
           </div>
           {reviewError && (
             <p className="market-demo-note" role="alert">
-              Rating terverifikasi belum tersedia. {reviewError}
+              Verified ratings are not available yet. {reviewError}
             </p>
           )}
           {invalid ? (
@@ -185,7 +286,7 @@ export default function MarketplacePage() {
             </div>
           ) : (
             <div className="market-panel">
-              <h3>Belum ada layanan yang cocok.</h3>
+              <h3>Belum ada services yang cocok.</h3>
               <p>
                 Coba kata kunci lain atau perluas kategori, lokasi, dan rentang
                 harga.
@@ -195,7 +296,7 @@ export default function MarketplacePage() {
                 className="market-reset"
                 onClick={() => setParams({})}
               >
-                Lihat semua layanan
+                Show semua services
               </button>
             </div>
           )}

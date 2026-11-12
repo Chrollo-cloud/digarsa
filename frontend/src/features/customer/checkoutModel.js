@@ -27,6 +27,6 @@ export function parseCheckout(query) {
   if (!ids.length || ids.length > 20 || new Set(ids).size !== ids.length ||
       ids.some(id => !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,199}$/.test(id)) ||
       !/^checkout-[a-zA-Z0-9-]{1,100}$/.test(checkoutId))
-    throw new Error("Pilihan checkout tidak valid. Pilih layanan dari keranjang kembali.");
+    throw new Error("Your checkout selection is invalid. Choose a service from your cart again.");
   return { ids, checkoutId };
 }

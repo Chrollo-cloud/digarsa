@@ -16,7 +16,7 @@ export default function CatalogNotice() {
         <p>
           {hasValidCatalog
             ? "Menampilkan salinan katalog terakhir yang berhasil dimuat; perubahan terbaru mungkin belum terlihat."
-            : "Daftar awal belum mencakup perubahan seller atau moderasi yang dapat diverifikasi."}{" "}
+            : "Sign up awal belum mencakup perubahan seller atau moderasi yang dapat diverifikasi."}{" "}
           Booking dinonaktifkan sementara.
         </p>
         <p>{error} Data tersimpan tidak dihapus atau direset.</p>

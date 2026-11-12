@@ -7,15 +7,15 @@ import "./sellerNotifications.css";
 
 const labels = {
   new_message: "Pesan baru",
-  booking_requested: "Pesanan baru",
-  new_review: "Ulasan baru",
+  booking_requested: "Orders baru",
+  new_review: "New review",
 };
 
 function formatTime(value) {
   const time = new Date(value);
   return Number.isFinite(time.getTime())
-    ? time.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })
-    : "Waktu tidak tersedia";
+    ? time.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
+    : "Time unavailable";
 }
 
 export default function SellerNotificationsPage() {
@@ -28,7 +28,7 @@ export default function SellerNotificationsPage() {
       sellerMessaging.markNotificationRead(id);
       setActionError("");
     } catch (failure) {
-      setActionError(failure.message || "Notifikasi belum dapat diperbarui.");
+      setActionError(failure.message || "Notifications could not be updated.");
     }
   }
 
@@ -40,26 +40,26 @@ export default function SellerNotificationsPage() {
   return (
     <SellerFrame
       title="Notifikasi Seller."
-      description="Pesan dan aktivitas layanan yang ditujukan kepada Seller Profile-mu."
+      description="Pesan dan aktivitas services yang ditujukan kepada Seller Profile-mu."
     >
       <section className="seller-notifications" aria-label="Notifikasi Seller">
         {actionError && <div className="ws-alert" role="alert">{actionError}</div>}
         <header className="seller-notifications-heading">
           <div>
             <span className="ws-kicker">AKTIVITAS AKUN</span>
-            <h2>Terbaru untukmu.</h2>
+            <h2>Latest for you.</h2>
           </div>
           <span className="seller-notifications-count">
-            {unreadCount} belum dibaca
+            {unreadCount} unread
           </span>
         </header>
         {error ? (
-          <div className="ws-alert" role="alert">Notifikasi belum dapat dimuat: {error}</div>
+          <div className="ws-alert" role="alert">Notifications could not be loaded: {error}</div>
         ) : !notifications.length ? (
           <div className="ws-empty seller-notifications-empty">
             <span aria-hidden="true">✳</span>
-            <h2>Belum ada notifikasi.</h2>
-            <p>Pesan Customer dan booking layananmu akan tampil di sini.</p>
+            <h2>No notifications yet.</h2>
+            <p>Pesan Customer dan booking servicesmu akan tampil di sini.</p>
           </div>
         ) : (
           <ul className="seller-notifications-list">
@@ -75,11 +75,11 @@ export default function SellerNotificationsPage() {
                   <time dateTime={notice.created_at}>{formatTime(notice.created_at)}</time>
                   <div className="seller-notifications-actions">
                     <button type="button" onClick={() => openNotice(notice)}>
-                      {notice.type === "new_message" ? "Buka percakapan" : notice.type === "booking_requested" ? "Lihat pesanan" : "Lihat profil"} ↗
+                      {notice.type === "new_message" ? "Open conversation" : notice.type === "booking_requested" ? "View orders" : "View profile"}
                     </button>
                     {!notice.is_read && (
                       <button type="button" onClick={() => markRead(notice.id)}>
-                        Tandai dibaca
+                        Mark as read
                       </button>
                     )}
                   </div>
@@ -89,7 +89,7 @@ export default function SellerNotificationsPage() {
           </ul>
         )}
         <p className="seller-notifications-footnote">
-          <Link to="/seller-dashboard">Kembali ke ringkasan Seller</Link>
+          <Link to="/seller-dashboard">Back to Seller overview</Link>
         </p>
       </section>
     </SellerFrame>

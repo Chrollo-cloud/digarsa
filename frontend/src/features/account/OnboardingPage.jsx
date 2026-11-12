@@ -14,7 +14,7 @@ export default function OnboardingPage() {
   const [busy, setBusy] = useState(false);
   const [bio, setBio] = useState("");
   useEffect(() => {
-    document.title = "Jadi Kreator — Digarsa";
+    document.title = "Become a creator — Digarsa";
   }, []);
   if (user.sellerProfileId) return <Navigate to="/seller-dashboard" replace />;
   async function submit(event) {
@@ -35,7 +35,7 @@ export default function OnboardingPage() {
   return (
     <div className="account-onboarding">
       <section className="account-onboarding__intro">
-        <Link to="/marketplace">← Kembali ke marketplace</Link>
+        <Link to="/marketplace">← Back to marketplace</Link>
         <span className="account-kicker">DIGARSA / SELLER PROFILE</span>
         <h1>
           Jadikan karyamu
@@ -43,24 +43,24 @@ export default function OnboardingPage() {
           <span>mudah ditemukan.</span>
         </h1>
         <p>
-          Kenalkan studio atau keahlianmu, tampilkan layanan, lalu kelola
-          kolaborasi dari akun Digarsa yang sama.
+          Kenalkan studio atau keahlianmu, tampilkan services, lalu kelola
+          kolaborasi of akun Digarsa yang sama.
         </p>
         <p className="account-benefit">
-          Satu akun untuk mencari layanan dan berkarya sebagai kreator.
+          One account to find services and work as a creator.
         </p>
       </section>
       <section className="account-onboarding__panel">
         <span className="account-kicker">MULAI SEBAGAI KREATOR · 01 / 01</span>
         <h2>Profil kreatormu.</h2>
         <p>
-          Aktifkan Seller Profile, lalu kelola layanan, pesanan, dan percakapan
+          Aktifkan Seller Profile, lalu kelola services, orders, dan percakapan
           di Seller Center.
         </p>
         <form onSubmit={submit} aria-busy={busy}>
           <fieldset disabled={busy}>
             <Input
-              label="Nama kreator atau studio"
+              label="Creator or studio name"
               name="name"
               required
               minLength={2}
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
                   defaultValue=""
                 >
                   <option value="" disabled>
-                    Pilih kategori
+                    Select a category
                   </option>
                   {sellerCategories.map((category) => (
                     <option key={category}>{category}</option>
@@ -84,7 +84,7 @@ export default function OnboardingPage() {
                 </select>
               </label>
               <Input
-                label="Kota atau wilayah"
+                label="City atau wilayah"
                 name="city"
                 required
                 minLength={2}
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
               label="Spesialisasi (opsional)"
               name="specialties"
               maxLength={500}
-              hint="Pisahkan dengan koma."
+              hint="Separate with commas."
             />
             {error && (
               <p className="account-feedback is-error" role="alert">
@@ -133,7 +133,7 @@ export default function OnboardingPage() {
               </p>
             )}
             <Button type="submit">
-              {busy ? "Mengaktifkan…" : "Aktifkan Akun Kreator"} ↗
+              {busy ? "Activating…" : "Activate Creator Account"}
             </Button>
           </fieldset>
         </form>

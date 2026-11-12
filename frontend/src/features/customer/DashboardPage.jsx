@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const statistics = [
     ["Booking aktif", overview.active, "/orders"],
     ["Kolaborasi selesai", overview.completed, "/orders?status=Completed"],
-    ["Layanan favorit", favorites.length, "/favorites"],
+    ["Service favorit", favorites.length, "/favorites"],
     ["Di keranjang", cart.length, "/cart"],
   ];
   return (
@@ -31,20 +31,20 @@ export default function DashboardPage() {
       <section className="customer-welcome" aria-label="Mulai kolaborasi">
         <div>
           <span className="market-kicker">RUANG UNTUK IDE BERIKUTNYA</span>
-          <h2>Karya baik dimulai<br />dari koneksi yang tepat.</h2>
+          <h2>Great work starts<br />with the right connection.</h2>
           <Link className="button button--primary" to="/marketplace">
-            Temukan kreator ↗
+            Find creators
           </Link>
         </div>
         <div className="customer-welcome-total">
           <strong>{bookings.length}</strong>
-          <span>permintaan booking<br />dari perjalananmu sejauh ini</span>
+          <span>permintaan booking<br />of perjalananmu sejauh ini</span>
         </div>
       </section>
-      <section className="customer-stats" aria-label="Ringkasan akun">
+      <section className="customer-stats" aria-label="Overview akun">
         {statistics.map(([label, value, to]) => (
           <Link key={label} to={to}>
-            <span>{label}<span aria-hidden="true">↗</span></span>
+            <span>{label}<span aria-hidden="true"></span></span>
             <strong>{value}</strong>
           </Link>
         ))}
@@ -72,16 +72,16 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p>Belum ada data pesanan. Statistik akan muncul setelah kamu mengirim kebutuhan pertama.</p>
+              <p>No order data yet. Your stats will appear after you send your first project request.</p>
             )}
             <p className="customer-list-caption">
-              Dihitung dari status booking saat ini · bukan data pembayaran.
+              Based on current booking statuses · not payment data.
             </p>
           </section>
           <section className="customer-dashboard-panel">
             <div className="customer-section-heading">
               <h2>Aktivitas terbaru.</h2>
-              <Link to="/orders">Semua pesanan ↗</Link>
+              <Link to="/orders">All orders </Link>
             </div>
             {overview.recent.length ? (
               <div className="customer-recent-orders">
@@ -91,7 +91,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <EmptyState title="Mulai cerita kolaborasimu.">
-                Kirim kebutuhan untuk layanan yang sesuai dengan kebutuhanmu.
+                Share what you need to find services that fit your project.
               </EmptyState>
             )}
           </section>
@@ -105,28 +105,28 @@ export default function DashboardPage() {
             ) : (
               <div className="customer-communication">
                 <Link to="/messages">
-                  <span>Pesan Saya<small>Pesan belum dibaca</small></span>
+                  <span>My Messages<small>Pesan unread</small></span>
                   <strong>{counts?.messages ?? "—"}</strong>
                 </Link>
                 <Link to="/notifications">
-                  <span>Notifikasi Saya<small>Kabar belum dibaca</small></span>
+                  <span>My Notifications<small>Kabar unread</small></span>
                   <strong>{counts?.notifications ?? "—"}</strong>
                 </Link>
               </div>
             )}
             <Link className="customer-profile-action" to="/profile">
-              Kelola profil pribadi ↗
+              Manage your profile
             </Link>
           </section>
           <section className="customer-dashboard-panel">
             <div className="customer-section-heading">
               <h2>Pilihan tersimpan.</h2>
-              <Link to="/favorites">Semua ↗</Link>
+              <Link to="/favorites">All </Link>
             </div>
             {saved.length ? saved.slice(0, 2).map((service) => (
               <SavedServiceCard key={service.id} service={service} id={service.id} />
             )) : (
-              <p>Layanan favoritmu akan muncul di sini. Simpan karya yang membuatmu ingin berkolaborasi.</p>
+              <p>Your favorite services will appear here. Save work that inspires you to collaborate.</p>
             )}
           </section>
         </aside>

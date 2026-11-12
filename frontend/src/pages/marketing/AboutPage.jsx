@@ -7,23 +7,23 @@ const values = [
   [
     "01",
     "Ruang untuk talenta.",
-    "Karya kreatif lokal punya banyak kemungkinan. Kami ingin memberi kreator ruang untuk memperkenalkan keahlian dan layanan mereka.",
+    "Karya kreatif lokal punya banyak kemungkinan. Kami ingin memberi kreator ruang untuk memperkenalkan keahlian dan services mereka.",
   ],
   [
     "02",
     "Kepercayaan yang dibangun.",
-    "Profil, brief yang jelas, dan ulasan dari booking yang selesai membantu pelanggan mengenal orang di balik sebuah karya.",
+    "Profil, brief yang jelas, dan ulasan of booking yang selesai membantu pelanggan mengenal orang di balik sebuah karya.",
   ],
   [
     "03",
     "Kolaborasi yang dekat.",
-    "Percakapan membantu menyamakan harapan. Dari kebutuhan awal sampai perkembangan pesanan, setiap pihak punya ruang untuk saling memahami.",
+    "Percakapan membantu menyamakan harapan. From kebutuhan awal sampai perkembangan orders, setiap pihak punya ruang untuk saling memahami.",
   ],
 ];
 
 export default function AboutPage() {
   return (
-    <MarketingPage title="Tentang Digarsa">
+    <MarketingPage title="About Digarsa">
       <header className="marketing-container marketing-about-hero">
         <span className="marketing-label marketing-pill">TENTANG DIGARSA</span>
         <h1>
@@ -70,18 +70,13 @@ export default function AboutPage() {
             membuatnya terlihat, terdengar, dan terasa.
           </p>
           <p>
-            UMKM yang ingin memperkenalkan produknya, pemilik usaha yang
-            membutuhkan identitas visual, atau seseorang yang sedang menyiapkan
-            proyek personal—semuanya membutuhkan partner kreatif yang sesuai.
+            Small businesses sharing their products, owners seeking a visual identity, and people preparing personal projects all need the right creative partner.
           </p>
           <p>
-            Digarsa hadir sebagai ruang pertemuan itu. Jelajahi layanan, kenali
-            kreatornya, lalu mulai percakapan tentang apa yang ingin kamu
-            wujudkan. Kami percaya proses kreatif yang baik dimulai dari saling
-            memahami.
+            Digarsa brings those people together. Explore services, meet creators, and start a conversation about what you want to make. We believe good creative work starts with understanding.
           </p>
           <Button to="/how-it-works" variant="secondary">
-            Kenali cara kerjanya <span aria-hidden="true">↗</span>
+            Learn how it works
           </Button>
         </div>
       </section>
@@ -90,25 +85,24 @@ export default function AboutPage() {
           <figure data-marketing-reveal>
             <img
               src={design}
-              alt="Eksplorasi palet warna dan sketsa identitas visual di meja desainer"
+              alt="A designer's desk with color palette explorations and visual identity sketches"
               width="1200"
               height="1500"
               loading="lazy"
             />
-            <figcaption>Setiap karya dimulai dari eksplorasi.</figcaption>
+            <figcaption>Every project starts with exploration.</figcaption>
           </figure>
           <div data-marketing-reveal>
-            <span className="marketing-label">02 / ARAH YANG KAMI TUJU</span>
+            <span className="marketing-label">02 / OUR DIRECTION</span>
             <h2 id="mission-title">
-              Membuka ruang.
+              Opening space.
               <br />
               <em>Mendekatkan</em>
               <br />
-              kesempatan.
+              opportunity.
             </h2>
             <p>
-              Membantu pelanggan menemukan keahlian yang dibutuhkan, sekaligus
-              memberi kreator ruang untuk mengembangkan peluang melalui karya.
+              Helping customers find the skills they need while giving creators room to grow through their work.
             </p>
             <ul className="marketing-values">
               {values.map(([number, title, copy]) => (
@@ -129,51 +123,45 @@ export default function AboutPage() {
         aria-labelledby="together-title"
       >
         <div className="marketing-section-heading" data-marketing-reveal>
-          <span className="marketing-label">03 / DUA SISI, SATU RUANG</span>
+          <span className="marketing-label">03 / TWO SIDES, ONE SPACE</span>
           <h2 id="together-title">
-            Ada tempat untuk
+            There is room for
             <br />
             <em>ide dan keahlianmu.</em>
           </h2>
         </div>
         <div className="marketing-audiences">
           <article data-marketing-reveal>
-            <span className="marketing-label">UNTUK PELANGGAN</span>
+            <span className="marketing-label">FOR CUSTOMERS</span>
             <h3>
-              Temukan orang
+              Meet the person
               <br />
-              di balik karya.
+              behind the work.
             </h3>
             <p>
-              Bandingkan layanan, lihat portofolio dan ulasan terverifikasi yang
-              tersedia, lalu ajukan brief kepada kreator dengan layanan yang
-              bisa dipesan. Ikuti permintaanmu dari akun yang sama.
+              Compare services, explore portfolios and verified reviews, then send a brief to a creator with an available service. Track requests from the same account.
             </p>
             <Button to="/marketplace" variant="secondary">
-              Temukan layanan <span aria-hidden="true">↗</span>
+              Explore services
             </Button>
           </article>
           <article data-marketing-reveal>
-            <span className="marketing-label">UNTUK KREATOR</span>
+            <span className="marketing-label">FOR CREATORS</span>
             <h3>
-              Beri keahlianmu
+              Give your skills
               <br />
-              ruang untuk dikenal.
+              room to be discovered.
             </h3>
             <p>
-              Aktifkan Seller Profile dari akun Digarsa, perkenalkan keahlianmu,
-              dan publikasikan layanan. Kelola permintaan serta percakapan di
-              Seller Center, sambil tetap bisa menjadi pelanggan.
+              Activate a Seller Profile on your Digarsa account, introduce your skills, and publish services. Manage requests and conversations in Seller Center while remaining a customer too.
             </p>
             <Button to="/become-a-creator" variant="secondary">
-              Mulai sebagai kreator <span aria-hidden="true">↗</span>
+              Become a creator
             </Button>
           </article>
         </div>
         <p className="marketing-demo-note">
-          Digarsa saat ini berupa demo lokal. Data akun dan aktivitas tersimpan
-          di browser yang digunakan; pembayaran dan sinkronisasi lintas
-          perangkat belum tersedia. Foto merupakan ilustrasi suasana kreatif.
+          Digarsa is currently a local demo. Account data and activity are stored in this browser; payments and cross-device sync are not available. Photos illustrate creative workspaces.
         </p>
       </section>
       <MarketingCTA />

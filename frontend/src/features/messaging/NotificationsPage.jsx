@@ -25,12 +25,12 @@ export default function NotificationsPage() {
     }
   }
   return (
-    <MessagingFrame title="Notifikasi Saya">
+    <MessagingFrame title="My Notifications">
       <div className="customer-notification-summary">
-        <p>{error ? "Data notifikasi belum tersedia." : `${unreadNotifications(data || [])} belum dibaca`}</p>
-        <div className="notification-filters" role="group" aria-label="Filter notifikasi">
-          <button type="button" aria-pressed={!unreadOnly} onClick={() => setUnreadOnly(false)}>Semua</button>
-          <button type="button" aria-pressed={unreadOnly} onClick={() => setUnreadOnly(true)}>Belum dibaca</button>
+        <p>{error ? "Notification data is unavailable." : `${unreadNotifications(data || [])} unread`}</p>
+        <div className="notification-filters" role="group" aria-label="Filter notifications">
+          <button type="button" aria-pressed={!unreadOnly} onClick={() => setUnreadOnly(false)}>All</button>
+          <button type="button" aria-pressed={unreadOnly} onClick={() => setUnreadOnly(true)}>Unread</button>
         </div>
       </div>
       {failure && (
@@ -41,11 +41,11 @@ export default function NotificationsPage() {
       {error ? (
         <MessagingState error={error} />
       ) : !rows.length ? (
-        <MessagingState title={unreadOnly ? "Semua kabar sudah kamu baca." : "Belum ada notifikasi."}>
+        <MessagingState title={unreadOnly ? "All kabar sudah kamu baca." : "No notifications yet."}>
           Kabar pesan dan perkembangan booking akan muncul di sini.
         </MessagingState>
       ) : (
-        <div className="messaging-list" aria-label="Daftar notifikasi">
+        <div className="messaging-list" aria-label="Notifications">
           {rows.map((notice) => (
             <article
               className={`messaging-notification ${notice.is_read ? "" : "is-unread"}`}
@@ -53,13 +53,13 @@ export default function NotificationsPage() {
             >
               <span
                 className="messaging-notification-dot"
-                aria-label={notice.is_read ? "Sudah dibaca" : "Belum dibaca"}
+                aria-label={notice.is_read ? "Read" : "Unread"}
               />
               <div>
                 <h2>{notice.title}</h2>
                 <p>{notice.message}</p>
                 <time dateTime={notice.created_at}>
-                  {new Date(notice.created_at).toLocaleString("id-ID", {
+                  {new Date(notice.created_at).toLocaleString("en-US", {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
@@ -67,8 +67,8 @@ export default function NotificationsPage() {
                 <div className="messaging-notification-actions">
                   {notice.to ? (
                     <Link to={notice.to} onClick={() => read(notice.id)}>
-                      Lihat{" "}
-                      {notice.type === "new_message" ? "pesan" : "booking"} ↗
+                      Show{" "}
+                      {notice.type === "new_message" ? "pesan" : "booking"}
                     </Link>
                   ) : (
                     <small>
@@ -81,9 +81,9 @@ export default function NotificationsPage() {
                       onClick={(event) => {
                         if (!read(notice.id)) event.preventDefault();
                       }}
-                      aria-label={`Tandai dibaca: ${notice.title}`}
+                      aria-label={`Mark as read: ${notice.title}`}
                     >
-                      Tandai dibaca
+                      Mark as read
                     </button>
                   )}
                 </div>

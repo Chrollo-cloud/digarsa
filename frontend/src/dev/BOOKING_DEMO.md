@@ -1,13 +1,13 @@
-# Opt-in localhost booking fixture
+# Local booking and payment demo
 
-Start `npm run dev -- --host 127.0.0.1`, then open `/src/dev/bookingSetup.html` on the same origin/port. This entry is not imported by the application or built into production. It requires Vite development mode and loopback hostname.
+Run `npm run dev -- --host 127.0.0.1`, then open `/src/dev/bookingSetup.html` on the same origin and port. This setup page is available only in Vite development mode on localhost and is not included in the production build.
 
-Choose two demo-only passwords privately, or use the explicit random-password button. Setup uses normal registration, Seller Profile activation and service creation. Existing-email collisions are rejected; accounts are never adopted or overwritten. Repeat setup reuses recorded identities/services. Passwords are not stored in the registry/source. Keep the setup tab open when using generated passwords.
+Enter two private demo-only passwords or generate random passwords. Setup uses normal registration, Seller Profile activation, and service creation. Existing email collisions are rejected; accounts are never adopted or overwritten. Passwords are not saved in the fixture registry. Keep the setup tab open if you need generated passwords to switch sessions.
 
-1. Setup leaves Buyer signed in. Open Marketplace in a new tab, search “demo”, add an eligible service to cart and open the cart icon.
-2. Start an individual request, enter the brief and a present/future date for onsite work, review and confirm. Open Pesanan.
-3. In the setup tab explicitly sign in as Seller; refresh the application tab, open Seller Center → Pesanan Masuk and accept or decline. Switch back to Buyer to track that same order.
-4. Nearby: use onsite mode, Makassar city and no radius, or manually choose a nearby synthetic test origin with matching radius. Public sample point is labeled synthetic QA, never geocoded from city text or copied from private location.
-5. Reset archives tracked fixture services only; accounts, orders and messages remain intact. Setup after reset creates a new service set. This is not a destructive history/account reset. No fake bookings or Paid records are seeded.
+1. Create the Buyer and Seller accounts and services. Setup leaves the Buyer signed in.
+2. Open Marketplace in another tab, choose an available service, create a booking request, and visit `/orders` to view it.
+3. In the setup tab, switch to Seller. Refresh the app tab and open `/seller-dashboard/orders`; accept the booking and confirm its final price.
+4. Switch back to Buyer and refresh. Open the order from `/orders`, then choose Demo payment or open `/payment/:bookingId` with that booking's ID.
+5. The payment screen is an explicit simulation. It records a demo status in local browser data only; no money moves and no bank confirmation occurs.
 
-Checkout/payment-demo routes are absent at this baseline. Accepted remains accepted pending legitimate payment integration. Teammate checkout/reset work stays deferred until its branch is reviewed. Demo seller activation requires ownership, not identity verification.
+Customer routes require a signed-in account and only show that account's bookings. Seller order routes require an active Seller capability and only show Seller-owned bookings. Do not remove these checks for testing. Reset archives fixture-owned services only; accounts, bookings, and conversations remain intact. No bookings or Paid entries are seeded.

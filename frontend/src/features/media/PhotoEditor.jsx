@@ -28,7 +28,7 @@ export default function PhotoEditor({ ownerUserId, scope, mediaId, url, currentO
     setBusy(true); setError(""); setMessage("");
     let id = "";
     try {
-      if (currentOwner() !== ownerUserId) throw new Error("Sesi berubah. Buka kembali foto dari akun aktif.");
+      if (currentOwner() !== ownerUserId) throw new Error("Sesi berubah. Buka kembali foto of akun aktif.");
       if (!remove) id = await mediaStore.put(draft.blob, ownerUserId, scope);
       if (ticket !== request.current || currentOwner() !== ownerUserId) {
         if (id) await mediaStore.remove(id, ownerUserId, scope);
@@ -36,7 +36,7 @@ export default function PhotoEditor({ ownerUserId, scope, mediaId, url, currentO
       }
       onCommit(id);
       setDraft(null);
-      setMessage(remove ? "Foto dihapus dari profil." : "Foto tersimpan pada perangkat ini, bukan di server.");
+      setMessage(remove ? "Foto dihapus of profil." : "Foto tersimpan pada perangkat ini, bukan di server.");
       if (mediaId) await mediaStore.remove(mediaId, ownerUserId, scope).catch(() => {});
     } catch (failure) {
       if (id) await mediaStore.remove(id, ownerUserId, scope).catch(() => {});
@@ -47,7 +47,7 @@ export default function PhotoEditor({ ownerUserId, scope, mediaId, url, currentO
   return (
     <section className="photo-editor" aria-label={scope === "seller" ? "Foto Seller Profile" : "Foto akun"}>
       <div>
-        <h2>{scope === "seller" ? "Foto Seller Profile" : "Foto profil dari perangkat"}</h2>
+        <h2>{scope === "seller" ? "Foto Seller Profile" : "Foto profil of perangkat"}</h2>
         <p>Demo lokal · JPEG, PNG, WebP hingga 5 MB. Tidak diunggah ke server atau disinkronkan ke perangkat lain.</p>
       </div>
       {(draft ? draft.src : saved) && <img className="photo-editor__preview" src={draft ? draft.src : saved} alt="Pratinjau foto profil" />}
@@ -56,8 +56,8 @@ export default function PhotoEditor({ ownerUserId, scope, mediaId, url, currentO
           onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void select(file); }} />
       </label>
       <div className="photo-editor__actions">
-        {draft && <><button type="button" className="button button--aqua" disabled={busy} onClick={() => void commit()}>Simpan foto pada perangkat</button>
-          <button type="button" className="button button--secondary" onClick={cancel}>Batal</button></>}
+        {draft && <><button type="button" className="button button--aqua" disabled={busy} onClick={() => void commit()}>Save foto pada perangkat</button>
+          <button type="button" className="button button--secondary" onClick={cancel}>Cancel</button></>}
         {!draft && (mediaId || url) && <button type="button" className="button button--secondary" disabled={busy} onClick={() => void commit(true)}>Hapus foto</button>}
       </div>
       {busy && <p role="status">Memproses foto…</p>}

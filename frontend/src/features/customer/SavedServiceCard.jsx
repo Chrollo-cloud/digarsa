@@ -16,19 +16,19 @@ export default function SavedServiceCard({ service, id, onRemove }) {
           <>
             <Availability value={service.availability} />
             <h2><Link to={`/service/${service.id}`}>{service.title}</Link></h2>
-            <p>{creator?.name || "Kreator tidak tersedia"}{creator?.city ? ` · ${creator.city}` : ""}</p>
+            <p>{creator?.name || "Creator unavailable"}{creator?.city ? ` · ${creator.city}` : ""}</p>
             <strong>{money(service.price)} <small>/ mulai dari</small></strong>
           </>
         ) : (
           <>
-            <h2>Layanan tidak tersedia.</h2>
-            <p>Kamu tetap dapat menghapusnya dari favorit.</p>
+            <h2>Service unavailable.</h2>
+            <p>Kamu tetap dapat menghapusnya of favorit.</p>
           </>
         )}
       </div>
       {onRemove && (
         <button className="saved-service-remove" type="button"
-          aria-label={`Hapus dari favorit: ${service?.title || id}`}
+          aria-label={`Hapus of favorit: ${service?.title || id}`}
           onClick={() => onRemove(id)}>
           ♥
         </button>

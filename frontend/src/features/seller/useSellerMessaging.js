@@ -24,7 +24,7 @@ export function useSellerMessaging(conversationId = "") {
     inbox = sellerMessaging.listInbox();
     if (conversationId) thread = sellerMessaging.getThread(conversationId);
   } catch (failure) {
-    error = failure.message || "Pesan belum dapat dimuat.";
+    error = failure.message || "Messages could not be loaded.";
   }
   return { user, inbox, thread, error, version };
 }

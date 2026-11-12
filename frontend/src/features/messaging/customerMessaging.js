@@ -3,7 +3,7 @@ import { MessagingError, messageSafety } from "./contracts.js";
 const denied = () => {
   throw new MessagingError(
     "NOT_FOUND_OR_FORBIDDEN",
-    "Percakapan tidak tersedia di ruang pelanggan akunmu.",
+    "This conversation is unavailable in your customer workspace.",
   );
 };
 
@@ -18,7 +18,7 @@ export function createCustomerMessaging({
   function account() {
     const user = accounts.current();
     if (!user)
-      throw new MessagingError("UNAUTHENTICATED", "Masuk untuk membuka pesan.");
+      throw new MessagingError("UNAUTHENTICATED", "Log in untuk membuka pesan.");
     return user;
   }
   function ownedBooking(id) {
@@ -42,11 +42,11 @@ export function createCustomerMessaging({
       (row) => row.id === conversation.service_id,
     );
     return {
-      seller_name: profile?.name || profile?.studioName || "Kreator Digarsa",
+      seller_name: profile?.name || profile?.studioName || "Creator Digarsa",
       seller_image: profile?.image || null,
       service_title:
         service?.title ||
-        (conversation.booking_id ? "Percakapan booking" : "Diskusi kreatif"),
+        (conversation.booking_id ? "Percakapan booking" : "Creative discussion"),
       service_available: !!service,
     };
   }
@@ -88,7 +88,7 @@ export function createCustomerMessaging({
       const user = account();
       const service = getServices().find((row) => row.id === service_id);
       if (!service)
-        throw new MessagingError("INVALID_CONTEXT", "Layanan tidak tersedia.");
+        throw new MessagingError("INVALID_CONTEXT", "Service unavailable.");
       const conversation = messaging.getOrCreateConversation({
         customer_user_id: user.id,
         seller_profile_id: service.creatorId,

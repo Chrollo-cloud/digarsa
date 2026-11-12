@@ -111,12 +111,6 @@ export default function SellerProfilePage() {
           hint="Pisahkan dengan koma."
         />
         <Input
-          label="Foto profil (URL, opsional)"
-          name="image"
-          type="url"
-          defaultValue={profile.image}
-        />
-        <Input
           label="Tautan portofolio (opsional)"
           name="portfolioLink"
           type="url"

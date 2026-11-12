@@ -22,6 +22,6 @@ export function useAdmin() {
     state.error = failure.message;
   }
   const creatorName = (id) =>
-    creators.find((creator) => creator.id === id)?.name || "Kreator";
+    creators.find((creator) => creator.id === id)?.name || "Creator";
   return { user, ...state, creatorName, catalog: sellerStore };
 }

@@ -10,7 +10,7 @@ const descriptions = {
   denied: "Izin lokasi ditolak. Kamu tetap bisa menjelajah atau memilih titik manual. Untuk mengizinkan kembali, ubah izin lokasi situs pada pengaturan browser.",
   gesture: "Browser belum memberikan lokasi. Tekan Gunakan lokasi saya untuk memulai lewat tindakan langsung; browser tetap menentukan izin.",
   unavailable: "Posisi perangkat belum tersedia. Coba lagi atau gunakan titik manual.",
-  unsupported: "Geolokasi tidak didukung pada browser atau konteks ini. Gunakan titik manual atau jelajahi wilayah layanan.",
+  unsupported: "Geolokasi tidak didukung pada browser atau konteks ini. Gunakan titik manual atau jelajahi wilayah services.",
   timeout: "Pencarian lokasi melewati batas waktu. Coba lagi dengan tombol di bawah atau pilih titik manual.",
   cleared: "Lokasi pencarian telah dibersihkan. Tidak ada permintaan lokasi baru otomatis.",
 };
@@ -76,7 +76,7 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
           <p>Titik sesi sebelumnya tetap digunakan sampai diganti atau dihapus.</p>
         )}
         {device.point && device.source === "geolocation" && <p role="status">
-          {device.accuracy === null ? "Akurasi perangkat tidak dilaporkan." : `Akurasi perkiraan ±${Math.round(device.accuracy).toLocaleString("id-ID")} meter.`}
+          {device.accuracy === null ? "Akurasi perangkat tidak dilaporkan." : `Akurasi perkiraan ±${Math.round(device.accuracy).toLocaleString("en-US")} meter.`}
           {device.accuracy > 100 && " Titik ini masih kasar; koreksi manual sebelum menyimpan."}
         </p>}
         <small>Posisi desktop melalui Wi-Fi dapat meleset. Titik bukan alamat pasti; kamu dapat mencoba lagi atau mengoreksinya di peta.</small>
@@ -93,10 +93,10 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
         <button type="button" className="location-link" onClick={clear}>Hapus lokasi</button>
         {device.point && (user ? (
           <button type="button" className="button button--secondary" onClick={save}>
-            Simpan lokasi ini di akun
+            Save lokasi ini di akun
           </button>
         ) : (
-          <Link className="location-link" to="/login?returnTo=%2Fnearby">Masuk untuk menyimpan lokasi</Link>
+          <Link className="location-link" to="/login?returnTo=%2Fnearby">Log in untuk menyimpan lokasi</Link>
         ))}
       </div>
       <details>
@@ -113,7 +113,7 @@ export default function DeviceLocationPanel({ device, onPickToggle, picking, onC
           <div className="location-form-actions">
             <button type="submit" className="button button--secondary">Gunakan titik manual</button>
             <button type="button" className="location-link" aria-pressed={picking} onClick={onPickToggle}>
-              {picking ? "Batalkan pilihan peta" : "Pilih titik pada peta"}
+              {picking ? "Cancel pilihan peta" : "Pilih titik pada peta"}
             </button>
           </div>
           <p>Titik manual hanya untuk sesi ini, kecuali kamu menekan tombol simpan.</p>

@@ -22,7 +22,7 @@ export function useSellerNotifications() {
     notifications = sellerMessaging.listNotifications();
     unreadCount = notifications.filter((notice) => !notice.is_read).length;
   } catch (failure) {
-    error = failure.message || "Notifikasi belum dapat dimuat.";
+    error = failure.message || "Notifications could not be loaded.";
   }
   return { notifications, unreadCount, error, version };
 }

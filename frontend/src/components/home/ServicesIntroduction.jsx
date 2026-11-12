@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 
 const categories = [
   ["Branding", "Branding"],
-  ["Fotografi", "Fotografi & Film"],
+  ["Photography", "Photography & Film"],
   ["Digital", "Web & Digital"],
-  ["Ilustrasi", "Illustration & Motion"],
+  ["Illustration", "Illustration & Motion"],
 ];
 
 export default function ServicesIntroduction() {
@@ -12,8 +12,8 @@ export default function ServicesIntroduction() {
     <>
       <section className="home-services" aria-labelledby="services-title">
         <div className="home-services__row" data-reveal>
-          <h2 id="services-title">Layanan</h2>
-          <nav aria-label="Kategori kreatif">
+          <h2 id="services-title">Service</h2>
+          <nav aria-label="Creative categories">
             {categories.map(([label, category]) => (
               <Link
                 key={label}
@@ -27,13 +27,12 @@ export default function ServicesIntroduction() {
       </section>
       <section className="home-description" aria-labelledby="description-title">
         <h2 id="description-title" data-reveal>
-          Talenta kreatif
+          Creative talent
           <br />
-          untuk ide yang <em>berarti.</em>
+          for ideas that <em>matter.</em>
         </h2>
         <p data-reveal>
-          Temukan partner kreatif lokal yang bisa membantu bisnis dan ide kamu
-          tumbuh—dari strategi, visual, hingga pengalaman digital.
+          Find local creative partners who can help your business and ideas grow—from strategy and visuals to digital experiences.
         </p>
       </section>
     </>

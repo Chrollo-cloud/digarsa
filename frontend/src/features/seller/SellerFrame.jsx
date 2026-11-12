@@ -13,6 +13,9 @@ const icons = [
   "messages",
   "notifications",
   "earnings",
+  "wallet",
+  "wallet",
+  "wallet",
   "profile",
 ];
 function NavigationIcon({ name }) {
@@ -23,6 +26,7 @@ function NavigationIcon({ name }) {
     messages: "M4 4h16v12H9l-5 4z M8 8h8 M8 12h5",
     notifications: "M5 17h14l-2-3V9a5 5 0 0 0-10 0v5z M10 21h4",
     earnings: "M3 5h18v14H3z M3 9h18 M16 14h2 M7 14h3",
+    wallet: "M4 6h16v14H4z M4 9h16 M16 14h1",
     profile: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z M4 21v-3a8 5 0 0 1 16 0v3",
   };
   return (
@@ -50,13 +54,16 @@ export default function SellerFrame({ title, description, children }) {
     document.title = `${title} — Digarsa`;
   }, [title]);
   const nav = [
-    ["/seller-dashboard", "Ringkasan", 0, true],
-    ["/seller-dashboard/orders", "Pesanan Masuk", waiting],
-    ["/seller-dashboard/services", "Layanan Saya"],
+    ["/seller-dashboard", "Overview", 0, true],
+    ["/seller-dashboard/orders", "Orders Log in", waiting],
+    ["/seller-dashboard/services", "Service Saya"],
     ["/seller-dashboard/messages", "Pesan"],
     ["/seller-dashboard/notifications", "Notifikasi", unreadCount],
-    ["/seller-dashboard/earnings", "Pendapatan"],
-    ["/seller-dashboard/profile", "Profil Seller"],
+    ["/seller-dashboard/earnings", "Earnings"],
+    ["/seller-dashboard/wallet", "Wallet"],
+    ["/seller-dashboard/withdraw", "Withdraw"],
+    ["/seller-dashboard/payout-history", "Riwayat Pencairan"],
+    ["/seller-dashboard/profile", "Seller profile"],
   ];
   return (
     <div className="ws-page seller-center">
@@ -110,7 +117,7 @@ export default function SellerFrame({ title, description, children }) {
             </span>
             <div>
               <strong>{profile.name}</strong>
-              <Link to={`/seller/${profile.id}`}>Lihat profil publik ↗</Link>
+              <Link to={`/seller/${profile.id}`}>View profile publik </Link>
             </div>
           </div>
         )}

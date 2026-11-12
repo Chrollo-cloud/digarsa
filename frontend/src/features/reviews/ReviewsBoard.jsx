@@ -29,8 +29,8 @@ export default function ReviewsBoard({ rows, personal = false, children }) {
           </h3>
           <p>
             {personal
-              ? "Pengalamanmu membantu pelanggan lain memilih kolaborasi."
-              : "Ulasan dari pelanggan yang telah menyelesaikan kolaborasi."}
+              ? "Your experience helps other customers choose a collaboration."
+              : "Reviews from customers who have completed a collaboration."}
           </p>
           <span aria-hidden="true">✳</span>
         </div>
@@ -43,7 +43,7 @@ export default function ReviewsBoard({ rows, personal = false, children }) {
               value={rating}
               onChange={(event) => setRating(event.target.value)}
             >
-              <option value="">Semua bintang</option>
+              <option value="">All bintang</option>
               {[5, 4, 3, 2, 1].map((star) => (
                 <option key={star} value={star}>
                   {star} bintang
@@ -54,7 +54,7 @@ export default function ReviewsBoard({ rows, personal = false, children }) {
           <label>
             Urutkan
             <select
-              aria-label="Urutkan ulasan"
+              aria-label="Sort reviews"
               value={sort}
               onChange={(event) => setSort(event.target.value)}
             >
@@ -64,7 +64,7 @@ export default function ReviewsBoard({ rows, personal = false, children }) {
             </select>
           </label>
           <span role="status">
-            {visible.length} dari {rows.length} ulasan
+            {visible.length} of {rows.length} ulasan
           </span>
         </div>
         <div className="review-list">
@@ -75,19 +75,19 @@ export default function ReviewsBoard({ rows, personal = false, children }) {
               <span aria-hidden="true">✳</span>
               <h3>
                 {rows.length
-                  ? "Belum ada ulasan dengan penilaian ini."
+                  ? "No reviews with this rating yet."
                   : "Cerita pertama dimulai darimu."}
               </h3>
               <p>
                 {rows.length
-                  ? "Pilih penilaian lain untuk melihat ulasan."
+                  ? "Choose another rating to see reviews."
                   : personal
-                    ? "Setelah booking selesai, bagikan pengalaman kolaborasimu."
-                    : "Belum ada ulasan pelanggan terverifikasi. Angka akan muncul setelah ulasan pertama."}
+                    ? "Share your experience after your booking is complete."
+                    : "No verified customer reviews yet. Angka akan muncul setelah ulasan pertama."}
               </p>
               {rating && (
                 <button type="button" onClick={() => setRating("")}>
-                  Lihat semua penilaian
+                  Show semua penilaian
                 </button>
               )}
             </div>

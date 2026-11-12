@@ -74,20 +74,20 @@ export default function SellerAvailabilityPage() {
 
   if (!service)
     return (
-      <SellerFrame title="Layanan tidak ditemukan.">
-        <Empty title="Layanan ini bukan milikmu atau sudah dihapus.">
-          Jadwal hanya dapat dikelola oleh pemilik layanan.
+      <SellerFrame title="Service not found.">
+        <Empty title="This service does not belong to you or has been deleted.">
+          Jadwal hanya dapat dikelola oleh pemilik services.
         </Empty>
-        <Link className="ws-link" to="/seller-dashboard/services">← Layanan saya</Link>
+        <Link className="ws-link" to="/seller-dashboard/services">← Service saya</Link>
       </SellerFrame>
     );
 
   return (
     <SellerFrame
-      title="Ketersediaan layanan."
+      title="Availability services."
       description={`Atur slot waktu untuk ${service.title}. Slot ini membantu perencanaan seller; formulir booking Customer saat ini hanya meminta tanggal, belum jam.`}
     >
-      <Link className="ws-back" to="/seller-dashboard/services">← Layanan saya</Link>
+      <Link className="ws-back" to="/seller-dashboard/services">← Service saya</Link>
       {success && <p className="ws-success" role="status">{success}</p>}
       {(error || schedulesState.error) && (
         <p className="ws-alert" role="alert">{error || schedulesState.error}</p>
@@ -114,7 +114,7 @@ export default function SellerAvailabilityPage() {
               <input id="availability-start" className="field__control" type="time" name="startTime" value={draft.startTime} onChange={edit} required />
             </div>
             <div className="field">
-              <label htmlFor="availability-end">Selesai</label>
+              <label htmlFor="availability-end">Completed</label>
               <input id="availability-end" className="field__control" type="time" name="endTime" value={draft.endTime} onChange={edit} required />
             </div>
           </div>
@@ -125,9 +125,9 @@ export default function SellerAvailabilityPage() {
         </div>
         <div className="ws-actions">
           <button className="button button--primary" type="submit" disabled={saving}>
-            {saving ? "Menyimpan…" : editingId ? "Simpan jadwal" : "Tambah jadwal"}
+            {saving ? "Menyimpan…" : editingId ? "Save jadwal" : "Tambah jadwal"}
           </button>
-          {editingId && <button className="button button--secondary" type="button" onClick={resetForm}>Batal edit</button>}
+          {editingId && <button className="button button--secondary" type="button" onClick={resetForm}>Cancel edit</button>}
         </div>
       </form>
 
@@ -145,7 +145,7 @@ export default function SellerAvailabilityPage() {
                   {confirmingId === schedule.id ? (
                     <div className="ws-actions" role="group" aria-label="Konfirmasi hapus jadwal">
                       <button className="button button--danger" type="button" onClick={() => remove(schedule.id)}>Ya, hapus</button>
-                      <button className="button button--secondary" type="button" onClick={() => setConfirmingId("")}>Batal</button>
+                      <button className="button button--secondary" type="button" onClick={() => setConfirmingId("")}>Cancel</button>
                     </div>
                   ) : (
                     <>

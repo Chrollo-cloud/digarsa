@@ -58,7 +58,7 @@ export default function ContactCreator({
         disabled={!!unavailable || busy}
         onClick={start}
       >
-        {busy ? "Membuka…" : bookingId ? "Hubungi kreator ↗" : "Chat Kreator ↗"}
+        {busy ? "Membuka…" : bookingId ? "Contact creator " : "Chat with creator "}
       </button>
       {unavailable && <p className="messaging-contact-note">{unavailable}</p>}
       {failure && (

@@ -42,16 +42,51 @@ export function parseCoordinates(lat, lng) {
     throw new Error("Isi kedua koordinat dengan angka yang valid.");
   return validateCoordinates({ lat: Number(lat), lng: Number(lng) });
 }
+const ADDRESS_FIELDS = [
+  ["province", 80],
+  ["regency", 80],
+  ["district", 80],
+  ["postalCode", 5],
+  ["detail", 200],
+];
+// Optional private address (province, kota/kabupaten, kecamatan, postal code, street detail).
+export function validateAddress(value) {
+  if (value == null) return null;
+  if (
+    !keys(value, ADDRESS_FIELDS.map(([name]) => name)) ||
+    ADDRESS_FIELDS.some(
+      ([name]) => value[name] !== undefined && typeof value[name] !== "string",
+    )
+  )
+    throw new Error("Data alamat akun tidak valid.");
+  const address = Object.fromEntries(
+    ADDRESS_FIELDS.map(([name, max]) => [name, label(value[name] ?? "", max)]),
+  );
+  if (address.postalCode && !/^\d{5}$/.test(address.postalCode))
+    throw new Error("Kode pos harus 5 angka.");
+  return Object.values(address).some(Boolean) ? address : null;
+}
 export function validateBuyerLocation(value) {
   if (value == null) return null;
   if (
-    !keys(value, ["version", "city", "coordinates", "source", "consent"]) ||
+    !keys(value, [
+      "version",
+      "city",
+      "coordinates",
+      "source",
+      "consent",
+      "address",
+    ]) ||
     value.version !== 1 ||
     !["city", "manual", "geolocation"].includes(value.source) ||
     typeof value.consent !== "boolean"
   )
     throw new Error("Data lokasi akun tidak valid.");
   const city = label(value.city);
+  // Older local records may contain an optional address here. Accept the legacy
+  // key so saved private locations remain readable, but never expose it through
+  // the marketplace-location model. Shipping addresses live in the account's
+  // separate address book.
   const coordinates =
     value.coordinates === null ? null : validateCoordinates(value.coordinates);
   if (

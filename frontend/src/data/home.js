@@ -21,7 +21,7 @@ export const projects = [
     studio: "Ruang Cerita",
     price: "Rp 850.000",
     image: photography,
-    alt: "Fotografer merekam lanskap dari sudut pandang baru",
+    alt: "A photographer captures a landscape from a new perspective",
   },
   {
     id: "digital",
@@ -30,7 +30,7 @@ export const projects = [
     studio: "Temu Digital",
     price: "Rp 2.500.000",
     image: digital,
-    alt: "Proses perancangan pengalaman digital",
+    alt: "Process perancangan pengalaman digital",
   },
 ];
 
@@ -38,16 +38,16 @@ export const railProjects = [
   ...projects,
   {
     id: "direction",
-    title: "Ruang untuk perspektif baru",
+    title: "Space for a new perspective",
     category: "Art Direction",
     studio: "Studio Arah",
     price: "Rp 1.500.000",
     image: workspace,
-    alt: "Ruang studio untuk kolaborasi kreatif",
+    alt: "A studio space for creative collaboration",
   },
   {
     id: "editorial",
-    title: "Cerita dari sudut yang berbeda",
+    title: "Stories from a different angle",
     category: "Editorial",
     studio: "Ruang Cerita",
     price: "Rp 950.000",
@@ -56,12 +56,12 @@ export const railProjects = [
   },
   {
     id: "illustration",
-    title: "Warna yang menghidupkan ide",
+    title: "Colors that bring ideas to life",
     category: "Illustration",
     studio: "Rona Works",
     price: "Rp 700.000",
     image: design,
-    alt: "Eksplorasi visual untuk karya ilustrasi",
+    alt: "A visual exploration for an illustration",
   },
 ];
 
@@ -72,7 +72,7 @@ export const creators = [
     role: "Brand & visual identity",
     city: "Bandung",
     image: design,
-    description: "Identitas visual yang berani, hangat, dan punya cerita.",
+    description: "A bold, warm visual identity with a story to tell.",
     skills: ["Branding", "Art direction", "Packaging"],
   },
   {
@@ -82,7 +82,7 @@ export const creators = [
     city: "Jakarta",
     image: photography,
     description:
-      "Menangkap cerita dari ruang, manusia, dan sudut pandang baru.",
+      "Capturing stories of spaces, people, and fresh perspectives.",
     skills: ["Photography", "Film", "Editorial"],
   },
   {
@@ -92,7 +92,7 @@ export const creators = [
     city: "Yogyakarta",
     image: workspace,
     description:
-      "Pengalaman digital yang intuitif untuk ide yang ingin tumbuh.",
+      "Intuitive digital experiences for ideas ready to grow.",
     skills: ["UI/UX", "Web design", "Digital"],
   },
   {
@@ -101,7 +101,7 @@ export const creators = [
     role: "Illustration & motion",
     city: "Surabaya",
     image: digital,
-    description: "Eksplorasi bentuk dan warna untuk karya yang terasa hidup.",
+    description: "Exploring shape and color to create work that feels alive.",
     skills: ["Illustration", "Motion", "Visual"],
   },
 ];

@@ -10,14 +10,14 @@ try {
   const run = action => async () => {
     const buttons = [...document.querySelectorAll("button")];
     buttons.forEach(button => { button.disabled = true; });
-    status.textContent = "Memproses penyiapan lokal…";
-    try { await action(); applyCatalog(); status.textContent = "Berhasil. Buka Digarsa di tab baru; sesi aktif digunakan bersama pada origin ini."; }
+    status.textContent = "Preparing local demo…";
+    try { await action(); applyCatalog(); status.textContent = "Done. Open Digarsa in a new tab; this origin shares the active session."; }
     catch (error) { status.textContent = error.message; }
     finally { buttons.forEach(button => { button.disabled = false; }); }
   };
   document.querySelector("#random").onclick = () => {
     for (const role of ["buyer", "seller"]) document.querySelector(`#${role}-password`).value = crypto.randomUUID();
-    status.textContent = "Sandi uji diisi hanya pada halaman ini; jangan muat ulang jika belum menyimpannya sendiri.";
+    status.textContent = "Test passwords are filled in on this page only. Do not reload before saving them somewhere safe.";
   };
   document.querySelector("#setup").onclick = run(() => setup.setup({ sellerPassword: password("seller"), buyerPassword: password("buyer"), enableEditorialSamples: document.querySelector("#editorial-samples").checked }));
   for (const role of ["buyer", "seller"]) document.querySelector(`#${role}`).onclick = run(() => setup.login(role, password(role)));

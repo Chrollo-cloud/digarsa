@@ -5,7 +5,7 @@ import "./profile.css";
 export default function ProfileLayout({ settings = false, children }) {
   const { storageError } = useAuth();
   useEffect(() => {
-    document.title = `${settings ? "Pengaturan akun" : "Profil Saya"} — Digarsa`;
+    document.title = `${settings ? "Settings akun" : "My Profile"} — Digarsa`;
   }, [settings]);
   return (
     <div className="personal-page">
@@ -17,7 +17,7 @@ export default function ProfileLayout({ settings = false, children }) {
           <h1>
             {settings ? (
               <>
-                Pengaturan <em>akun.</em>
+                Settings <em>akun.</em>
               </>
             ) : (
               <>

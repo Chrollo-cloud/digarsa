@@ -6,7 +6,7 @@ import {
 const normalize = (value) =>
   String(value || "")
     .trim()
-    .toLocaleLowerCase("id-ID");
+    .toLocaleLowerCase("en-US");
 export function discoverServices({
   catalog,
   resolveSellerProfile,
@@ -23,15 +23,15 @@ export function discoverServices({
       "Katalog belum dapat diverifikasi. Penemuan lokasi dinonaktifkan sampai data pulih.",
     );
   if (!["onsite", "remote"].includes(mode))
-    throw new Error("Pilih jenis layanan yang valid.");
+    throw new Error("Pilih jenis services yang valid.");
   if (origin) validateCoordinates(origin);
   if (
     radiusKm !== null &&
     (!Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 20000)
   )
-    throw new Error("Radius harus lebih dari 0 hingga 20.000 km.");
+    throw new Error("Radius harus lebih of 0 hingga 20.000 km.");
   if (radiusKm !== null && (!origin || mode === "remote"))
-    throw new Error("Radius memerlukan titik pencarian untuk layanan onsite.");
+    throw new Error("Radius memerlukan titik pencarian untuk services onsite.");
   const result = [];
   for (const service of catalog) {
     if (

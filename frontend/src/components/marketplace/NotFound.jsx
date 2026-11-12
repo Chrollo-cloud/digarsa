@@ -4,12 +4,12 @@ export default function NotFound({ type }) {
   return (
     <div className="market-page market-shell market-not-found">
       <span className="market-kicker">404 / DIGARSA</span>
-      <h1>{type} tidak ditemukan.</h1>
+      <h1>{type} not found.</h1>
       <p>
-        Alamat ini belum tersedia. Temukan layanan kreatif lainnya di
+        This address is unavailable. Discover more creative services in the
         marketplace.
       </p>
-      <Button to="/marketplace">Kembali ke marketplace →</Button>
+      <Button to="/marketplace">Back to marketplace </Button>
     </div>
   );
 }

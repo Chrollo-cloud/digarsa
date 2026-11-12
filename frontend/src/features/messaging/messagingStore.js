@@ -14,7 +14,7 @@ const copy = (row) => ({ ...row });
 const denied = () =>
   fail(
     "NOT_FOUND_OR_FORBIDDEN",
-    "Data tidak ditemukan atau bukan milik akunmu.",
+    "Data tidak ditemukan atau bukan belongs to your account.",
   );
 const requestKeys = (input, allowed) => {
   if (
@@ -48,7 +48,7 @@ export function createMessagingStore({
       fail("SESSION_UNAVAILABLE", "Sesi demo tidak dapat dibaca.");
     }
     if (!user || !isId(user.id))
-      fail("UNAUTHENTICATED", "Masuk ke akun Digarsa untuk melanjutkan.");
+      fail("UNAUTHENTICATED", "Log in ke akun Digarsa untuk melanjutkan.");
     return user;
   }
   function load() {
@@ -127,7 +127,7 @@ export function createMessagingStore({
       if (error instanceof MessagingError) throw error;
       fail(
         "DEPENDENCY_UNAVAILABLE",
-        "Sumber data akun, layanan, atau booking tidak dapat diverifikasi.",
+        "Sumber data akun, services, atau booking tidak dapat diverifikasi.",
       );
     }
   }
@@ -180,7 +180,7 @@ export function createMessagingStore({
         booking.seller_profile_id !== row.seller_profile_id ||
         booking.service_id !== row.service_id)
     )
-      fail("INVALID_CONTEXT", "Booking, layanan, dan peserta tidak cocok.");
+      fail("INVALID_CONTEXT", "Booking, services, dan peserta tidak cocok.");
     if (row.service_id) {
       const service = resolve(resolveService, row.service_id);
       if (
@@ -191,7 +191,7 @@ export function createMessagingStore({
       )
         fail(
           "INVALID_CONTEXT",
-          "Layanan bukan milik Seller Profile ini atau sudah tidak tersedia.",
+          "Service bukan milik Seller Profile ini atau sudah tidak tersedia.",
         );
     }
     return { row, profile, booking };
@@ -531,13 +531,13 @@ export function createMessagingStore({
           type,
           title: {
             Requested: "Permintaan booking baru",
-            Accepted: "Booking diterima",
+            Accepted: "Accepted bookings",
             Declined: "Booking ditolak",
-            Completed: "Booking selesai",
+            Completed: "Completed bookings",
             Paid: "Simulasi pembayaran dikonfirmasi",
           }[booking.status],
           message: booking.status === "Paid"
-            ? "Pembayaran demo disimulasikan oleh pelanggan. Tidak ada uang dipindahkan atau konfirmasi bank."
+            ? "Payment demo disimulasikan oleh pelanggan. Tidak ada uang dipindahkan atau konfirmasi bank."
             : "Status booking diperbarui pada data demo Digarsa. Notifikasi ini tidak memproses atau membuktikan pembayaran.",
           related_entity_id: booking_id,
         },
@@ -572,7 +572,7 @@ export function createMessagingStore({
       )
         fail(
           "INVALID_CONTEXT",
-          "Ulasan harus berasal dari booking selesai milik akunmu.",
+          "Ulasan harus berasal of booking selesai belongs to your account.",
         );
       const key = JSON.stringify([
         "new_review",
@@ -593,9 +593,9 @@ export function createMessagingStore({
           recipient_user_id: profile.owner_user_id,
           actor_user_id: user.id,
           type: "new_review",
-          title: "Ulasan baru",
+          title: "New review",
           message:
-            "Pelanggan memberi ulasan untuk booking yang selesai di Digarsa.",
+            "Customer memberi ulasan untuk booking yang selesai di Digarsa.",
           related_entity_id: review_id,
         },
         timestamp(),

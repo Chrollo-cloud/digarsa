@@ -17,7 +17,7 @@ export default function ReviewsPage() {
     rows: reviewStore.listOwn(),
     completed: reviewStore.listCompletedBookings(),
   }));
-  useEffect(() => { document.title = "Beri Penilaian — Digarsa"; }, []);
+  useEffect(() => { document.title = "My Reviews — Digarsa"; }, []);
   const eligible = data?.completed.filter((row) => row.eligible && !row.review) || [];
   function selectTab(next) {
     setParams(next ? { tab: "history" } : {}, { replace: true });
@@ -28,13 +28,13 @@ export default function ReviewsPage() {
         <header className="reviews-page-heading">
           <div>
             <span className="review-kicker">DIGARSA / RUANG PERSONAL</span>
-            <h1>Beri Penilaian<span>.</span></h1>
-            <p>Pengalaman nyata. Kepercayaan untuk karya berikutnya.</p>
+            <h1>My Reviews<span>.</span></h1>
+            <p>Real experiences. Trust for the next project.</p>
           </div>
         </header>
         {error ? <p role="alert" className="review-error">{error}</p> : (
           <section key={user.id} className="personal-reviews">
-            <div className="personal-review-tabs" role="tablist" aria-label="Penilaian booking" ref={tabs}
+            <div className="personal-review-tabs" role="tablist" aria-label="Review booking" ref={tabs}
               onKeyDown={(event) => {
                 const index = { ArrowRight: history ? 0 : 1, ArrowLeft: history ? 0 : 1, Home: 0, End: 1 }[event.key];
                 if (index !== undefined) {
@@ -43,7 +43,7 @@ export default function ReviewsPage() {
                   tabs.current.querySelectorAll('[role="tab"]')[index].focus();
                 }
               }}>
-              {[[false, "Belum Dinilai", eligible.length], [true, "Penilaian Saya", data.rows.length]].map(([isHistory, label, count]) => (
+              {[[false, "Belum Dinilai", eligible.length], [true, "Review Saya", data.rows.length]].map(([isHistory, label, count]) => (
                 <button key={label} type="button" role="tab" id={isHistory ? "review-history-tab" : "review-queue-tab"}
                   aria-selected={history === isHistory} aria-controls="personal-review-panel"
                   tabIndex={history === isHistory ? 0 : -1} onClick={() => selectTab(isHistory)}>
@@ -60,15 +60,15 @@ export default function ReviewsPage() {
                 </div>
               ) : (
                 <div className="review-empty">
-                  <h2>{history ? "Ceritamu menunggu untuk dibagikan." : "Semua sudah tertangani."}</h2>
-                  <p>{history ? "Penilaian yang kamu kirim akan muncul di sini." : "Belum ada booking Completed yang siap dinilai. Pantau kolaborasimu di Pesanan."}</p>
-                  <Link to="/orders">Lihat pesanan ↗</Link>
+                  <h2>{history ? "Your story is ready to be shared." : "Everything is up to date."}</h2>
+                  <p>{history ? "Reviews you submit will appear here." : "No completed bookings are ready for a review. Track your collaborations in Orders."}</p>
+                  <Link to="/orders">View orders </Link>
                 </div>
               )}
             </div>
           </section>
         )}
-        <p className="review-demo">Demo lokal · Penilaian tersimpan di browser ini. Verifikasi booking demo bukan verifikasi server.</p>
+        <p className="review-demo">Local demo · Reviews are stored in this browser. Demo booking verification is not server verification.</p>
       </div>
     </div>
   );
@@ -88,14 +88,14 @@ function PersonalReview({ review, booking }) {
         {service?.image ? <img src={service.image} alt="" loading="lazy" /> : <span className="personal-review-placeholder" aria-hidden="true">D.</span>}
         <div>
           <h3>{service ? <Link to={`/service/${service.id}`}>{context.service_title}</Link> : context.service_title}</h3>
-          <p>{review ? "Dinilai" : "Diselesaikan"} {date && Number.isFinite(Date.parse(date)) ? new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "· tanggal belum tercatat"}</p>
+          <p>{review ? "Dinilai" : "Diselesaikan"} {date && Number.isFinite(Date.parse(date)) ? new Date(date).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "· tanggal belum tercatat"}</p>
         </div>
       </div>
       {review && <p className="review-comment">{review.comment}</p>}
       <footer>
         <span className="review-verified">✓ Booking Completed{review?.updated_at ? " · Diperbarui" : ""}</span>
         <Link className="button button--primary" to={`/review/${review?.booking_id || booking.id}${review ? "?edit=1" : ""}`}>
-          {review ? "Ubah Penilaian" : "Beri Penilaian"} ↗
+          {review ? "Edit review" : "My Reviews"}
         </Link>
       </footer>
     </article>

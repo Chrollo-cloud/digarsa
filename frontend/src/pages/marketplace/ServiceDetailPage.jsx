@@ -14,15 +14,15 @@ import { useAuth } from "../../features/account/authContext";
 import ContactCreator from "../../features/messaging/ContactCreator";
 import "./marketplace.css";
 
-export default function ServiceDetailPage() {
+export default function ServiceDetailsPage() {
   useCatalog();
   const { id } = useParams();
   const { user } = useAuth();
   const service = services.find((item) => item.id === id);
   useEffect(() => {
-    document.title = `${service?.title || "Layanan tidak ditemukan"} — Digarsa`;
+    document.title = `${service?.title || "Service not found"} — Digarsa`;
   }, [service]);
-  if (!service) return <NotFound type="Layanan" />;
+  if (!service) return <NotFound type="Service" />;
   const creator = getCreator(service.creatorId);
   const reason = customerStore.getBookingRestriction(service.id);
   const demoSeller = customerStore.getDemoBookingSellerProfile(service.id);
@@ -49,7 +49,7 @@ export default function ServiceDetailPage() {
               <p>{service.description}</p>
             </section>
             <section className="market-section">
-              <h2>Tentang pengerjaan</h2>
+              <h2>About pengerjaan</h2>
               <div className="market-panel">
                 <p>
                   <strong>{service.delivery}</strong> ·{" "}
@@ -57,10 +57,10 @@ export default function ServiceDetailPage() {
                     ? `Produksi di ${service.publicLocation?.area || creator.city}; lokasi dibahas bersama kreator.`
                     : service.delivery === "Remote"
                       ? "Kolaborasi dan pengiriman hasil secara daring."
-                      : "Mode pengerjaan belum didukung."}
+                      : "Work mode belum didukung."}
                 </p>
                 <p>
-                  Estimasi pengerjaan: {service.turnaround} setelah brief
+                  Estimated turnaround: {service.turnaround} setelah brief
                   disepakati.
                 </p>
                 <p>
@@ -72,7 +72,7 @@ export default function ServiceDetailPage() {
             <PublicReviews serviceId={service.id} />
             <Reviews reviews={service.reviews} />
           </div>
-          <aside className="market-detail-aside" aria-label="Ringkasan layanan">
+          <aside className="market-detail-aside" aria-label="Overview services">
             <div className="market-panel">
               <Availability value={service.availability} />
               <p>Mulai dari</p>
@@ -97,7 +97,7 @@ export default function ServiceDetailPage() {
                   className="button button--primary market-future"
                   to={`/booking/${service.id}`}
                 >
-                  Ajukan permintaan booking ↗
+                  Submit a booking request
                 </Link>
               )}
               {demoSeller && <p className="market-demo-note">Contoh editorial ini dapat dipesan dalam demo lokal. Permintaan diteruskan ke akun Seller demo {demoSeller.name}; kreator contoh bukan identitas terverifikasi.</p>}
@@ -124,7 +124,7 @@ export default function ServiceDetailPage() {
                 <strong>{creator.name}</strong>
                 <small>{creator.city}</small>
               </span>
-              <span aria-hidden="true">↗</span>
+              <span aria-hidden="true"></span>
             </Link>
           </aside>
         </div>

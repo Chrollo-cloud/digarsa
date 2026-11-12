@@ -34,26 +34,26 @@ function Avatar({ conversation }) {
 
 function InboxPanel({ conversations, error, activeId }) {
   const [search, setSearch] = useState("");
-  const term = search.trim().toLocaleLowerCase("id-ID");
+  const term = search.trim().toLocaleLowerCase("en-US");
   const rows = conversations.filter((row) =>
     [row.seller_name, row.service_title, row.last_message?.content || ""].some(
-      (value) => value.toLocaleLowerCase("id-ID").includes(term),
+      (value) => value.toLocaleLowerCase("en-US").includes(term),
     ),
   );
   const unread = conversations.reduce((sum, row) => sum + row.unread_count, 0);
   return (
-    <aside className="workspace-inbox" aria-label="Inbox pelanggan">
+    <aside className="workspace-inbox" aria-label="Customer inbox">
       <header className="workspace-inbox-heading">
         <div>
           <span className="workspace-eyebrow">RUANG KOLABORASI</span>
           <h1>
-            Pesan Saya<span>.</span>
+            My Messages<span>.</span>
           </h1>
         </div>
         {unread > 0 && (
           <span
             className="workspace-unread-total"
-            aria-label={`${unread} pesan belum dibaca`}
+            aria-label={`${unread} pesan unread`}
           >
             {unread}
           </span>
@@ -73,10 +73,10 @@ function InboxPanel({ conversations, error, activeId }) {
             <circle cx="10.5" cy="10.5" r="6.5" />
             <path d="m16 16 4 4" />
           </svg>
-          <span className="workspace-sr-only">Cari percakapan</span>
+          <span className="workspace-sr-only">Search percakapan</span>
           <input
             type="search"
-            placeholder="Cari percakapan…"
+            placeholder="Search percakapan…"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -97,21 +97,21 @@ function InboxPanel({ conversations, error, activeId }) {
           </div>
         ) : !conversations.length ? (
           <div className="workspace-list-state">
-            <span aria-hidden="true">↗</span>
+            <span aria-hidden="true"></span>
             <strong>Ruang untuk ide berikutnya.</strong>
-            <p>Temukan kreator, lalu mulai percakapan dari halaman layanan.</p>
-            <Link to="/marketplace">Temukan kreator ↗</Link>
+            <p>Find creators, lalu mulai percakapan of halaman services.</p>
+            <Link to="/marketplace">Find creators </Link>
           </div>
         ) : !rows.length ? (
           <div className="workspace-list-state">
             <strong>Percakapan tidak ditemukan.</strong>
-            <p>Coba nama kreator, layanan, atau kata lain.</p>
+            <p>Coba nama kreator, services, atau kata lain.</p>
             <button type="button" onClick={() => setSearch("")}>
               Hapus pencarian
             </button>
           </div>
         ) : (
-          <nav aria-label="Daftar percakapan">
+          <nav aria-label="Sign up percakapan">
             {rows.map((row) => (
               <NavLink
                 className={`workspace-conversation ${row.id === activeId ? "is-active" : ""}`}
@@ -123,7 +123,7 @@ function InboxPanel({ conversations, error, activeId }) {
                   <div className="workspace-conversation-top">
                     <strong>{row.seller_name}</strong>
                     <time dateTime={row.updated_at}>
-                      {new Date(row.updated_at).toLocaleDateString("id-ID", {
+                      {new Date(row.updated_at).toLocaleDateString("en-US", {
                         day: "numeric",
                         month: "short",
                       })}
@@ -135,12 +135,12 @@ function InboxPanel({ conversations, error, activeId }) {
                   <div className="workspace-conversation-preview">
                     <p>
                       {row.last_message?.content ||
-                        "Sapa kreator dan bagikan idemu…"}
+                        "Say hello to the creator and share your idea…"}
                     </p>
                     {row.unread_count > 0 && (
                       <span
                         className="workspace-unread"
-                        aria-label={`${row.unread_count} pesan belum dibaca`}
+                        aria-label={`${row.unread_count} pesan unread`}
                       >
                         {row.unread_count}
                       </span>
@@ -169,7 +169,7 @@ export default function MessagingWorkspace({ activeId }) {
     customerMessaging.listInbox(),
   );
   useEffect(() => {
-    document.title = `${activeId ? "Percakapan" : "Pesan Saya"} — Digarsa`;
+    document.title = `${activeId ? "Percakapan" : "My Messages"} — Digarsa`;
   }, [activeId]);
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -183,7 +183,7 @@ export default function MessagingWorkspace({ activeId }) {
         <header className="workspace-topline">
           <div>
             <span className="workspace-eyebrow">DIGARSA / RUANG PERSONAL</span>
-            <p>Setiap karya dimulai dari percakapan.</p>
+            <p>Setiap karya dimulai of percakapan.</p>
           </div>
         </header>
         <div className="workspace-panels">
@@ -202,7 +202,7 @@ export default function MessagingWorkspace({ activeId }) {
             ) : (
               <section
                 className="workspace-welcome"
-                aria-label="Pilih percakapan"
+                aria-label="Choose a conversation"
               >
                 <span className="workspace-welcome-art" aria-hidden="true">
                   <svg
@@ -227,11 +227,11 @@ export default function MessagingWorkspace({ activeId }) {
                   Kemungkinan besar<span>.</span>
                 </h2>
                 <p>
-                  Pilih percakapan untuk melanjutkan ide,
+                  Choose a conversation untuk melanjutkan ide,
                   <br />
                   menyusun brief, dan memulai karya bersama.
                 </p>
-                <Link to="/marketplace">Temukan kolaborasi berikutnya ↗</Link>
+                <Link to="/marketplace">Temukan kolaborasi berikutnya </Link>
               </section>
             )}
           </div>

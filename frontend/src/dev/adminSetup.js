@@ -5,13 +5,13 @@ const status = document.querySelector("#status");
 function identity() {
   const user = currentDemoAccount();
   if (user.email !== "srikandi@gmail.com")
-    throw new Error("Masuk dengan akun demo khusus yang diminta sebelum mengubah izin.");
+    throw new Error("Log in with the dedicated demo account before changing permissions.");
   document.querySelector("#identity").textContent = `${user.name} · ${user.email} · ID: ${user.id}`;
   return user;
 }
 async function action(task) {
   try {
-    status.textContent = "Memproses…";
+    status.textContent = "Processing…";
     await task();
   } catch (error) {
     status.textContent = error.message;
@@ -25,7 +25,7 @@ async function authenticate(register) {
   else await demoStore.login(input.email, input.password);
   input.password = "";
   identity();
-  status.textContent = "Akun terverifikasi. Periksa identitas lalu ketik ID untuk mengaktifkan atau mencabut izin.";
+  status.textContent = "Account verified. Check the identity, then enter the ID to grant or revoke permission.";
 }
 document.querySelector("#register").onclick = () => action(() => authenticate(true));
 document.querySelector("#login").onclick = () => action(() => authenticate(false));
@@ -33,8 +33,8 @@ for (const [selector, apply] of [["#grant", provisionDemoAdmin], ["#revoke", rev
   document.querySelector(selector).onclick = () => action(() => {
     const user = identity();
     const expectedId = document.querySelector("#account-id").value.trim();
-    if (expectedId !== user.id) throw new Error("ID harus sama dengan akun demo yang terverifikasi.");
+    if (expectedId !== user.id) throw new Error("The ID must match the verified demo account.");
     apply(expectedId);
-    status.textContent = "Izin tersimpan. Reload aplikasi untuk memuat ulang navigasi dan buka /admin untuk memeriksa akses.";
+    status.textContent = "Permission saved. Reload the app to refresh navigation, then open /admin to check access.";
   });
 }

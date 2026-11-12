@@ -17,7 +17,7 @@ export default function AuthPage({ register = false }) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
-    document.title = `${register ? "Buat akun" : "Masuk"} — Digarsa`;
+    document.title = `${register ? "Create an account" : "Log in"} — Digarsa`;
   }, [register]);
   useEffect(() => {
     if (!success) return undefined;
@@ -52,56 +52,56 @@ export default function AuthPage({ register = false }) {
         <h1>
           {register ? (
             <>
-              Punya ide?
+              Have an idea?
               <br />
-              <em>Temukan</em>
+              <em>Find</em>
               <br />
-              orangnya.
+              the right people.
             </>
           ) : (
             <>
-              Ide baik
+              Good ideas
               <br />
-              dimulai dari
+              start with
               <br />
-              <em>pertemuan.</em>
+              <em>connection.</em>
             </>
           )}
         </h1>
-        <p>Marketplace kreatif untuk kolaborasi yang terasa lebih dekat.</p>
+        <p>A creative marketplace for meaningful collaboration.</p>
         <small>DIGARSA / INDONESIA</small>
       </aside>
       <section className="account-auth__form">
         <div>
           <span className="account-kicker">
-            {register ? "MULAI BERKOLABORASI" : "AKUN DIGARSA"}
+            {register ? "START COLLABORATING" : "DIGARSA ACCOUNT"}
           </span>
           <h2>
-            {register ? "Buat akun" : "Selamat datang kembali"}
+            {register ? "Create an account" : "Welcome back"}
             <span>.</span>
           </h2>
           <p>
             {register
-              ? "Satu akun untuk mencari layanan dan berkarya sebagai kreator."
-              : "Masuk dan lanjutkan ide baikmu."}
+              ? "One account to find services and work as a creator."
+              : "Log in and keep your ideas moving."}
           </p>
           {success || user ? (
             <div className="account-feedback" role="status">
               <p>
                 {success
                   ? register
-                    ? "Akun demo berhasil dibuat."
-                    : "Berhasil masuk."
-                  : `Kamu masuk sebagai ${user.name}.`}
+                    ? "Demo account created."
+                    : "You are logged in."
+                  : `Logged in as ${user.name}.`}
               </p>
-              <Button to={destination}>Lanjutkan →</Button>
+              <Button to={destination}>Lanjutkan </Button>
             </div>
           ) : (
             <form onSubmit={submit} aria-busy={busy}>
               <fieldset disabled={busy}>
                 {register && (
                   <Input
-                    label="Nama lengkap"
+                    label="Full name"
                     name="name"
                     required
                     minLength={2}
@@ -110,7 +110,7 @@ export default function AuthPage({ register = false }) {
                   />
                 )}
                 <Input
-                  label="Email"
+                    label="Email address address"
                   name="email"
                   type="email"
                   required
@@ -124,12 +124,12 @@ export default function AuthPage({ register = false }) {
                   maxLength={128}
                   autoComplete={register ? "new-password" : "current-password"}
                   placeholder={
-                    register ? "Minimal 8 karakter" : "Kata sandi demo"
+                    register ? "At least 8 characters" : "Demo password"
                   }
                 />
                 <Button type="submit">
-                  {busy ? "Memeriksa…" : register ? "Buat akun" : "Masuk"}{" "}
-                  <span aria-hidden="true">↗</span>
+                  {busy ? "Checking…" : register ? "Create an account" : "Log in"}{" "}
+                  <span aria-hidden="true"></span>
                 </Button>
               </fieldset>
             </form>
@@ -139,15 +139,15 @@ export default function AuthPage({ register = false }) {
               {error || storageError}
             </p>
           )}
-          {!register && !user && <p className="account-switch"><Link to="/forgot-password">Lupa Password?</Link></p>}
+          {!register && !user && <p className="account-switch"><Link to="/forgot-password">Forgot password?</Link></p>}
           <DemoNotice />
           {!user && (
             <p className="account-switch">
-              {register ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
+              {register ? "Already have an account?" : "New to Digarsa?"}{" "}
               <Link
                 to={`${register ? "/login" : "/register"}?returnTo=${encodeURIComponent(destination)}`}
               >
-                {register ? "Masuk" : "Daftar sekarang"} ↗
+                {register ? "Log in" : "Sign up"}
               </Link>
             </p>
           )}

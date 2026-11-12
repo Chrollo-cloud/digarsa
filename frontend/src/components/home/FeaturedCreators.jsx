@@ -8,9 +8,9 @@ export default function FeaturedCreators() {
       <SectionHeading
         label="creators"
         id="creators-title"
-        description="Temukan cerita dan sudut pandang di balik setiap kreator."
+        description="Discover the stories and perspectives behind every creator."
       >
-        Temui para <em>kreator.</em>
+        Meet the <em>creators.</em>
       </SectionHeading>
       <div className="home-creators__grid">
         {creators.map((creator, index) => (
@@ -18,7 +18,7 @@ export default function FeaturedCreators() {
         ))}
       </div>
       <p className="home-creators__hint type-metadata">
-        HOVER · ENTER / SPACE · TAP TO FLIP ↗
+        HOVER · ENTER / SPACE · TAP TO FLIP
       </p>
     </section>
   );

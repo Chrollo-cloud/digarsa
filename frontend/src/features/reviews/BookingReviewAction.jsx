@@ -15,10 +15,10 @@ export default function BookingReviewAction({ bookingId }) {
   return (
     <div className="customer-info">
       {data.review ? (
-        <Link to="/reviews">✓ Sudah diulas · Lihat ulasan saya ↗</Link>
+        <Link to="/reviews">✓ Reviewed · View my reviews </Link>
       ) : data.eligible ? (
         <Link className="button button--primary" to={`/review/${bookingId}`}>
-          Tulis ulasan kolaborasi ↗
+          Review this collaboration
         </Link>
       ) : (
         <p>{data.reason}</p>

@@ -6,7 +6,7 @@ export default function PortfolioLink({ url }) {
   return (
     <a className="button button--secondary" href={href}
       target="_blank" rel="noopener noreferrer">
-      Lihat Portfolio <span aria-hidden="true">↗</span>
+      Show Portfolio <span aria-hidden="true"></span>
       <span className="market-sr-only"> (buka tab baru)</span>
     </a>
   );

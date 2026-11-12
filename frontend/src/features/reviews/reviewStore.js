@@ -107,14 +107,14 @@ export function createReviewStore({
       if (error instanceof ReviewError) throw error;
       fail(
         "DEPENDENCY_UNAVAILABLE",
-        "Data akun, layanan, atau booking demo belum dapat diverifikasi.",
+        "Data akun, services, atau booking demo belum dapat diverifikasi.",
       );
     }
   }
   function account() {
     const user = source(currentUser);
     if (!user || !id(user.id) || !user.capabilities?.includes("buyer"))
-      fail("UNAUTHENTICATED", "Masuk untuk menulis ulasan.");
+      fail("UNAUTHENTICATED", "Log in untuk menulis ulasan.");
     return user;
   }
   function load() {
@@ -252,10 +252,10 @@ export function createReviewStore({
     )
       fail(
         "INVALID_CONTEXT",
-        "Pemilik Seller Profile belum dapat diverifikasi. Kreator editorial tidak menerima ulasan terverifikasi.",
+        "Pemilik Seller Profile belum dapat diverifikasi. Creator editorial tidak menerima verified reviews.",
       );
     if (seller.owner_user_id === user.id || user.sellerProfileId === seller.id)
-      fail("SELF_REVIEW", "Kamu tidak dapat mengulas layanan milikmu sendiri.");
+      fail("SELF_REVIEW", "Kamu tidak dapat mengulas services milikmu sendiri.");
     const service = source(resolveService, booking.service_id);
     if (
       service &&
@@ -264,7 +264,7 @@ export function createReviewStore({
     )
       fail(
         "INVALID_CONTEXT",
-        "Layanan dan Seller Profile tidak cocok dengan booking.",
+        "Service dan Seller Profile tidak cocok dengan booking.",
       );
     return seller;
   }
@@ -372,7 +372,7 @@ export function createReviewStore({
       if (expected_user_id !== user.id)
         fail(
           "SESSION_CHANGED",
-          "Sesi berubah. Buka kembali formulir dari akun aktif.",
+          "Your session changed. Reopen the form from the active account.",
         );
       if (
         !exact(input, [
@@ -397,7 +397,7 @@ export function createReviewStore({
       if (booking.status !== "Completed")
         fail(
           "INELIGIBLE",
-          "Hanya booking Completed yang dapat diulas. Pembayaran dan penyelesaian tidak diproses di sini.",
+          "Hanya booking Completed yang dapat diulas. Payment dan penyelesaian tidak diproses di sini.",
         );
       association(booking, user);
       if (
@@ -406,7 +406,7 @@ export function createReviewStore({
       )
         fail(
           "INVALID_CONTEXT",
-          "Layanan dan kreator harus cocok dengan booking.",
+          "Service dan kreator harus cocok dengan booking.",
         );
       if (db.reviews.some((row) => row.booking_id === booking.id))
         fail(
@@ -444,7 +444,7 @@ export function createReviewStore({
           (value) => text(value, 1, 200),
         )
       )
-        fail("INVALID_CONTEXT", "Ringkasan akun atau booking tidak lengkap.");
+        fail("INVALID_CONTEXT", "Overview akun atau booking tidak lengkap.");
       db.reviews.push(row);
       save(db);
       return { ...row };
@@ -452,7 +452,7 @@ export function createReviewStore({
     update(review_id, input, { expected_user_id } = {}) {
       const user = account();
       if (expected_user_id !== user.id)
-        fail("SESSION_CHANGED", "Sesi berubah. Buka kembali formulir dari akun aktif.");
+        fail("SESSION_CHANGED", "Your session changed. Reopen the form from the active account.");
       if (!id(review_id) || !exact(input, ["rating", "comment"]) ||
           !Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5 ||
           typeof input.comment !== "string" || !text(input.comment.trim(), 10, 2000))

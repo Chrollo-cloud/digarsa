@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
 import {
   ACCOUNT_KEY,
+  ACCOUNT_REPORTS_KEY,
   ADMIN_PERMISSION,
   createDemoStore,
 } from "../src/features/account/demoStore.js";
@@ -704,4 +705,24 @@ test("schedule metadata survives blocked deletion when booking storage is corrup
   assert.throws(() => f.seller.remove(service.id), /belum dapat diverifikasi/);
   assert.equal(f.values.get(SELLER_KEY), before);
   assert.equal(f.values.get(CUSTOMER_KEY), "{damaged");
+});
+
+test("Seller Buyer profiles require a related owned order and redact unshared contact details", async () => {
+  const f = await fixture();
+  await f.login("a@test.dev");
+  const service = f.seller.create(serviceInput());
+  f.refresh();
+  const booking = await requested(f, service);
+  await f.login("a@test.dev");
+  const profile = f.accounts.buyerProfileForSeller(f.buyer.id);
+  assert.equal(profile.id, f.buyer.id);
+  assert.equal(profile.name, f.buyer.name);
+  assert.equal(profile.phone, "");
+  assert.throws(() => f.accounts.buyerProfileForSeller(f.b.id), /no order associated/i);
+  assert.throws(() => f.accounts.submitBuyerReport(f.buyer.id, booking.id, "Not a report reason", "A sufficiently detailed report.", { expectedUserId: f.a.id }), /Choose a report reason/);
+  const report = f.accounts.submitBuyerReport(f.buyer.id, booking.id, "Fraud or suspicious activity", "This report contains enough detail for local testing.", { expectedUserId: f.a.id });
+  assert.match(report.id, /^RPT-/);
+  assert.equal(JSON.parse(f.values.get(ACCOUNT_REPORTS_KEY)).reports[0].targetAccountId, f.buyer.id);
+  await f.login("buyer@test.dev");
+  assert.throws(() => f.accounts.buyerProfileForSeller(f.buyer.id), /Access denied/);
 });

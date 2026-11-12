@@ -16,9 +16,9 @@ export default function CreatorProfilePage() {
   const { id } = useParams();
   const creator = getCreator(id);
   useEffect(() => {
-    document.title = `${creator?.name || "Kreator tidak ditemukan"} — Digarsa`;
+    document.title = `${creator?.name || "Creator not found"} — Digarsa`;
   }, [creator]);
-  if (!creator) return <NotFound type="Kreator" />;
+  if (!creator) return <NotFound type="Creator" />;
   const listings = services.filter(
     (service) => service.creatorId === creator.id,
   );
@@ -53,7 +53,7 @@ export default function CreatorProfilePage() {
         <p className="market-profile-bio">{creator.bio}</p>
         <PortfolioLink url={creator.portfolioLink} />
         {creator.publicLocation?.area && (
-          <p>Wilayah layanan publik: {creator.publicLocation.area}</p>
+          <p>Wilayah services publik: {creator.publicLocation.area}</p>
         )}
         <ul className="market-skills">
           {creator.skills.map((skill) => (
@@ -68,7 +68,7 @@ export default function CreatorProfilePage() {
                 Berkarya bersama<span>.</span>
               </h2>
             </div>
-            <p>{listings.length} layanan · termasuk jadwal penuh</p>
+            <p>{listings.length} services · termasuk jadwal penuh</p>
           </div>
           <div className="market-service-grid">
             {listings.map((service) => (
@@ -82,7 +82,7 @@ export default function CreatorProfilePage() {
             {creator.portfolio.map((work) => (
               <Link key={work.serviceId} to={`/service/${work.serviceId}`}>
                 <img src={work.image} alt={work.alt} loading="lazy" />
-                <span>{work.title} ↗</span>
+                <span>{work.title} </span>
               </Link>
             ))}
           </div>
@@ -90,7 +90,7 @@ export default function CreatorProfilePage() {
         <PublicReviews sellerProfileId={creator.id} />
         <Reviews reviews={reviews} />
         <p className="market-demo-note">
-          Profil dan karya merupakan ilustrasi layanan kreatif. Semua data pada
+          Profil dan karya merupakan ilustrasi services kreatif. All data pada
           halaman ini adalah data demo.
         </p>
       </div>

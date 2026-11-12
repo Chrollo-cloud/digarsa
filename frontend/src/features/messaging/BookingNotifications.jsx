@@ -15,7 +15,7 @@ export default function BookingNotifications() {
         // them back because a separate demo notification could not be saved.
         onError: () =>
           console.warn(
-            "Notifikasi booking demo belum dapat disimpan atau diverifikasi.",
+            "Demo booking notifications could not be saved or verified.",
           ),
       }),
     [],

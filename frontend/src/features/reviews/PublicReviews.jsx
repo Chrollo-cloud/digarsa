@@ -13,7 +13,7 @@ export default function PublicReviews({ serviceId, sellerProfileId }) {
   return (
     <section
       className="market-section verified-reviews"
-      aria-label="Ulasan pelanggan terverifikasi"
+      aria-label="Verified customer reviews"
     >
       <header className="review-public-heading">
         <span className="review-kicker">DARI PELANGGAN DIGARSA</span>

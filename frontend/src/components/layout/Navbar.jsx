@@ -44,7 +44,7 @@ export default function Navbar() {
 
   return (
     <header className="site-header" ref={header}>
-      <nav className="container navbar" aria-label="Navigasi utama">
+      <nav className="container navbar" aria-label="Main navigation">
         <Link
           to="/"
           className="navbar__brand"
@@ -70,7 +70,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="navbar__actions">
-            {!user && <Link className="navbar__login" to="/login" onClick={close}>Masuk</Link>}
+            {!user && <Link className="navbar__login" to="/login" onClick={close}>Log in</Link>}
             <Button
               variant="aqua"
               className="navbar__cta"
@@ -81,8 +81,8 @@ export default function Navbar() {
               }
               onClick={close}
             >
-              {user?.sellerProfileId ? "Seller Center" : "Jadi Kreator"}{" "}
-              {!user?.sellerProfileId && <span aria-hidden="true">↗</span>}
+              {user?.sellerProfileId ? "Seller Center" : "Become a creator"}{" "}
+              {!user?.sellerProfileId && <span aria-hidden="true"></span>}
             </Button>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function Navbar() {
           type="button"
           aria-expanded={isOpen}
           aria-controls="public-navigation"
-          aria-label={isOpen ? "Tutup navigasi" : "Buka navigasi"}
+          aria-label={isOpen ? "Close navigation" : "Open navigation"}
           onClick={() => setOpenPath(isOpen ? null : pathname)}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
