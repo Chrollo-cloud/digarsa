@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
+import { demoStore } from "../account/demoStore";
 import { money } from "../../data/marketplace";
 import { publicUrl } from "../../utils/publicUrl";
 import { bookingDate } from "../customer/formatters";
@@ -54,7 +54,13 @@ export default function SellerOrderDetailsPage() {
   const [deliveryNote, setDeliveryNote] = useState("");
   const [deliveryLink, setDeliveryLink] = useState("");
   const [sending, setSending] = useState(false);
-
+  const [showReport, setShowReport] = useState(false);
+const [reportReason, setReportReason] = useState(
+  "Fraud or suspicious activity",
+);
+const [reportDetails, setReportDetails] = useState("");
+const [reportError, setReportError] = useState("");
+const [reportSuccess, setReportSuccess] = useState("");
   if (!booking) {
     return (
       <SellerFrame title="Order not found.">
@@ -149,7 +155,32 @@ export default function SellerOrderDetailsPage() {
       setSending(false);
     }
   }
+function submitBuyerReport(event) {
+  event.preventDefault();
+  setReportError("");
+  setReportSuccess("");
 
+  try {
+    const currentUser = demoStore.current();
+
+    if (!currentUser) {
+      throw new Error("Sesi Seller tidak ditemukan. Silakan login kembali.");
+    }
+
+    demoStore.submitAccountReport(
+      booking.customerId,
+      reportReason,
+      reportDetails,
+      { expectedUserId: currentUser.id },
+    );
+
+    setReportSuccess("Laporan akun Buyer berhasil dikirim kepada Admin.");
+    setReportDetails("");
+    setShowReport(false);
+  } catch (failure) {
+    setReportError(failure.message);
+  }
+}
   return (
     <SellerFrame
       title="Order details."
@@ -258,7 +289,108 @@ export default function SellerOrderDetailsPage() {
               </div>
             )}
           </dl>
+          <hr />
 
+<section className="ws-report">
+  <h3>Pelaporan Akun Buyer</h3>
+
+  <p>
+    Jika Buyer melakukan penipuan, penyalahgunaan platform,
+    atau pelanggaran lainnya, Seller dapat mengirimkan laporan
+    kepada Admin Digarsa.
+  </p>
+
+  {reportError && (
+    <p className="ws-alert" role="alert">
+      {reportError}
+    </p>
+  )}
+
+  {reportSuccess && (
+    <p className="ws-success" role="status">
+      {reportSuccess}
+    </p>
+  )}
+
+  {!showReport ? (
+    <button
+      type="button"
+      className="button button--danger"
+      onClick={() => {
+        setReportError("");
+        setReportSuccess("");
+        setShowReport(true);
+      }}
+    >
+      Laporkan Akun Buyer
+    </button>
+  ) : (
+    <form className="ws-form" onSubmit={submitBuyerReport}>
+      <div className="field">
+        <label htmlFor="buyer-report-reason">
+          Alasan Laporan
+        </label>
+
+        <select
+          id="buyer-report-reason"
+          className="field__control"
+          value={reportReason}
+          onChange={(event) => setReportReason(event.target.value)}
+          required
+        >
+          <option value="Fraud or suspicious activity">
+            Penipuan atau aktivitas mencurigakan
+          </option>
+          <option value="Harassment or inappropriate communication">
+            Pelecehan atau komunikasi tidak pantas
+          </option>
+          <option value="False identity or profile">
+            Identitas atau profil palsu
+          </option>
+          <option value="Spam or platform abuse">
+            Spam atau penyalahgunaan platform
+          </option>
+          <option value="Other">Lainnya</option>
+        </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="buyer-report-details">
+          Kronologi dan Bukti Pendukung
+        </label>
+
+        <textarea
+          id="buyer-report-details"
+          className="field__control"
+          minLength={10}
+          maxLength={1000}
+          required
+          value={reportDetails}
+          onChange={(event) => setReportDetails(event.target.value)}
+          placeholder="Jelaskan kejadian yang menjadi alasan laporan..."
+        />
+      </div>
+
+      <div className="ws-actions">
+        <button
+          type="submit"
+          className="button button--danger"
+          disabled={reportDetails.trim().length < 10}
+        >
+          Kirim Laporan
+        </button>
+
+        <button
+          type="button"
+          className="button button--secondary"
+          onClick={() => setShowReport(false)}
+        >
+          Batal
+        </button>
+      </div>
+    </form>
+  )}
+</section>
           <h3>Project requirements</h3>
           <p className="ws-preline">{booking.requirements}</p>
 

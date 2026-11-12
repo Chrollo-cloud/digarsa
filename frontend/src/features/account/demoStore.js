@@ -109,10 +109,17 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     listeners.forEach((listener) => listener());
   }
   function accountForSession(db) {
-    return db.session?.token
-      ? db.accounts.find((account) => account.id === db.session.userId)
-      : null;
+  if (!db.session?.token) return null;
+
+  const account = db.accounts.find(
+    (item) => item.id === db.session.userId,
+  );
+
+  if (!account || account.accountStatus === "Suspended") {
+    return null;
   }
+  return account;
+}
   function ownedProfile(db, account) {
     return account
       ? db.profiles.find(
@@ -177,9 +184,20 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       return () => listeners.delete(listener);
     },
     current() {
-      const db = read();
-      return publicUser(db, accountForSession(db));
-    },
+  const db = read();
+
+  const sessionAccount = db.session?.token
+    ? db.accounts.find((item) => item.id === db.session.userId)
+    : null;
+
+  if (sessionAccount?.accountStatus === "Suspended") {
+    db.session = null;
+    write(db);
+    return null;
+  }
+
+  return publicUser(db, accountForSession(db));
+},
     async register(input) {
       const name = text(input.name, "Nama", 2, 80);
       const email = text(input.email, "Email address", 3, 254).toLowerCase();
@@ -229,7 +247,14 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       const db = read();
       const latest = db.accounts.find((item) => item.id === account.id);
       if (!latest) throw new Error("Akun demo tidak tersedia.");
-      db.session = { userId: latest.id, token: cryptoApi.randomUUID() };
+
+if (latest.accountStatus === "Suspended") {
+  throw new Error(
+    "Akun Anda sedang ditangguhkan oleh administrator. Silakan hubungi pihak Digarsa."
+  );
+}
+
+db.session = { userId: latest.id, token: cryptoApi.randomUUID() };
       write(db);
       return publicUser(db, latest);
     },
@@ -638,6 +663,245 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       catch { throw new Error("Report was not saved because browser storage is unavailable."); }
       return { id: report.id, submittedAt: report.submittedAt };
     },
+
+    // Submit report for any other account (buyer or seller).
+    submitAccountReport(targetAccountId, reason, details, { expectedUserId } = {}) {
+      const db = read();
+      const reporter = accountForSession(db);
+
+      if (!reporter || reporter.id !== expectedUserId) {
+        throw new Error("Sesi akun tidak valid.");
+      }
+
+      if (typeof targetAccountId !== "string" || targetAccountId === reporter.id) {
+        throw new Error("Akun yang dilaporkan tidak valid.");
+      }
+
+      const targets = db.accounts.filter(
+        (item) => item.id === targetAccountId
+      );
+
+      if (targets.length !== 1) {
+        throw new Error("Akun yang dilaporkan tidak ditemukan.");
+      }
+
+      const allowedReasons = [
+        "Fraud or suspicious activity",
+        "Harassment or inappropriate communication",
+        "False identity or profile",
+        "Spam or platform abuse",
+        "Other",
+      ];
+
+      if (!allowedReasons.includes(reason)) {
+        throw new Error("Pilih alasan laporan yang tersedia.");
+      }
+
+      const note = typeof details === "string" ? details.trim() : "";
+
+      if (note.length < 10 || note.length > 1000) {
+        throw new Error("Detail laporan harus 10–1.000 karakter.");
+      }
+
+      let reportData;
+
+      try {
+        reportData = JSON.parse(
+          storage.getItem(ACCOUNT_REPORTS_KEY) ||
+          '{"version":1,"reports":[]}'
+        );
+
+        if (
+          reportData.version !== 1 ||
+          !Array.isArray(reportData.reports)
+        ) throw new Error();
+      } catch {
+        throw new Error("Data laporan tidak dapat diverifikasi.");
+      }
+
+      const report = {
+        id: `RPT-${cryptoApi.randomUUID()}`,
+        reporterId: reporter.id,
+        targetAccountId,
+        reason,
+        details: note,
+        status: "Pending",
+        submittedAt: new Date().toISOString(),
+      };
+
+      reportData.reports.push(report);
+
+      try {
+        storage.setItem(
+          ACCOUNT_REPORTS_KEY,
+          JSON.stringify(reportData)
+        );
+      } catch {
+        throw new Error("Laporan gagal disimpan.");
+      }
+
+      listeners.forEach((listener) => listener());
+
+      return { id: report.id };
+    },
+
+    // Admin-only: read all account reports.
+    listAccountReportsForAdmin() {
+      const db = read();
+      const admin = accountForSession(db);
+
+      if (!admin || !hasAdmin(admin)) {
+        throw new Error("Memerlukan izin admin internal.");
+      }
+
+      let reportData;
+
+      try {
+        reportData = JSON.parse(
+          storage.getItem(ACCOUNT_REPORTS_KEY) ||
+          '{"version":1,"reports":[]}'
+        );
+
+        if (
+          reportData.version !== 1 ||
+          !Array.isArray(reportData.reports)
+        ) throw new Error();
+      } catch {
+        throw new Error("Data laporan tidak dapat dibaca.");
+      }
+
+      return reportData.reports.map((report) => ({
+        ...report,
+        reporterName:
+          db.accounts.find((item) => item.id === report.reporterId)?.name ||
+          "Akun tidak tersedia",
+        targetName:
+          db.accounts.find((item) => item.id === report.targetAccountId)?.name ||
+          "Akun tidak tersedia",
+      }));
+    },
+
+    // Admin-only: suspend account without deleting any records.
+    suspendAccount(targetAccountId, reason) {
+      const db = read();
+      const admin = accountForSession(db);
+
+      if (!admin || !hasAdmin(admin)) {
+        throw new Error("Memerlukan izin admin internal.");
+      }
+
+      if (
+        typeof targetAccountId !== "string" ||
+        targetAccountId === admin.id
+      ) {
+        throw new Error("Admin tidak dapat menangguhkan akunnya sendiri.");
+      }
+
+      const matches = db.accounts.filter(
+        (item) => item.id === targetAccountId
+      );
+
+      if (matches.length !== 1) {
+        throw new Error("Akun tidak ditemukan.");
+      }
+
+      const target = matches[0];
+
+      if (hasAdmin(target)) {
+        throw new Error("Akun administrator tidak dapat ditangguhkan.");
+      }
+
+      const note = typeof reason === "string" ? reason.trim() : "";
+
+      if (note.length < 5 || note.length > 300) {
+        throw new Error("Alasan suspend harus 5–300 karakter.");
+      }
+
+      target.accountStatus = "Suspended";
+      target.suspendedAt = new Date().toISOString();
+      target.suspendedReason = note;
+
+      write(db);
+
+      return { success: true };
+    },
+
+    // Admin-only: restore a suspended account.
+    reinstateAccount(targetAccountId) {
+      const db = read();
+      const admin = accountForSession(db);
+
+      if (!admin || !hasAdmin(admin)) {
+        throw new Error("Memerlukan izin admin internal.");
+      }
+
+      const matches = db.accounts.filter(
+        (item) => item.id === targetAccountId
+      );
+
+      if (matches.length !== 1) {
+        throw new Error("Akun tidak ditemukan.");
+      }
+
+      const target = matches[0];
+
+      if (hasAdmin(target)) {
+        throw new Error("Akun administrator tidak dapat diubah melalui tindakan ini.");
+      }
+
+      if (target.accountStatus !== "Suspended") {
+        throw new Error("Akun tidak sedang ditangguhkan.");
+      }
+
+      target.accountStatus = "Active";
+      target.reinstatedAt = new Date().toISOString();
+      delete target.suspendedAt;
+      delete target.suspendedReason;
+
+      write(db);
+
+      return { success: true };
+    },
+
+    // Admin-only: update report status.
+    reviewAccountReport(reportId, status, note = "") {
+      const db = read();
+      const admin = accountForSession(db);
+
+      if (!admin || !hasAdmin(admin)) {
+        throw new Error("Memerlukan izin admin internal.");
+      }
+
+      if (!["Reviewed", "Dismissed"].includes(status)) {
+        throw new Error("Status laporan tidak valid.");
+      }
+
+      const reportData = JSON.parse(
+        storage.getItem(ACCOUNT_REPORTS_KEY) ||
+        '{"version":1,"reports":[]}'
+      );
+
+      const report = reportData.reports.find(
+        (item) => item.id === reportId
+      );
+
+      if (!report) throw new Error("Laporan tidak ditemukan.");
+
+      report.status = status;
+      report.reviewedAt = new Date().toISOString();
+      report.reviewedBy = admin.id;
+      report.adminNote =
+        typeof note === "string" ? note.trim().slice(0, 500) : "";
+
+      storage.setItem(
+        ACCOUNT_REPORTS_KEY,
+        JSON.stringify(reportData)
+      );
+
+      listeners.forEach((listener) => listener());
+
+      return { success: true };
+    },
     // Admin-only. Never returns salts or password verifiers.
     listAccountsForAdmin() {
       const db = read();
@@ -665,6 +929,9 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
           sellerCity: profile?.city || "",
           isAdmin: hasAdmin(item),
           isSelf: item.id === account.id,
+          accountStatus: item.accountStatus || "Active",
+          suspendedAt: item.suspendedAt || null,
+          suspendedReason: item.suspendedReason || "",
         };
       });
     },

@@ -727,3 +727,89 @@
     gap: 8px;
   }
 }
+
+.creator-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 18px 0;
+}
+
+.creator-report-button,
+.creator-report-submit {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 18px;
+  background: #a83232;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.creator-report-button:hover,
+.creator-report-submit:hover {
+  background: #852626;
+}
+
+.creator-report-panel {
+  margin: 20px 0;
+  padding: 22px;
+  border: 1px solid #dedede;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.creator-report-panel h2 {
+  margin: 0 0 8px;
+}
+
+.creator-report-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.creator-report-panel label {
+  font-weight: 600;
+}
+
+.creator-report-panel select,
+.creator-report-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.creator-report-panel textarea {
+  resize: vertical;
+}
+
+.creator-report-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.creator-report-cancel {
+  padding: 11px 18px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.creator-report-error {
+  color: #b42318;
+  font-size: 14px;
+}
+
+.creator-report-success {
+  padding: 12px;
+  border-radius: 8px;
+  background: #eaf7ed;
+  color: #176b32;
+}
