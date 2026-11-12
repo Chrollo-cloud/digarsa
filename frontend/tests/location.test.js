@@ -411,7 +411,7 @@ test("bad stored location blocks catalog synchronization and discovery until leg
   f.values.set(SELLER_KEY, good);
   assert.equal(refresh(), true);
   assert.equal(f.discover().length, 1);
-  assert.equal(safeReturnTo("/nearby"), "/nearby");
+  assert.equal(safeReturnTo("/nearby"), "/");
 });
 
 test("seller visibility changes remove public pins without changing account location or ownership", async () => {

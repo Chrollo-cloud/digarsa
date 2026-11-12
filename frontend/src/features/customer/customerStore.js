@@ -489,7 +489,6 @@ export function createCustomerStore({
         throw new Error("Pemilik Seller Profile belum dapat diverifikasi.");
       booking.status = "Paid";
       booking.paymentStatus = "Paid";
-      booking.paymentStatus = "Paid";
       booking.updatedAt = now();
       booking.demoPayment = { id: `simulation-${randomId()}`, kind: "simulation", amount: booking.finalPrice, paidAt: booking.updatedAt };
       write(data);

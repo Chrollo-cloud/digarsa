@@ -59,6 +59,7 @@ test("unsafe and malformed paths cannot be normalized into valid destinations", 
     "/admin/orders\n",
     "/seller-dashboard/services/service-a1/delete",
     "/admin/unknown",
+    "/nearby",
     "/login?returnTo=/admin",
     "/register",
   ])

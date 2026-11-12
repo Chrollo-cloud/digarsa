@@ -5,19 +5,14 @@
 > location models, and privacy behavior below remain in use where linked by active
 > profile and service forms. Historical `/nearby` notes describe the removed page.
 
-## Routes and interface
+## Active location interfaces
 
-`/nearby` is a lazy-loaded public discovery page linked from the existing
-Marketplace hero. The global navbar structure is unchanged. Desktop uses results
-on the left and an interactive Leaflet map on the right. Mobile puts the map above
-the results and collapses secondary filters; search remains visible. Cards, map
-pins, selection summary, Service Detail links, and the explicit map jump link share
-selection. The list is the keyboard alternative to map interaction.
-
-Profile and Settings contain the same account-scoped location editor. Seller
-Profile and the existing service create/edit form contain optional public location
-controls. New fields retain account/service ownership, validation, and lifecycle
-rules rather than creating another account, catalog, or location database.
+There is no `/nearby` route or Marketplace discovery link in the integrated
+application. Active location interfaces are the account address/location forms,
+Seller Profile location fields, and the Seller Location Picker used by profile and
+service forms. The shared Leaflet map remains available for choosing a point;
+location data stays within the account, address, Seller Profile, or service record
+that owns it.
 
 ## Additive location models
 
@@ -60,9 +55,9 @@ Optional Seller Profile field `publicLocation`, and optional service override
   optional for location; sellers can add it afterward in Profile Seller.
 
 Invalid new stored service locations make catalog reads report integrity errors;
-existing catalog synchronization retains its last valid snapshot. Nearby discovery
-hides results/pins while catalog health is bad, even when a cached catalog exists.
-It offers a retry that only rereads data. This never repairs or resets stored changes.
+existing catalog synchronization retains its last valid snapshot. Consumers must not
+treat a catalog-integrity failure as an empty or authoritative result. This never
+repairs or resets stored changes.
 
 ## Public/private APIs
 
@@ -103,38 +98,16 @@ best-effort public tile source needs internet and has no availability guarantee;
 production scale should use an appropriately provisioned provider. Tile failures
 show a message while results and map markers remain usable.
 
-The map renders only eligible public service points as markers. A valid buyer point
-sets the viewport and distance origin, never a public marker, service record, URL
-parameter, analytics event, or notification. Centering or manually exploring the map
-necessarily requests that viewport's tiles from OSM, revealing the viewed area and
-normal network metadata to the tile provider. The UI explains this limitation.
+The Seller Location Picker renders a draft selection marker, and address forms
+may render the user's own selected address point. Buyer coordinates are never copied
+to public service markers or records, URLs, analytics events, or notifications.
+Loading map tiles requests the viewed map area from OSM, along with normal network
+metadata.
 
-Only entering `/nearby` attaches the device-location controller. The first entry
-checks browser permissions and makes one `getCurrentPosition` attempt if supported;
-already-granted permission initializes automatically. A sessionStorage flag records
-only that an attempt happened, never coordinates. Subsequent mounts do not re-prompt.
-After a full reload, known granted permission can initialize again; prompt/unknown
-permission with an existing attempt flag requires the explicit retry button. Without
-the Permissions API, Geolocation itself decides permission. An uncompleted native
-prompt is bounded by a 12-second UI watchdog, with a 10-second acquisition timeout.
-
-`Gunakan lokasi saya` calls Geolocation synchronously inside the user gesture,
-without first awaiting a Permissions query. Browsers still determine permission;
-this does not bypass denial or OS/site settings. Loading, denied, gesture-required,
-unsupported, unavailable and timeout states remain actionable. No watchPosition,
-continuous tracking or background request is added. Unmount, manual selection,
-clearing, and account changes invalidate late callbacks. StrictMode remounts share
-the in-flight attempt rather than creating another request.
-
-Detected/manual discovery points live in RAM, scoped to the current account/guest.
-The hook masks previous-account coordinates before effects run. `Simpan lokasi ini
-di akun` is the separate, explicit consent action that invokes the existing private
-account method. `Hapus lokasi` clears RAM and the signed-in account's saved location;
-storage failures are surfaced, not repaired or reset. Clearing suppresses automatic
-reacquisition for that scope until explicit retry. The original Profile/Settings
-editor remains user-initiated and never auto-detects location. Saved points remain a
-fallback when no session point exists. Default nearby radius is 25 km when an origin
-is available; users can change/reset it. City filters never infer coordinates.
+The device-location discovery controller is not attached by any active route.
+Current navigation does not request GPS permission. Private location fields remain
+account-scoped and require explicit user actions; profile and address forms do not
+silently start device tracking.
 
 LocalStorage remains an editable, single-browser demo, not production privacy or
 server authorization. Other device users with storage access can inspect it.
