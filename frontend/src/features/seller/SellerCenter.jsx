@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from "react-router-dom";
 import SellerOverviewPage from "./SellerOverviewPage";
 import SellerOrdersPage from "./SellerOrdersPage";
@@ -11,10 +12,8 @@ import SellerAvailabilityPage from "./SellerAvailabilityPage";
 import SellerMessagingPage from "./SellerMessagingPage";
 import SellerNotificationsPage from "./SellerNotificationsPage";
 import WalletPage from "./WalletPage";
-import WithdrawPage from "./WithdrawPage";
-import PayoutHistoryPage from "./PayoutHistoryPage";
+import SellerPayoutsPage from "./SellerPayoutsPage";
 
-// Mounted at /seller-dashboard/* behind the Phase 5 RequireSeller guard.
 export default function SellerCenter() {
   return (
     <Routes>
@@ -28,8 +27,10 @@ export default function SellerCenter() {
       <Route path="services/:serviceId/availability" element={<SellerAvailabilityPage />} />
       <Route path="earnings" element={<EarningsPage />} />
       <Route path="wallet" element={<WalletPage />} />
-      <Route path="withdraw" element={<WithdrawPage />} />
-      <Route path="payout-history" element={<PayoutHistoryPage />} />
+
+      <Route path="withdraw" element={<SellerPayoutsPage />} />
+      <Route path="payout-history" element={<SellerPayoutsPage />} />
+
       <Route path="profile" element={<SellerProfilePage />} />
       <Route path="messages" element={<SellerMessagingPage />} />
       <Route path="messages/:conversationId" element={<SellerMessagingPage />} />

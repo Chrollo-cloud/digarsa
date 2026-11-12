@@ -135,10 +135,6 @@
   align-self: stretch;
 }
 
-.admin-center .seller-sidebar__nav a.active {
-  /* Mengikuti status aktif navigasi Seller */
-}
-
 .admin-center .seller-center__content {
   min-width: 0;
 }

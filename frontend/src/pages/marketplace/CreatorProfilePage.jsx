@@ -96,25 +96,29 @@ export default function CreatorProfilePage() {
         </nav>
 
         <div className="market-profile-cover">
-          <LocalImage
-            url={creator.image}
-            mediaId={creator.imageMediaId}
-            ownerUserId={creator.ownerUserId}
-            alt=""
-          />
+          <div className="market-profile-cover__inner">
+            <LocalImage
+              url={creator.image}
+              mediaId={creator.imageMediaId}
+              ownerUserId={creator.ownerUserId}
+              alt={`Foto sampul ${creator.name}`}
+            />
+          </div>
         </div>
 
         <section
           className="market-profile-intro"
           aria-labelledby="creator-name"
         >
-          <LocalImage
-            className="market-profile-avatar"
-            url={creator.image}
-            mediaId={creator.imageMediaId}
-            ownerUserId={creator.ownerUserId}
-            alt={`Visual studio ${creator.name}`}
-          />
+          <div className="market-profile-avatar-frame">
+            <LocalImage
+              className="market-profile-avatar"
+              url={creator.image}
+              mediaId={creator.imageMediaId}
+              ownerUserId={creator.ownerUserId}
+              alt={`Foto profil ${creator.name}`}
+            />
+          </div>
 
           <div>
             <span className="market-kicker">{creator.role}</span>

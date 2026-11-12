@@ -26,15 +26,54 @@ export function monthKey(iso) {
   return Number.isFinite(date.getTime()) ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` : "unknown";
 }
 export function summarizeEarnings(bookings) {
-  const by = (...statuses) => bookings.filter(booking => statuses.includes(booking.status));
-  const completed = by("Completed"); const progress = by("Accepted", "Paid"); const pending = by("Requested");
+  const by = (...statuses) =>
+    bookings.filter((booking) => statuses.includes(booking.status));
+
+  const completed = by("Completed");
+  const progress = by("Accepted", "Paid");
+  const pending = by("Requested");
+
+  const amountOf = (row) =>
+    Number.isSafeInteger(row.finalPrice)
+      ? row.finalPrice
+      : row.estimatedPrice;
+
   const byMonth = new Map();
+
   for (const row of completed) {
     const month = monthKey(row.updatedAt || row.createdAt);
-    const current = byMonth.get(month) || { month, count: 0, total: 0 };
-    current.count += 1; current.total += row.estimatedPrice; byMonth.set(month, current);
+    const current = byMonth.get(month) || {
+      month,
+      count: 0,
+      total: 0,
+    };
+
+    current.count += 1;
+    current.total += amountOf(row);
+    byMonth.set(month, current);
   }
-  return { completed: { count: completed.length, total: completed.reduce((sum, row) => sum + row.estimatedPrice, 0), rows: completed }, inProgress: { count: progress.length, total: progress.reduce((sum, row) => sum + row.estimatedPrice, 0), rows: progress }, pending: { count: pending.length, total: pending.reduce((sum, row) => sum + row.estimatedPrice, 0), rows: pending }, declined: by("Declined", "Cancelled").length, months: [...byMonth.values()].sort((a,b) => b.month.localeCompare(a.month)) };
+
+  return {
+    completed: {
+      count: completed.length,
+      total: completed.reduce((sum, row) => sum + amountOf(row), 0),
+      rows: completed,
+    },
+    inProgress: {
+      count: progress.length,
+      total: progress.reduce((sum, row) => sum + amountOf(row), 0),
+      rows: progress,
+    },
+    pending: {
+      count: pending.length,
+      total: pending.reduce((sum, row) => sum + amountOf(row), 0),
+      rows: pending,
+    },
+    declined: by("Declined", "Cancelled").length,
+    months: [...byMonth.values()].sort((a, b) =>
+      b.month.localeCompare(a.month),
+    ),
+  };
 }
 export function summarizePerformance(bookings) {
   const decided = bookings.filter(row => row.status !== "Requested"); const accepted = bookings.filter(row => ["Accepted", "Paid", "Completed"].includes(row.status)); const completed = bookings.filter(row => row.status === "Completed");
