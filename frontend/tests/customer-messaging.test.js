@@ -230,9 +230,11 @@ test("customer unread counts, preview, ordering, and recipient read state stay c
   f.as(f.buyer);
   assert.deepEqual(
     f.ui.listInbox().map((row) => row.id),
-    [older.id, newer.id],
+    [older.id],
   );
-  assert.equal(f.ui.listInbox()[0].last_message.id, sent.id);
+  const inbox = f.ui.listInbox();
+  assert.deepEqual(inbox[0].conversation_ids, [older.id, newer.id]);
+  assert.equal(inbox[0].last_message.id, sent.id);
   assert.equal(f.ui.counts().messages, 1);
   assert.equal(f.ui.counts().notifications, 1);
   assert.deepEqual(f.ui.markRead(older.id), { messages_marked_read: 1 });
