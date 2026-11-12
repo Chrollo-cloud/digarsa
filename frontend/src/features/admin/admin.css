@@ -73,3 +73,72 @@
   .admin-payment-table,
   .admin-payout-table { min-width: 900px; }
 }
+
+.admin-account-moderation {
+  margin: 28px 0;
+}
+
+.admin-account-moderation .ws-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-account-moderation .ws-section-head h2 {
+  margin-bottom: 6px;
+}
+
+.admin-account-moderation .ws-section-head p {
+  margin-top: 0;
+}
+
+.admin-report-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-report-content > p {
+  overflow-wrap: anywhere;
+}
+
+.admin-account-moderation .ws-row__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .admin-account-moderation .ws-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-account-moderation .ws-row {
+    flex-direction: column;
+  }
+
+  .admin-account-moderation .ws-row__side {
+    align-items: flex-start;
+  }
+}
+
+
+/* Admin Center menggunakan layout Seller Center */
+.admin-center {
+  min-height: 100vh;
+}
+
+.admin-center .seller-sidebar {
+  align-self: stretch;
+}
+
+.admin-center .seller-sidebar__nav a.active {
+  /* Mengikuti status aktif navigasi Seller */
+}
+
+.admin-center .seller-center__content {
+  min-width: 0;
+}
