@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { money } from "../../data/marketplace";
-import { statuses } from "../customer/customerStore";
+import { paymentStatuses, statuses } from "../customer/customerStore";
 import { Empty, StatusBadge } from "../workspace/WorkspaceFrame";
 import { dateTime } from "../workspace/format";
 import AdminFrame from "./AdminFrame";
@@ -9,6 +9,7 @@ import { useAdmin } from "./useAdmin";
 export default function AdminOrdersPage() {
   const { bookings, accounts, creatorName, error } = useAdmin();
   const [status, setStatus] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [sellerId, setSellerId] = useState("");
   const [from, setFrom] = useState("");
@@ -27,15 +28,18 @@ export default function AdminOrdersPage() {
         names[booking.customerId],
         creatorName(booking.creatorId),
         booking.creatorId,
+        booking.paymentMethod,
+        booking.paymentStatus,
       ].join(" ").toLocaleLowerCase("id-ID");
       return (!status || booking.status === status) &&
+        (!paymentStatus || (booking.paymentStatus || "Unpaid") === paymentStatus) &&
         (!customerId || booking.customerId === customerId) &&
         (!sellerId || booking.creatorId === sellerId) &&
         (!from || day >= from) &&
         (!through || day <= through) &&
         searchText.includes(query);
     });
-  }, [bookings, status, customerId, sellerId, from, through, search, names, creatorName]);
+  }, [bookings, status, paymentStatus, customerId, sellerId, from, through, search, names, creatorName]);
 
   return (
     <AdminFrame
@@ -52,6 +56,13 @@ export default function AdminOrdersPage() {
           <select id="admin-status" className="field__control" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="">Semua status</option>
             {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="admin-payment-status">Pembayaran</label>
+          <select id="admin-payment-status" className="field__control" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}>
+            <option value="">Semua pembayaran</option>
+            {paymentStatuses.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </div>
         <div className="field">
@@ -78,7 +89,7 @@ export default function AdminOrdersPage() {
         </div>
         <p aria-live="polite">{rows.length} dari {bookings.length} booking</p>
       </div>
-      <p className="ws-notice">Admin dapat memantau status saat ini. Riwayat perubahan status dan audit trail belum disimpan oleh model booking demo.</p>
+      <p className="ws-notice">Admin dapat memantau status booking dan simulasi pembayaran QRIS. Status Paid hanya menandai simulasi lokal, bukan konfirmasi transaksi dari bank.</p>
       {error ? (
         <Empty title="Data booking belum tersedia.">Data tidak dapat dibaca. Periksa penyimpanan demo, lalu muat ulang.</Empty>
       ) : !rows.length ? (
@@ -89,7 +100,7 @@ export default function AdminOrdersPage() {
         <div className="ws-table-wrap">
           <table className="ws-table admin-orders-table">
             <thead>
-              <tr><th scope="col">Layanan</th><th scope="col">Customer</th><th scope="col">Seller</th><th scope="col">Status</th><th scope="col">Estimasi</th></tr>
+              <tr><th scope="col">Layanan</th><th scope="col">Customer</th><th scope="col">Seller</th><th scope="col">Booking</th><th scope="col">Pembayaran</th><th scope="col">Estimasi</th></tr>
             </thead>
             <tbody>
               {rows.map((booking) => (
@@ -106,14 +117,21 @@ export default function AdminOrdersPage() {
                         <dt>Lokasi</dt><dd>{booking.location || "Tidak ada lokasi onsite"}</dd>
                         <dt>Ringkasan kebutuhan</dt><dd>{booking.requirements || "Tidak tersedia"}</dd>
                         <dt>Deskripsi proyek</dt><dd>{booking.description || "Tidak tersedia"}</dd>
-                        <dt>Status saat ini</dt><dd>{booking.status}</dd>
+                        <dt>Status booking</dt><dd>{booking.status}</dd>
+                        <dt>Metode pembayaran</dt><dd>{booking.paymentMethod || "QRIS (default demo)"}</dd>
+                        <dt>Status pembayaran</dt><dd>{booking.paymentStatus || "Unpaid"}</dd>
+                        <dt>Waktu pembayaran</dt><dd>{booking.paidAt ? dateTime(booking.paidAt) : "Belum dibayar"}</dd>
                       </dl>
                     </details>
                   </td>
                   <td>{names[booking.customerId] || "Akun tidak dikenal"}</td>
                   <td>{creatorName(booking.creatorId)}</td>
                   <td><StatusBadge status={booking.status} /></td>
-                  <td>{money(booking.estimatedPrice)}</td>
+                  <td>
+                    <StatusBadge status={booking.paymentStatus || "Unpaid"} />
+                    <small>{booking.paymentMethod || "QRIS"}</small>
+                  </td>
+                  <td>{money(booking.finalPrice ?? booking.estimatedPrice)}</td>
                 </tr>
               ))}
             </tbody>

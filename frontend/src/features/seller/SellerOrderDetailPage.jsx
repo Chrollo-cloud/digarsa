@@ -14,6 +14,11 @@ import {
   bookingStatusLabel,
 } from "../customer/bookingLifecycle";
 const copy = {
+  start: {
+    title: "Mulai pengerjaan pesanan?",
+    body: "Pelanggan akan melihat bahwa pekerjaan dimulai setelah pembayaran demo tercatat.",
+    confirm: "Ya, mulai pengerjaan",
+  },
   accept: {
     title: "Terima permintaan ini?",
     body: "Pelanggan akan melihat status Diterima Seller. Harga akhir di bawah dikonfirmasi saat diterima. Belum ada pembayaran; pelanggan dapat menjalankan simulasi demo secara terpisah.",
@@ -40,7 +45,6 @@ export default function SellerOrderDetailPage() {
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
-
   if (!booking)
     return (
       <SellerFrame title="Pesanan tidak ditemukan.">
@@ -188,6 +192,7 @@ export default function SellerOrderDetailPage() {
                 >
                   {key === "accept" && "Terima"}
                   {key === "decline" && "Tolak"}
+                  {key === "start" && "Mulai pengerjaan"}
                   {key === "complete" && "Tandai selesai"}
                 </button>
               ))}

@@ -26,7 +26,7 @@ test("reported device accuracy is distinct from coordinates and invalid readings
   assert.throws(() => readingFromPosition({ coords: { latitude: 91, longitude: 1, accuracy: 1 } }));
 });
 test("Indonesian status presentation preserves all canonical lifecycle values", () => {
-  assert.deepEqual(bookingLifecycle, ["Requested", "Accepted", "Paid", "Completed"]);
+  assert.deepEqual(bookingLifecycle, ["Requested", "Accepted", "Paid", "In Progress", "Completed"]);
   assert.deepEqual(["Requested", "Accepted", "Paid", "Completed", "Declined", "Cancelled"].map(bookingStatusLabel), ["Menunggu Persetujuan", "Diterima Seller", "Sudah Dibayar", "Selesai", "Ditolak Seller", "Dibatalkan"]);
 });
 test("opt-in fixtures create real seller/buyer ownership, are idempotent and preserve booking safeguards", async () => {

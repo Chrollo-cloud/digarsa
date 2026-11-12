@@ -7,7 +7,7 @@ export const buyerLinks = [
   ["/settings", "Pengaturan"],
   ["/favorites", "Favorit"],
   ["/cart", "Keranjang"],
-  ["/orders", "Pesanan"],
+  ["/orders", "Booking Saya"],
   ["/reviews", "Beri Penilaian"],
   ["/messages", "Pesan Saya"],
   ["/notifications", "Notifikasi Saya"],

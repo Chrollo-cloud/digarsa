@@ -6,6 +6,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import ContactCreator from "../messaging/ContactCreator";
+import ReportAccountButton from "../account/ReportAccountButton";
 import BookingReviewAction from "../reviews/BookingReviewAction";
 import { money } from "../../data/marketplace";
 import { useCustomer } from "./useCustomer";
@@ -108,6 +109,14 @@ export default function BookingDetailPage() {
           </div>
           {Number.isSafeInteger(booking.finalPrice) && <div><dt>Harga akhir Seller</dt><dd>{money(booking.finalPrice)}</dd></div>}
           <div>
+            <dt>Harga final</dt>
+            <dd>{money(booking.finalPrice ?? booking.estimatedPrice)}</dd>
+          </div>
+          <div>
+            <dt>Status pembayaran</dt>
+            <dd>{booking.paymentStatus || (booking.status === "Paid" || booking.status === "Completed" ? "Paid" : "Unpaid")}</dd>
+          </div>
+          <div>
             <dt>Mode pengerjaan</dt>
             <dd>{booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}</dd>
           </div>
@@ -137,9 +146,15 @@ export default function BookingDetailPage() {
         {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) &&
           <Link className="button button--primary" to={`/payment/${booking.id}`}>Pembayaran demo →</Link>}
         <Link to={`/service/${booking.serviceId}`}>Lihat layanan ↗</Link>
+        {booking.status === "Accepted" && ["Unpaid", "Failed", "Expired"].includes(booking.paymentStatus) && (
+          <Link className="button button--primary customer-payment-link" to={`/orders/${booking.id}/payment`}>
+            {booking.paymentStatus === "Unpaid" ? "Lanjut ke pembayaran" : "Coba pembayaran lagi"} ↗
+          </Link>
+        )}
         {booking.status === "Completed" && (
           <BookingReviewAction bookingId={booking.id} />
         )}
+        <ReportAccountButton targetSellerProfileId={booking.creatorId} />
         <ContactCreator
           key={booking.id}
           sellerProfileId={booking.creatorId}

@@ -45,7 +45,7 @@ export default function ServiceActions({ service }) {
           aria-pressed={saved}
           onClick={() => act("favorite")}
         >
-          {saved ? "♥ Disimpan" : "♡ Simpan"}
+          {saved ? "♥ Favorite" : "♡ Favorite"}
         </button>
         <button
           type="button"

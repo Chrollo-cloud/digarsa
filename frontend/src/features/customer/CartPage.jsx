@@ -34,6 +34,7 @@ function CartContents() {
       setError("");
     } catch (failure) { setError(failure.message); }
   }
+
   return (
     <CustomerFrame title="Keranjang layananmu."
       description="Pilih layanan untuk kolaborasimu. Setiap layanan menjadi pesanan terpisah, termasuk saat kreatornya berbeda.">

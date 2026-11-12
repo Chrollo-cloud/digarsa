@@ -1,5 +1,5 @@
 import { bookingStatusLabel } from "./bookingLifecycle";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { statuses } from "./customerStore";
 import { useCustomer } from "./useCustomer";
 import CustomerFrame from "./CustomerFrame";
@@ -7,9 +7,11 @@ import EmptyState from "./EmptyState";
 import BookingCard from "./BookingCard";
 export default function OrdersPage() {
   const { bookings, user } = useCustomer();
-  return <OrderList key={user.id} bookings={bookings} />;
+  const [params] = useSearchParams();
+  const location = useLocation();
+  return <OrderList key={user.id} bookings={bookings} createdCount={params.getAll("created").length} notificationWarning={location.state?.notificationWarning} />;
 }
-function OrderList({ bookings }) {
+function OrderList({ bookings, createdCount, notificationWarning }) {
   const [params, setParams] = useSearchParams();
   const requested = params.get("status") || "";
   const status = statuses.includes(requested) ? requested : "";
@@ -22,6 +24,8 @@ function OrderList({ bookings }) {
       title="Setiap ide, satu perjalanan."
       description="Pantau permintaan dan riwayat kolaborasimu."
     >
+      {createdCount > 0 && <p className="customer-success" role="status">{createdCount} booking request berhasil dikirim. Seller akan meninjau masing-masing permintaan; pembayaran belum dilakukan.</p>}
+      {notificationWarning && <p className="customer-warning" role="alert">Booking tersimpan, tetapi sebagian notifikasi Seller belum dapat disimpan. Status pesanan tetap tersedia di sini.</p>}
       <div className="customer-order-tabs" role="group" aria-label="Status pesanan">
         {[["", "Semua"], ...statuses.map((value) => [value, bookingStatusLabel(value)])].map(([value, label]) => (
           <button key={label} type="button" aria-pressed={status === value} onClick={() => setStatus(value)}>

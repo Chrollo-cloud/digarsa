@@ -6,8 +6,11 @@ export const CUSTOMER_KEY = "digarsa.demo.customer.v1";
 export const sellerActions = {
   accept: { from: ["Requested"], to: "Accepted", label: "diterima" },
   decline: { from: ["Requested"], to: "Declined", label: "ditolak" },
+  start: { from: ["Paid"], to: "In Progress", label: "mulai dikerjakan" },
   complete: {
-    from: ["Paid"],
+    // Paid remains accepted for historical compatibility; the Seller UI guides
+    // current orders through In Progress before completion.
+    from: ["Paid", "In Progress"],
     to: "Completed",
     label: "ditandai selesai",
   },
@@ -16,10 +19,32 @@ export const statuses = [
   "Requested",
   "Accepted",
   "Paid",
+  "In Progress",
   "Completed",
   "Declined",
   "Cancelled",
 ];
+export const paymentStatuses = [
+  "Unpaid",
+  "Pending",
+  "Paid",
+  "Failed",
+  "Expired",
+  "Refunded",
+];
+const paymentStatusOf = (booking) =>
+  booking.paymentStatus ||
+  (["Paid", "In Progress", "Completed"].includes(booking.status)
+    ? "Paid"
+    : "Unpaid");
+const publicBooking = (booking) => ({
+  ...booking,
+  paymentStatus: paymentStatusOf(booking),
+  finalPrice: Number.isFinite(booking.finalPrice)
+    ? booking.finalPrice
+    : booking.estimatedPrice,
+  additionalInfo: booking.additionalInfo || "",
+});
 export const localToday = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -143,7 +168,7 @@ export function createCustomerStore({
           ].every((key) => string(row[key], 200)) &&
           !ids.has(row.id) &&
           statuses.includes(row.status) &&
-          (!Object.hasOwn(row, "finalPrice") || validPrice(row.finalPrice)) &&
+          (!Object.hasOwn(row, "finalPrice") || row.finalPrice === null || validPrice(row.finalPrice)) &&
           (!Object.hasOwn(row, "checkoutId") || validCheckoutId(row.checkoutId)) &&
           (!Object.hasOwn(row, "checkoutServiceIds") ||
             (Array.isArray(row.checkoutServiceIds) && row.checkoutServiceIds.length > 0 &&
@@ -153,6 +178,14 @@ export function createCustomerStore({
             (row.demoPayment?.kind === "simulation" && validPrice(row.finalPrice) &&
               row.demoPayment.amount === row.finalPrice && string(row.demoPayment.id, 200) &&
               Number.isFinite(Date.parse(row.demoPayment.paidAt)) && ["Paid", "Completed"].includes(row.status))) &&
+          (row.paymentStatus === undefined ||
+            paymentStatuses.includes(row.paymentStatus)) &&
+          (row.finalPrice === undefined ||
+            row.finalPrice === null ||
+            (Number.isFinite(row.finalPrice) && row.finalPrice >= 0)) &&
+          (row.additionalInfo === undefined ||
+            (typeof row.additionalInfo === "string" &&
+              row.additionalInfo.length <= 2000)) &&
           ["remote", "onsite"].includes(row.deliveryMode) &&
           Number.isFinite(row.estimatedPrice) &&
           row.estimatedPrice >= 0 &&
@@ -344,7 +377,8 @@ export function createCustomerStore({
         cart: list?.cart || [],
         bookings: data.bookings
           .filter((booking) => booking.customerId === account.id)
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map(publicBooking),
         error,
       };
     },
@@ -366,29 +400,10 @@ export function createCustomerStore({
       input,
       { confirmed = false, expectedUserId } = {},
     ) {
-      const account = user();
-      if (!confirmed)
-        throw new Error("Tinjau dan konfirmasi permintaan terlebih dahulu.");
-      if (account.id !== expectedUserId)
-        throw new Error(
-          "Sesi berubah. Tinjau ulang permintaan dari akun aktif.",
-        );
-      const details = validate(serviceId, input);
-      const data = writable();
-      const booking = {
-        ...details,
-        id: `booking-${randomId()}`,
-        customerId: account.id,
-        status: "Requested",
-        createdAt: now(),
-      };
-      if (data.bookings.some((item) => item.id === booking.id))
-        throw new Error("ID booking bertabrakan. Silakan coba lagi.");
-      data.bookings.push(booking);
-      const list = data.lists.find((item) => item.userId === account.id);
-      if (list) list.cart = list.cart.filter((id) => id !== serviceId);
-      write(data);
-      return booking;
+      return this.createBookings(
+        [{ serviceId, input }],
+        { confirmed, expectedUserId },
+      )[0];
     },
     getBooking(id) {
       user();
@@ -473,6 +488,8 @@ export function createCustomerStore({
       if (!resolveSellerProfile(booking.creatorId)?.ownerUserId)
         throw new Error("Pemilik Seller Profile belum dapat diverifikasi.");
       booking.status = "Paid";
+      booking.paymentStatus = "Paid";
+      booking.paymentStatus = "Paid";
       booking.updatedAt = now();
       booking.demoPayment = { id: `simulation-${randomId()}`, kind: "simulation", amount: booking.finalPrice, paidAt: booking.updatedAt };
       write(data);
@@ -486,7 +503,8 @@ export function createCustomerStore({
       return {
         bookings: data.bookings
           .filter((booking) => booking.creatorId === account.sellerProfileId)
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map(publicBooking),
         error,
       };
     },
@@ -511,7 +529,7 @@ export function createCustomerStore({
         (row) =>
           row.creatorId === account.sellerProfileId &&
           row.serviceId === serviceId &&
-          ["Requested", "Accepted", "Paid"].includes(row.status),
+          ["Requested", "Accepted", "Paid", "In Progress"].includes(row.status),
       ).length;
     },
     respondToBooking(bookingId, action, { expectedStatus, reason, finalPrice } = {}) {
@@ -546,9 +564,78 @@ export function createCustomerStore({
       }
       booking.status = rule.to;
       booking.updatedAt = now();
+      if (action === "accept") {
+        // Preserve the quoted final price from the current seller action flow.
+        booking.paymentStatus = "Unpaid";
+      }
       if (action === "decline" && note) booking.declineReason = note;
       write(data);
-      return { ...booking };
+      return publicBooking(booking);
+    },
+    beginPayment(bookingId, method, { expectedUserId } = {}) {
+      const account = user();
+      if (account.id !== expectedUserId)
+        throw new Error("Sesi berubah. Muat ulang pesanan sebelum membayar.");
+      if (!allowDemoPayment())
+        throw new Error("Simulasi pembayaran tidak diaktifkan pada lingkungan ini.");
+      const data = writable();
+      const booking = data.bookings.find(
+        (item) => item.id === bookingId && item.customerId === account.id,
+      );
+      if (!booking) throw new Error("Booking tidak ditemukan atau bukan milik akunmu.");
+      if (booking.status !== "Accepted")
+        throw new Error("Pembayaran hanya tersedia setelah Seller menerima pesanan.");
+      if (!validPrice(booking.finalPrice))
+        throw new Error("Harga akhir belum dikonfirmasi oleh Seller.");
+      const paymentStatus = paymentStatusOf(booking);
+      if (!["Unpaid", "Failed", "Expired"].includes(paymentStatus))
+        throw new Error(paymentStatus === "Pending" ? "Pembayaran sedang diproses." : "Pembayaran untuk booking ini sudah selesai.");
+      if (method !== "QRIS")
+        throw new Error("Metode pembayaran demo yang tersedia hanya QRIS.");
+      booking.paymentStatus = "Pending";
+      booking.paymentMethod = method;
+      booking.paymentAttemptedAt = now();
+      booking.updatedAt = now();
+      write(data);
+      return publicBooking(booking);
+    },
+    createBookings(items, { confirmed = false, expectedUserId } = {}) {
+      const account = user();
+      if (!confirmed) throw new Error("Tinjau dan konfirmasi permintaan terlebih dahulu.");
+      if (account.id !== expectedUserId)
+        throw new Error("Sesi berubah. Tinjau ulang permintaan dari akun aktif.");
+      if (!Array.isArray(items) || items.length < 1 || items.length > 20)
+        throw new Error("Pilih 1–20 layanan untuk checkout.");
+      const serviceIds = items.map((item) => item?.serviceId);
+      if (new Set(serviceIds).size !== serviceIds.length)
+        throw new Error("Layanan duplikat tidak dapat diajukan dua kali.");
+      const details = items.map((item) => ({
+        ...validate(item.serviceId, item.input || {}),
+        additionalInfo: typeof item.input?.additionalInfo === "string"
+          ? requiredText(item.input.additionalInfo, "Informasi tambahan", 0, 2000)
+          : "",
+      }));
+      const data = writable();
+      const createdAt = now();
+      const bookings = details.map((detail) => ({
+        ...detail,
+        id: `booking-${randomId()}`,
+        customerId: account.id,
+        status: "Requested",
+        paymentStatus: "Unpaid",
+        finalPrice: null,
+        createdAt,
+      }));
+      const ids = new Set(data.bookings.map((item) => item.id));
+      for (const booking of bookings) {
+        if (ids.has(booking.id)) throw new Error("ID booking bertabrakan. Silakan coba lagi.");
+        ids.add(booking.id);
+      }
+      data.bookings.push(...bookings);
+      const list = data.lists.find((item) => item.userId === account.id);
+      if (list) list.cart = list.cart.filter((id) => !serviceIds.includes(id));
+      write(data);
+      return bookings.map(publicBooking);
     },
     adminView() {
       const account = currentUser();
@@ -556,9 +643,9 @@ export function createCustomerStore({
         throw new Error("Memerlukan izin admin internal.");
       const { data, error } = read();
       return {
-        bookings: [...data.bookings].sort((a, b) =>
-          b.createdAt.localeCompare(a.createdAt),
-        ),
+        bookings: [...data.bookings]
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map(publicBooking),
         error,
       };
     },

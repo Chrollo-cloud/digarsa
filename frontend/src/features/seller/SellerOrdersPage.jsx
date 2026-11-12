@@ -1,6 +1,6 @@
-import { bookingStatusLabel } from "../customer/bookingLifecycle";
 import { Link, useSearchParams } from "react-router-dom";
 import { money } from "../../data/marketplace";
+import { bookingStatusLabel } from "../customer/bookingLifecycle";
 import { statuses } from "../customer/customerStore";
 import { Empty, StatusBadge } from "../workspace/WorkspaceFrame";
 import { dateOnly } from "../workspace/format";
@@ -48,8 +48,16 @@ export default function SellerOrdersPage() {
               <div>
                 <h3>{booking.serviceTitle}</h3>
                 <p>
-                  {customers[booking.customerId] || "Pelanggan"} · diajukan{" "}
-                  {dateOnly(booking.createdAt)} ·{" "}
+                  Buyer: {" "}
+                  <Link
+                    className="seller-customer-link"
+                    to={`/seller-dashboard/customers/${booking.customerId}`}
+                  >
+                    {customers[booking.customerId] || "Pelanggan"} ↗
+                  </Link>
+                </p>
+                <p>
+                  Diajukan {dateOnly(booking.createdAt)} ·{" "}
                   {booking.deliveryMode === "onsite" ? "Di lokasi" : "Daring"}
                 </p>
               </div>

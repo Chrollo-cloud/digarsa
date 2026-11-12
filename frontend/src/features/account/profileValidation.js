@@ -19,15 +19,33 @@ export function validateProfilePatch(input) {
     throw new Error("Nama harus 2–80 karakter.");
   if (result.avatarMediaId && !isMediaId(result.avatarMediaId)) throw new Error("Referensi foto lokal tidak valid.");
   if (result.avatarUrl) {
+  if (result.avatarUrl.startsWith("data:")) {
+    const validUploadedJpeg =
+      /^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]+={0,2}$/.test(
+        result.avatarUrl,
+      );
+
+    if (
+      !validUploadedJpeg ||
+      result.avatarUrl.length > 250_000
+    ) {
+      throw new Error(
+        "Foto hasil upload tidak valid atau terlalu besar. Pilih ulang gambar.",
+      );
+    }
+  } else {
     try {
       const url = new URL(result.avatarUrl);
+
       if (
         !["https:", "http:"].includes(url.protocol) ||
         url.username ||
         url.password ||
         url.href.length > 2048
-      )
+      ) {
         throw new Error();
+      }
+
       result.avatarUrl = url.href;
     } catch {
       throw new Error(
@@ -35,6 +53,7 @@ export function validateProfilePatch(input) {
       );
     }
   }
+}
   if (
     result.phone &&
     (!/^\+?[\d ()-]+$/.test(result.phone) ||
@@ -75,4 +94,25 @@ export function validateNewPassword(password, confirmation) {
     throw new Error("Kata sandi baru harus 8–128 karakter.");
   if (password !== confirmation)
     throw new Error("Konfirmasi kata sandi baru tidak cocok.");
+}
+
+
+export function isBuyerProfileComplete(user) {
+  if (!user) return false;
+
+  const nameComplete =
+    typeof user.name === "string" &&
+    user.name.trim().length >= 2;
+
+  const phoneDigits =
+    typeof user.phone === "string"
+      ? user.phone.replace(/\D/g, "")
+      : "";
+
+  const phoneComplete =
+    /^\+?[\d ()-]+$/.test(user.phone || "") &&
+    phoneDigits.length >= 7 &&
+    phoneDigits.length <= 15;
+
+  return nameComplete && phoneComplete;
 }

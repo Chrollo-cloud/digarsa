@@ -14,6 +14,7 @@ export default function Footer() {
         </div>
         <nav aria-label="Navigasi footer">
           {publicNavigation.map(({ to, label }) => <Link key={to} to={to}>{label}</Link>)}
+          <a href="mailto:digarsaofficial@gmail.com">Layanan Pengaduan</a>
         </nav>
         <small>© {new Date().getFullYear()} DIGARSA — INDONESIA</small>
       </div>

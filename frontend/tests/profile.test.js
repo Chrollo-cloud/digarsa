@@ -34,37 +34,55 @@ const change = (store, id, overrides = {}) =>
     { expectedUserId: id },
   );
 
+
 test("profile changes are scoped to the session, preserve ID/email, and persist across instances", async () => {
   const { store, storage } = setup();
+
   const first = await store.register(credentials);
   const second = await store.register({
     ...credentials,
     email: "other@example.test",
     name: "Akun Lain",
   });
+
   await store.login(credentials.email, credentials.password);
+
   let notices = 0;
   const stop = store.subscribe(() => notices++);
+
+  const uploadedAvatar =
+    `data:image/jpeg;base64,/9j/${"A".repeat(120)}`;
+
   const updated = store.updateProfile(
     {
-      name: "  Nama Baru  ",
+      name: "Nama Baru",
       phone: "+62 812-3456-7890",
-      birthDate: "1998-04-12",
-      gender: "Tidak ingin menyebutkan",
-      avatarUrl: "https://example.test/avatar.png",
+      avatarUrl: uploadedAvatar,
     },
     { expectedUserId: first.id },
   );
+
   assert.equal(updated.name, "Nama Baru");
   assert.equal(updated.id, first.id);
   assert.equal(updated.email, credentials.email);
+  assert.equal(updated.phone, "+62 812-3456-7890");
+  assert.equal(updated.avatarUrl, uploadedAvatar);
   assert.equal(notices, 1);
+
   stop();
+
   const reloaded = createDemoStore(storage, webcrypto);
+
   assert.equal(reloaded.current().id, first.id);
+  assert.equal(reloaded.current().name, "Nama Baru");
   assert.equal(reloaded.current().phone, "+62 812-3456-7890");
-  assert.equal(reloaded.current().avatarUrl, "https://example.test/avatar.png");
-  const other = await store.login("other@example.test", credentials.password);
+  assert.equal(reloaded.current().avatarUrl, uploadedAvatar);
+
+  const other = await store.login(
+    "other@example.test",
+    credentials.password,
+  );
+
   assert.equal(other.id, second.id);
   assert.equal(other.name, "Akun Lain");
   assert.equal(other.avatarUrl, "");

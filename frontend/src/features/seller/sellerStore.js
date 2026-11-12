@@ -7,7 +7,7 @@ import { ADMIN_PERMISSION, sellerCategories } from "../account/demoStore.js";
 export const SELLER_KEY = "digarsa.demo.seller.v1";
 export const availabilityValues = ["Open", "Full-book"];
 export const deliveryValues = ["Remote", "Onsite"];
-export const activeBookingStatuses = ["Requested", "Accepted", "Paid"];
+export const activeBookingStatuses = ["Requested", "Accepted", "Paid", "In Progress"];
 
 const empty = () => ({
   version: 1,

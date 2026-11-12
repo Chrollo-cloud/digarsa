@@ -74,7 +74,7 @@
 }
 .personal-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 19px;
   margin: 25px 0;
   padding: 0;
@@ -343,4 +343,292 @@
     margin-top: 8px;
     padding-top: 14px;
   }
+}
+
+/* Avatar upload — consistent with other profile inputs */
+.personal-avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.personal-avatar-upload > label {
+  display: block;
+  margin: 0 0 8px;
+  color: #42495a;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.personal-avatar-upload .field__control[type="file"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid #d9dce0;
+  border-radius: 4px;
+  background: #fff;
+  color: #42495a;
+  font: inherit;
+  font-size: 12px;
+  line-height: 32px;
+  text-align: left;
+}
+
+.personal-avatar-upload .field__control[type="file"]::file-selector-button {
+  box-sizing: border-box;
+  height: 30px;
+  margin: 0 10px 0 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 4px;
+  background: #e4f3f7;
+  color: #287b98;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 30px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.personal-avatar-upload .field__control[type="file"]::file-selector-button:hover {
+  background: #d5edf4;
+}
+
+.personal-avatar-upload .field__hint {
+  display: block;
+  margin: 6px 0 0;
+  color: #858b9a;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.personal-avatar-upload .personal-field-note {
+  margin-top: 6px;
+  text-align: left;
+}
+
+.personal-avatar-upload .button {
+  align-self: flex-start;
+  width: fit-content;
+  min-height: 38px;
+  margin-top: 8px;
+}
+
+
+/* Personal address form */
+.address-book-card {
+  margin-top: 24px;
+}
+
+.address-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 19px;
+  margin: 25px 0;
+  min-width: 0;
+}
+
+.address-form-grid > .field {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  color: #42495a;
+  font-size: 11px;
+}
+
+.address-form-grid .field__control {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin-top: 8px;
+  border: 1px solid #d9dce0;
+  border-radius: 4px;
+  background: #fff;
+  color: #42495a;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.address-form-grid .field__control:disabled {
+  background: #f4f5f3;
+  color: #858b9a;
+  cursor: not-allowed;
+}
+
+.address-form-grid select.field__control {
+  padding: 0 12px;
+}
+
+.address-form-grid input.field__control {
+  padding-inline: 12px;
+}
+
+.address-form-full {
+  grid-column: 1 / -1;
+}
+
+.address-form-grid .address-detail-control {
+  min-height: 100px;
+  max-height: 220px;
+  padding: 12px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.address-data-note,
+.address-source-note {
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.address-source-note a {
+  color: var(--color-blue);
+  text-decoration: underline;
+}
+
+.address-form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.address-form-buttons .button {
+  min-height: 46px;
+}
+
+@media (max-width: 620px) {
+  .address-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .address-form-full {
+    grid-column: auto;
+  }
+
+  .address-form-buttons {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .address-form-buttons .button {
+    width: 100%;
+  }
+}
+
+.address-location-section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e8e9e4;
+}
+
+.address-location-heading h3 {
+  margin: 0 0 8px;
+  color: var(--color-indigo);
+  font: 700 20px var(--font-display);
+}
+
+.address-location-heading p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.address-location-actions {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.address-location-actions .button {
+  min-height: 44px;
+}
+
+.address-location-map .location-map {
+  width: 100%;
+  height: 380px;
+  min-height: 300px;
+  border: 1px solid #d9dce0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.address-coordinate-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  margin-top: 14px;
+  border: 1px solid #d9e9eb;
+  border-radius: 6px;
+  background: #f5faf9;
+}
+
+.address-coordinate-preview span {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.address-coordinate-preview strong {
+  color: var(--color-indigo);
+  font-size: 12px;
+}
+
+.address-location-consent {
+  margin: 16px 0;
+  align-items: flex-start;
+}
+
+@media (max-width: 620px) {
+  .address-location-map .location-map {
+    height: 300px;
+  }
+}
+
+/* Gender select alignment */
+.personal-gender-field {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  gap: 6px;
+}
+
+.personal-gender-field > label {
+  display: block;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.personal-gender-field select {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid #d9dce0;
+  border-radius: 4px;
+  background: white;
+  color: #42495a;
+  font-size: 12px;
 }

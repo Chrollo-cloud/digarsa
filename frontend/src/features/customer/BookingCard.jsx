@@ -30,6 +30,7 @@ export default function BookingCard({ booking }) {
         <Link to={`/orders/${booking.id}`}>Lihat detail →</Link>
         {booking.status === "Accepted" && Number.isSafeInteger(booking.finalPrice) && <Link to={`/payment/${booking.id}`}>Pembayaran demo →</Link>}
       </footer>
+      <small className="customer-payment-status">Pembayaran: {booking.paymentStatus || (booking.status === "Paid" || booking.status === "Completed" ? "Paid" : "Unpaid")}</small>
     </article>
   );
 }

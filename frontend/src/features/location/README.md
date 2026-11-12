@@ -1,4 +1,9 @@
-# Phase D — Location and Nearby Services
+# Location models, maps, and service areas
+
+> Nearby Services discovery has been retired from the integrated application.
+> The shared Leaflet map, Seller Location Picker, address selection, validated
+> location models, and privacy behavior below remain in use where linked by active
+> profile and service forms. Historical `/nearby` notes describe the removed page.
 
 ## Routes and interface
 

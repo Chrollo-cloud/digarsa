@@ -36,7 +36,12 @@ function InboxPanel({ conversations, error, activeId }) {
   const [search, setSearch] = useState("");
   const term = search.trim().toLocaleLowerCase("id-ID");
   const rows = conversations.filter((row) =>
-    [row.seller_name, row.service_title, row.last_message?.content || ""].some(
+    [
+      row.seller_name,
+      row.service_title,
+      ...(row.contexts || []).map((context) => context.service_title),
+      row.last_message?.content || "",
+    ].some(
       (value) => value.toLocaleLowerCase("id-ID").includes(term),
     ),
   );
@@ -114,7 +119,7 @@ function InboxPanel({ conversations, error, activeId }) {
           <nav aria-label="Daftar percakapan">
             {rows.map((row) => (
               <NavLink
-                className={`workspace-conversation ${row.id === activeId ? "is-active" : ""}`}
+                className={`workspace-conversation ${row.id === activeId || row.conversation_ids?.includes(activeId) ? "is-active" : ""}`}
                 key={row.id}
                 to={`/messages/${row.id}`}
               >
@@ -147,7 +152,11 @@ function InboxPanel({ conversations, error, activeId }) {
                     )}
                   </div>
                   <small className="workspace-context-label">
-                    {row.booking_id ? "BOOKING" : "DISKUSI LAYANAN"}
+                    {row.conversation_ids.length > 1
+                      ? `${row.conversation_ids.length} LAYANAN`
+                      : row.booking_id
+                        ? "BOOKING"
+                        : "DISKUSI LAYANAN"}
                   </small>
                 </div>
               </NavLink>

@@ -127,6 +127,11 @@ export default function AuthPage({ register = false }) {
                     register ? "Minimal 8 karakter" : "Kata sandi demo"
                   }
                 />
+                {!register && (
+                  <Link className="account-forgot-password" to="/reset-password">
+                    Lupa password?
+                  </Link>
+                )}
                 <Button type="submit">
                   {busy ? "Memeriksa…" : register ? "Buat akun" : "Masuk"}{" "}
                   <span aria-hidden="true">↗</span>

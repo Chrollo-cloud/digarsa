@@ -26,22 +26,73 @@ function text(value, name, min, max) {
     throw new Error(`${name} harus ${min}–${max} karakter.`);
   return result;
 }
+
+
 function optionalUrl(value, name) {
-  if (!value?.trim()) return "";
+  if (value == null || value === "") return "";
+
+  if (typeof value !== "string") {
+    throw new Error(`${name} tidak valid.`);
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) return "";
+
   try {
-    const url = new URL(value.trim());
+    const url = new URL(normalized);
+
     if (
       !["http:", "https:"].includes(url.protocol) ||
       url.username ||
       url.password ||
       url.href.length > 2048
-    )
+    ) {
       throw new Error();
+    }
+
     return url.href;
   } catch {
-    throw new Error(`${name} harus URL http atau https yang valid.`);
+    throw new Error(
+      `${name} harus URL http atau https yang valid.`,
+    );
   }
 }
+
+
+
+function optionalProfileImage(value, name) {
+  // Foto profil bersifat opsional.
+  if (value == null || value === "") return "";
+
+  if (typeof value !== "string") {
+    throw new Error(`${name} tidak valid.`);
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) return "";
+
+  // Compressed JPEG produced by the local image upload form.
+  if (normalized.startsWith("data:")) {
+    const validJpeg =
+      /^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]+={0,2}$/.test(
+        normalized,
+      );
+
+    if (!validJpeg || normalized.length > 250_000) {
+      throw new Error(
+        `${name} harus berupa gambar JPEG yang valid dan maksimal 180 KB setelah kompresi.`,
+      );
+    }
+
+    return normalized;
+  }
+
+  // Preserve support for existing HTTP/HTTPS image URLs.
+  return optionalUrl(normalized, name);
+}
+
 const hasAdmin = (account) => account?.permissions?.includes(ADMIN_PERMISSION);
 const hex = (buffer) =>
   Array.from(new Uint8Array(buffer), (byte) =>
@@ -50,8 +101,13 @@ const hex = (buffer) =>
 
 // Demo-only credential verification. Browser storage and permissions can be altered
 // by the device owner; this is NOT a server-authenticated security boundary.
-export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
+export function createDemoStore(
+  storage,
+  cryptoApi = globalThis.crypto,
+  allowDemoPasswordReset = true,
+) {
   const listeners = new Set();
+  const passwordResetChallenges = new Map();
   function read() {
     let raw;
     try {
@@ -104,9 +160,10 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     listeners.forEach((listener) => listener());
   }
   function accountForSession(db) {
-    return db.session?.token
-      ? db.accounts.find((account) => account.id === db.session.userId)
+    const account = db.session?.token
+      ? db.accounts.find((item) => item.id === db.session.userId)
       : null;
+    return account && account.status !== "suspended" ? account : null;
   }
   function ownedProfile(db, account) {
     return account
@@ -223,10 +280,68 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         throw new Error("Email atau kata sandi tidak cocok.");
       const db = read();
       const latest = db.accounts.find((item) => item.id === account.id);
-      if (!latest) throw new Error("Akun demo tidak tersedia.");
+      if (!latest || latest.status === "suspended") throw new Error("Akun ini sedang dinonaktifkan oleh Admin Digarsa.");
       db.session = { userId: latest.id, token: cryptoApi.randomUUID() };
       write(db);
       return publicUser(db, latest);
+    },
+    requestPasswordReset(emailInput) {
+      if (!allowDemoPasswordReset)
+        throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      if (!emailPattern.test(email)) throw new Error("Masukkan email yang valid.");
+      const account = read().accounts.find((item) => item.email === email);
+      if (!account) throw new Error("Email tidak ditemukan.");
+      const challengeId = cryptoApi.randomUUID();
+      const code = String(cryptoApi.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, "0");
+      const expiresAt = Date.now() + 5 * 60 * 1000;
+      passwordResetChallenges.set(challengeId, {
+        email, code, expiresAt, verified: false, attempts: 0,
+        accountId: account.id, passwordVerifier: account.passwordVerifier,
+      });
+      return { challengeId, code, expiresAt };
+    },
+    verifyPasswordResetCode(challengeId, emailInput, code) {
+      if (!allowDemoPasswordReset) throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      const challenge = passwordResetChallenges.get(challengeId);
+      if (!challenge || challenge.email !== email) throw new Error("Kode verifikasi tidak valid.");
+      if (Date.now() > challenge.expiresAt) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Kode verifikasi sudah kedaluwarsa. Kirim kode baru.");
+      }
+      if (challenge.attempts >= 5) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Terlalu banyak percobaan. Kirim kode baru.");
+      }
+      challenge.attempts += 1;
+      if (typeof code !== "string" || code !== challenge.code)
+        throw new Error("Kode OTP salah.");
+      challenge.verified = true;
+      return true;
+    },
+    async completePasswordReset(challengeId, emailInput, newPassword, confirmation) {
+      if (!allowDemoPasswordReset) throw new Error("Reset password memerlukan layanan email backend.");
+      const email = typeof emailInput === "string" ? emailInput.trim().toLowerCase() : "";
+      const challenge = passwordResetChallenges.get(challengeId);
+      if (!challenge || challenge.email !== email || !challenge.verified)
+        throw new Error("Verifikasi kode terlebih dahulu.");
+      if (Date.now() > challenge.expiresAt) {
+        passwordResetChallenges.delete(challengeId);
+        throw new Error("Kode verifikasi sudah kedaluwarsa. Mulai kembali.");
+      }
+      validateNewPassword(newPassword, confirmation);
+      const salt = hex(cryptoApi.getRandomValues(new Uint8Array(16)));
+      const passwordVerifier = await verifier(newPassword, salt);
+      const db = read();
+      const account = db.accounts.find((item) => item.id === challenge.accountId && item.email === email);
+      if (!account || account.passwordVerifier !== challenge.passwordVerifier)
+        throw new Error("Data akun berubah. Mulai ulang reset password.");
+      account.salt = salt;
+      account.passwordVerifier = passwordVerifier;
+      write(db);
+      passwordResetChallenges.delete(challengeId);
+      return true;
     },
     updateProfile(input, { expectedUserId } = {}) {
       const db = read();
@@ -327,39 +442,50 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       write(db);
     },
     activateSeller(input) {
-      const db = read();
-      const account = accountForSession(db);
-      if (!account)
-        throw new Error("Masuk sebelum mengaktifkan Seller Profile.");
-      if (
-        account.sellerProfileId ||
-        db.profiles.some((profile) => profile.ownerUserId === account.id)
-      )
-        throw new Error("Seller Profile sudah diaktifkan.");
-      if (!sellerCategories.includes(input.category))
-        throw new Error("Pilih kategori layanan yang tersedia.");
-      const profile = {
-        id: `creator-${cryptoApi.randomUUID()}`,
-        ownerUserId: account.id,
-        ...(Object.hasOwn(input, "publicLocation")
-          ? { publicLocation: validatePublicLocation(input.publicLocation) }
-          : {}),
-        name: text(input.name, "Nama kreator", 2, 80),
-        category: input.category,
-        city: text(input.city, "Kota", 2, 80),
-        bio: text(input.bio, "Bio", 30, 500),
-        image: optionalUrl(input.image, "Foto profil"),
-        portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
-        specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
-      };
-      db.profiles.push(profile);
-      account.sellerProfileId = profile.id;
-      write(db);
-      return profile;
-    },
+  const db = read();
+  const account = accountForSession(db);
+
+  if (!account)
+    throw new Error("Masuk sebelum mengaktifkan Seller Profile.");
+
+  if (
+    account.sellerProfileId ||
+    db.profiles.some((profile) => profile.ownerUserId === account.id)
+  )
+    throw new Error("Seller Profile sudah diaktifkan.");
+
+  if (!sellerCategories.includes(input.category))
+    throw new Error("Pilih kategori layanan yang tersedia.");
+
+  const profile = {
+    id: `creator-${cryptoApi.randomUUID()}`,
+    ownerUserId: account.id,
+
+    ...(Object.hasOwn(input, "publicLocation")
+      ? { publicLocation: validatePublicLocation(input.publicLocation) }
+      : {}),
+
+    name: text(input.name, "Nama kreator", 2, 80),
+    category: input.category,
+    city: text(input.city, "Kota", 2, 80),
+    bio: text(input.bio, "Bio", 30, 500),
+
+    image: optionalProfileImage(input.image, "Foto profil"),
+
+    portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
+
+    specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+
+  db.profiles.push(profile);
+  account.sellerProfileId = profile.id;
+
+  write(db);
+  return profile;
+},
     getOwnedSeller(profileId) {
       const db = read();
       const profile = ownedProfile(db, accountForSession(db));
@@ -387,7 +513,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
         category: input.category,
         city: text(input.city, "Kota", 2, 80),
         bio: text(input.bio, "Bio", 30, 500),
-        image: optionalUrl(input.image, "Foto profil"),
+        image: optionalProfileImage(input.image, "Foto profil"),
         portfolioLink: optionalUrl(input.portfolioLink, "Portfolio"),
         specialties: text(input.specialties || "", "Spesialisasi", 0, 500)
           .split(",")
@@ -400,7 +526,8 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
     },
     // Seller profiles are public marketplace data (no credentials involved).
     listSellerProfiles() {
-      return read().profiles.map((profile) => ({
+      const db = read();
+      return db.profiles.filter((profile) => db.accounts.find((account) => account.id === profile.ownerUserId)?.status !== "suspended").map((profile) => ({
         ...profile,
         specialties: [...(profile.specialties || [])],
         ...(Object.hasOwn(profile, "publicLocation")
@@ -439,7 +566,8 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       if (
         owners.length !== 1 ||
         !owners[0].id ||
-        owners[0].sellerProfileId !== profile.id
+        owners[0].sellerProfileId !== profile.id ||
+        owners[0].status === "suspended"
       )
         return null;
       return {
@@ -492,6 +620,45 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
       }
       return identities;
     },
+    // Reports are tied to real account IDs; reporter identity comes from session.
+    reportAccount({ targetAccountId, targetSellerProfileId, reason, details = "" }) {
+      const db = read();
+      const reporter = accountForSession(db);
+      if (!reporter) throw new Error("Masuk untuk melaporkan akun.");
+      const target = targetAccountId
+        ? db.accounts.find((item) => item.id === targetAccountId)
+        : db.accounts.find((item) => item.sellerProfileId === targetSellerProfileId);
+      if (!target || target.id === reporter.id) throw new Error("Akun yang dilaporkan tidak valid.");
+      const allowed = ["Penipuan atau transaksi mencurigakan", "Pelecehan atau komunikasi tidak pantas", "Identitas atau profil palsu", "Spam atau penyalahgunaan platform", "Lainnya"];
+      if (!allowed.includes(reason)) throw new Error("Pilih alasan laporan.");
+      const note = typeof details === "string" ? details.trim().slice(0, 1000) : "";
+      if (note.length < 10) throw new Error("Jelaskan laporan minimal 10 karakter.");
+      db.reports ||= [];
+      if (db.reports.some((row) => row.reporterId === reporter.id && row.targetAccountId === target.id && row.status === "open"))
+        throw new Error("Laporan untuk akun ini masih dalam peninjauan.");
+      const report = { id: cryptoApi.randomUUID(), reporterId: reporter.id, targetAccountId: target.id, reason, details: note, status: "open", createdAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null, action: null };
+      db.reports.push(report); write(db); return { ...report };
+    },
+    listAccountReportsForAdmin() {
+      const db = read(); const admin = accountForSession(db);
+      if (!admin || !hasAdmin(admin)) throw new Error("Memerlukan izin admin internal.");
+      return (db.reports || []).map((row) => ({ ...row, reporter: db.accounts.find((a) => a.id === row.reporterId)?.name || "Akun tidak tersedia", target: db.accounts.find((a) => a.id === row.targetAccountId)?.name || "Akun tidak tersedia", targetEmail: db.accounts.find((a) => a.id === row.targetAccountId)?.email || "", targetStatus: db.accounts.find((a) => a.id === row.targetAccountId)?.status || "active" })).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    reviewAccountReport(reportId, action) {
+      const db = read(); const admin = accountForSession(db);
+      if (!admin || !hasAdmin(admin)) throw new Error("Memerlukan izin admin internal.");
+      if (!["dismiss", "suspend"].includes(action)) throw new Error("Tindakan laporan tidak valid.");
+      const report = (db.reports || []).find((row) => row.id === reportId);
+      if (!report || report.status !== "open") throw new Error("Laporan sudah ditinjau atau tidak tersedia.");
+      const target = db.accounts.find((item) => item.id === report.targetAccountId);
+      if (action === "suspend") {
+        if (!target || hasAdmin(target)) throw new Error("Akun Admin tidak dapat dinonaktifkan dari alur laporan.");
+        target.status = "suspended"; target.suspendedAt = new Date().toISOString();
+        if (db.session?.userId === target.id) db.session = null;
+      }
+      report.status = "reviewed"; report.action = action; report.reviewedAt = new Date().toISOString(); report.reviewedBy = admin.id;
+      write(db); return { ...report };
+    },
     // Admin-only. Never returns salts or password verifiers.
     listAccountsForAdmin() {
       const db = read();
@@ -519,6 +686,7 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
           sellerCity: profile?.city || "",
           isAdmin: hasAdmin(item),
           isSelf: item.id === account.id,
+          status: item.status === "suspended" ? "suspended" : "active",
         };
       });
     },
@@ -528,4 +696,4 @@ export function createDemoStore(storage, cryptoApi = globalThis.crypto) {
 export const demoStore = createDemoStore({
   getItem: (key) => window.localStorage.getItem(key),
   setItem: (key, value) => window.localStorage.setItem(key, value),
-});
+}, globalThis.crypto, import.meta.env?.DEV === true);

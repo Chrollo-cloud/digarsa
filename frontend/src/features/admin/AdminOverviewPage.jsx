@@ -22,6 +22,9 @@ export default function AdminOverviewPage() {
     ["Requested", "Accepted", "Paid"].includes(item.status),
   ).length;
   const completedBookings = bookings.filter((item) => item.status === "Completed").length;
+  const pendingPayments = bookings.filter((item) => (item.paymentStatus || "Unpaid") === "Pending").length;
+  const paidPayments = bookings.filter((item) => (item.paymentStatus || (["Paid", "In Progress", "Completed"].includes(item.status) ? "Paid" : "Unpaid")) === "Paid").length;
+  const failedPayments = bookings.filter((item) => item.paymentStatus === "Failed").length;
   const volume = bookings
     .filter((item) => item.status === "Completed")
     .reduce((sum, item) => sum + item.estimatedPrice, 0);
@@ -48,6 +51,9 @@ export default function AdminOverviewPage() {
           <Stat label="Booking 7 hari terakhir" value={recentBookings} note="Berdasarkan tanggal permintaan" />
           <Stat label="Booking aktif" value={activeBookings} note="Requested, Accepted, atau Paid" />
           <Stat label="Layanan tayang" value={services.filter((item) => item.active && !item.hidden).length} note="Aktif dan tidak dimoderasi" />
+          <Stat label="Menunggu pembayaran" value={pendingPayments} note="Simulasi QRIS belum diselesaikan" />
+          <Stat label="Pembayaran simulasi berhasil" value={paidPayments} note="Bukan konfirmasi bank" />
+          <Stat label="Simulasi pembayaran gagal" value={failedPayments} note="Customer dapat mencoba kembali" />
           <Stat label="Layanan nonaktif" value={services.filter((item) => !item.active && !item.hidden).length} note="Dinonaktifkan Seller" />
         </div>
       </section>

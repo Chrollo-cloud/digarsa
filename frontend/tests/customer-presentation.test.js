@@ -42,13 +42,13 @@ test('notification popover dismisses outside/Escape and restores focus without s
 });
 
 test('customer dashboard aggregates real lifecycle statuses and dates without mutating bookings', () => {
-  const bookings = ['Requested','Accepted','Paid','Completed','Declined','Cancelled'].map((status,index)=>({id:String(index),status,createdAt:`2026-11-0${index+1}T00:00:00.000Z`}));
+  const bookings = ['Requested','Accepted','Paid','In Progress','Completed','Declined','Cancelled'].map((status,index)=>({id:String(index),status,createdAt:`2026-11-0${index+1}T00:00:00.000Z`}));
   const before = structuredClone(bookings);
   const summary = customerOverview(bookings);
-  assert.equal(summary.active, 3);
+  assert.equal(summary.active, 4);
   assert.equal(summary.completed, 1);
   assert.ok(summary.statuses.every(row=>row.count===1));
-  assert.deepEqual(summary.recent.map(row=>row.id), ['5','4','3']);
+  assert.deepEqual(summary.recent.map(row=>row.id), ['6','5','4']);
   assert.deepEqual(bookings, before);
   const empty = customerOverview([]);
   assert.equal(empty.active, 0);

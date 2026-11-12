@@ -102,6 +102,7 @@ function setup() {
     randomId: randomUUID,
     today: () => "2026-11-07",
     now: () => "2026-11-07T08:00:00.000Z",
+    allowDemoPayment: () => true,
   };
   const store = createCustomerStore(options);
   return {
@@ -153,6 +154,59 @@ test("cart is isolated, persists full-book entries, and has no quantity or combi
   s.store.removeFromCart("remote");
   assert.deepEqual(s.store.view().cart, ["full"]);
   assert.equal(s.store.checkout, undefined);
+});
+
+test("multi-service checkout creates separate Requested bookings atomically and removes only selected cart items", () => {
+  const s = setup();
+  s.store.addToCart("remote");
+  s.store.addToCart("onsite");
+  s.store.addToCart("scheduled");
+  const onsiteBrief = {
+    ...brief,
+    requestedDate: "2026-11-08",
+    location: "Jalan Pengayoman nomor 12, Makassar",
+  };
+  const created = s.store.createBookings([
+    { serviceId: "remote", input: brief },
+    { serviceId: "onsite", input: onsiteBrief },
+  ], { confirmed: true, expectedUserId: first.id });
+  assert.equal(created.length, 2);
+  assert.deepEqual(created.map(({ status, paymentStatus }) => [status, paymentStatus]), [
+    ["Requested", "Unpaid"],
+    ["Requested", "Unpaid"],
+  ]);
+  assert.deepEqual(s.store.view().cart, ["scheduled"]);
+  assert.equal(s.store.view().bookings.length, 2);
+  assert.throws(() => s.store.createBookings([
+    { serviceId: "remote", input: brief },
+    { serviceId: "remote", input: brief },
+  ], { confirmed: true, expectedUserId: first.id }), /duplikat/);
+  assert.equal(s.store.view().bookings.length, 2);
+});
+
+test("payment waits for Seller acceptance and requires the existing explicit owner-approved demo simulation", () => {
+  const s = setup();
+  const booking = s.confirm("remote");
+  assert.equal(booking.paymentStatus, "Unpaid");
+  assert.throws(() => s.store.beginPayment(booking.id, "BCA", { expectedUserId: first.id }), /setelah Seller menerima/);
+  s.as({ ...second, id: "seller-account", capabilities: ["buyer", "seller"], sellerProfileId: "studio" });
+  assert.throws(() => s.store.beginPayment(booking.id, "BCA", { expectedUserId: first.id }), /Sesi berubah/);
+  s.store.respondToBooking(booking.id, "accept");
+  s.as(first);
+  s.store.beginPayment(booking.id, "QRIS", { expectedUserId: first.id });
+  assert.equal(s.store.getBooking(booking.id).status, "Accepted");
+  assert.equal(s.store.getBooking(booking.id).paymentStatus, "Pending");
+  assert.throws(() => s.store.simulatePayment(booking.id, {
+    expectedUserId: first.id,
+    expectedFinalPrice: booking.finalPrice,
+  }), /Konfirmasi simulasi/);
+  s.store.simulatePayment(booking.id, {
+    confirmed: true,
+    expectedUserId: first.id,
+    expectedFinalPrice: booking.finalPrice,
+  });
+  assert.equal(s.store.getBooking(booking.id).status, "Paid");
+  assert.equal(s.store.getBooking(booking.id).paymentStatus, "Paid");
 });
 
 test("guests cannot mutate favorites, cart, or bookings", () => {

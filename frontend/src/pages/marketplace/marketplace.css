@@ -690,15 +690,37 @@
   }
 }
 
-.market-nearby-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin-top: 8px;
-  color: var(--color-aqua);
-  font-size: 13px;
-  text-underline-offset: 5px;
+/* Report Account pada Creator Profile */
+.market-profile-report {
+  margin: 28px 28px 35px;
+  padding: 18px 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
 }
-.market-nearby-link:hover { text-decoration: underline; }
-.market-nearby-link svg { flex-shrink: 0; }
+
+.market-profile-report > p {
+  margin: 0 0 8px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.market-profile-report .report-account {
+  margin-top: 0;
+}
+
+.market-profile-report .report-account__trigger {
+  color: #a33d38;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.market-profile-report .report-account__form {
+  max-width: 100%;
+}
+
+@media (max-width: 620px) {
+  .market-profile-report {
+    margin-inline: 0;
+  }
+}

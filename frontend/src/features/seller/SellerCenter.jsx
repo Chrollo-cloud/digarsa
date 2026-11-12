@@ -9,7 +9,7 @@ import EarningsPage from "./EarningsPage";
 import SellerAvailabilityPage from "./SellerAvailabilityPage";
 import SellerMessagingPage from "./SellerMessagingPage";
 import SellerNotificationsPage from "./SellerNotificationsPage";
-
+import SellerBuyerProfilePage from "./SellerBuyerProfilePage";
 // Mounted at /seller-dashboard/* behind the Phase 5 RequireSeller guard.
 export default function SellerCenter() {
   return (
@@ -17,6 +17,7 @@ export default function SellerCenter() {
       <Route index element={<SellerOverviewPage />} />
       <Route path="orders" element={<SellerOrdersPage />} />
       <Route path="orders/:bookingId" element={<SellerOrderDetailPage />} />
+      <Route path="customers/:customerId" element={<SellerBuyerProfilePage />}/>
       <Route path="services" element={<SellerServicesPage />} />
       <Route path="services/new" element={<ServiceFormPage />} />
       <Route path="services/:serviceId/edit" element={<ServiceFormPage />} />

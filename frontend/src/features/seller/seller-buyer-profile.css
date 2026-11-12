@@ -1,0 +1,138 @@
+/* Buyer Profile */
+.seller-buyer-profile {
+  max-width: 850px;
+  margin: 24px auto;
+  padding: 30px;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 35px #2529440a;
+}
+
+.seller-buyer-profile__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #e8e9e4;
+}
+
+.seller-buyer-profile__avatar {
+  width: 82px;
+  height: 82px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.seller-buyer-profile__initial {
+  display: grid;
+  place-items: center;
+  background: #e7f5f2;
+  color: var(--color-indigo);
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.seller-buyer-profile__label {
+  color: var(--color-blue);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.seller-buyer-profile__header h2 {
+  margin: 7px 0;
+  color: var(--color-indigo);
+  font: 700 28px var(--font-display);
+}
+
+.seller-buyer-profile__header p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.seller-buyer-profile__details {
+  padding: 26px 0;
+}
+
+.seller-buyer-profile__details h3,
+.seller-buyer-profile__report h3 {
+  margin: 0 0 18px;
+  color: var(--color-indigo);
+  font: 700 20px var(--font-display);
+}
+
+.seller-buyer-profile__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.seller-buyer-profile__item span {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.seller-buyer-profile__item strong {
+  color: var(--color-indigo);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.seller-buyer-profile__report {
+  padding: 22px;
+  border: 1px solid #eadede;
+  border-radius: 8px;
+  background: #fffafa;
+}
+
+.seller-buyer-profile__report h3 {
+  margin-bottom: 8px;
+  color: #a33d38;
+}
+
+.seller-buyer-profile__report p {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.seller-customer-link {
+  color: var(--color-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.seller-customer-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 620px) {
+  .seller-buyer-profile {
+    padding: 20px;
+  }
+
+  .seller-buyer-profile__header h2 {
+    font-size: 23px;
+  }
+
+  .seller-buyer-profile__avatar {
+    width: 65px;
+    height: 65px;
+  }
+
+  .seller-buyer-profile__item {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .seller-buyer-profile__item strong {
+    text-align: left;
+  }
+}

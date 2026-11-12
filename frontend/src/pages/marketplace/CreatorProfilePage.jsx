@@ -8,6 +8,7 @@ import VerifiedRating from "../../features/reviews/VerifiedRating";
 import ServiceCard from "../../components/marketplace/ServiceCard";
 import PortfolioLink from "../../components/marketplace/PortfolioLink";
 import Reviews from "../../components/marketplace/Reviews";
+import ReportAccountButton from "../../features/account/ReportAccountButton";
 import NotFound from "../../components/marketplace/NotFound";
 import "./marketplace.css";
 
@@ -60,6 +61,13 @@ export default function CreatorProfilePage() {
             <li key={skill}>{skill}</li>
           ))}
         </ul>
+        <div className="market-profile-report">
+          <p>Menemukan sesuatu yang mencurigakan?</p>
+          <ReportAccountButton
+            targetSellerProfileId={creator.id}
+            label="Laporkan Akun Seller"
+          />
+        </div>
         <section className="market-section" aria-labelledby="creator-services">
           <div className="market-section-head">
             <div>

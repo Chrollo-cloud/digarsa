@@ -13,6 +13,8 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [bio, setBio] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [imageError, setImageError] = useState("");
   useEffect(() => {
     document.title = "Jadi Kreator — Digarsa";
   }, []);
@@ -23,9 +25,9 @@ export default function OnboardingPage() {
     setBusy(true);
     setError("");
     try {
-      store.activateSeller(
-        Object.fromEntries(new FormData(event.currentTarget)),
-      );
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      values.image = profileImage;
+      store.activateSeller(values);
       navigate("/seller-dashboard", { replace: true });
     } catch (failure) {
       setError(failure.message);
@@ -108,12 +110,29 @@ export default function OnboardingPage() {
             </label>
             <small id="bio-count">{bio.length}/500 karakter</small>
             <div className="account-field-pair">
-              <Input
-                label="URL foto profil (opsional)"
-                name="image"
-                type="url"
-                maxLength={2048}
-              />
+              <div className="field account-avatar-upload">
+                <label htmlFor="creator-avatar-file">Foto profil (opsional)</label>
+                <input id="creator-avatar-file" className="field__control" type="file" accept="image/jpeg,image/png,image/webp" onChange={async (event) => {
+                  const input = event.currentTarget; const file = input.files?.[0]; input.value = ""; setImageError("");
+                  if (!file) return;
+                  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setImageError("Gunakan gambar JPG, PNG, atau WEBP."); return; }
+                  if (file.size > 5 * 1024 * 1024) { setImageError("Ukuran gambar maksimal 5 MB."); return; }
+                  try {
+                    const bitmap = await createImageBitmap(file);
+                    if (bitmap.width * bitmap.height > 20000000) throw new Error("Resolusi gambar terlalu besar.");
+                    const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+                    const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+                    const context = canvas.getContext("2d"); if (!context) throw new Error("Gagal memproses gambar.");
+                    context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close?.();
+                    let blob = null; for (const quality of [0.82, 0.72, 0.62]) { blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality)); if (blob && blob.size <= 180 * 1024) break; }
+                    if (!blob || blob.size > 180 * 1024) throw new Error("Foto terlalu besar setelah dikompres.");
+                    const reader = new FileReader(); reader.onload = () => setProfileImage(String(reader.result)); reader.onerror = () => setImageError("Gagal membaca foto."); reader.readAsDataURL(blob);
+                  } catch (failure) { setImageError(failure.message || "Foto tidak dapat diproses."); }
+                }} />
+                <small>Pilih foto dari perangkat (JPG, PNG, WEBP; maksimal 5 MB).</small>
+                {imageError && <small className="account-feedback is-error" role="alert">{imageError}</small>}
+                {profileImage && <button type="button" className="button button--secondary" onClick={() => setProfileImage("")}>Hapus foto</button>}
+              </div>
               <Input
                 label="Portfolio / sosial media (opsional)"
                 name="portfolioLink"

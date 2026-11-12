@@ -1,0 +1,105 @@
+
+.seller-profile-image-upload {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.seller-profile-image-upload > label {
+  color: var(--color-indigo);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.seller-profile-image-upload input[type="file"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--color-indigo);
+  font: inherit;
+  font-size: 12px;
+}
+
+.seller-profile-image-upload input[type="file"]::file-selector-button {
+  min-height: 32px;
+  margin-right: 10px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 4px;
+  background: #e7f5f2;
+  color: var(--color-indigo);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seller-profile-image-upload input[type="file"]::file-selector-button:hover {
+  background: #d8efea;
+}
+
+.seller-profile-image-upload .field__hint {
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.seller-profile-image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-paper);
+}
+
+.seller-profile-image-preview > img {
+  display: block;
+  flex: none;
+  width: 88px;
+  height: 88px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #ffffff;
+  object-fit: cover;
+}
+
+.seller-profile-image-preview > div {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.seller-profile-image-preview strong {
+  color: var(--color-indigo);
+  font-size: 12px;
+}
+
+.seller-profile-image-preview span {
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.seller-profile-image-preview .button {
+  min-height: 36px;
+}
+
+.seller-image-status {
+  margin: 0;
+  color: var(--color-blue);
+  font-size: 11px;
+}
+
+@media (max-width: 480px) {
+  .seller-profile-image-preview {
+    align-items: flex-start;
+  }
+}
