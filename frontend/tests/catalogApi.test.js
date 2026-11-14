@@ -29,7 +29,7 @@ const serviceDto = {
   availability: "Open", image_url: "https://cdn.example/service.jpg", active: true,
   created_at: "2026-11-13T00:00:00.000Z", updated_at: "2026-11-13T00:00:00.000Z",
   studio: "Studio One", city: "Makassar", public_location: null, bookable: true,
-  source: "seller", alt: "Brand identity work", images: [{ src: "https://cdn.example/service.jpg", alt: "Work" }],
+  source: "seller", seller_image_url: "/images/sellers/avatars/seller-01.jpg", alt: "Brand identity work", images: [{ src: "https://cdn.example/service.jpg", alt: "Work" }],
   avg_rating: 4.5, review_count: 2,
 };
 
@@ -54,6 +54,7 @@ test("service list uses verified filters, anonymous transport, and cursor respon
   assert.equal(parsed.searchParams.get("limit"), "10");
   assert.equal(captured.options.headers.has("Authorization"), false);
   assert.equal(page.items[0].creatorId, "seller-1");
+  assert.equal(page.items[0].creator.image, "/images/sellers/avatars/seller-01.jpg");
   assert.equal(page.items[0].avgRating, 4.5);
   assert.equal(page.nextCursor, "next-cursor");
   assert.equal(page.hasMore, true);
@@ -79,7 +80,7 @@ test("public detail, creator, and facet adapters use the mounted public route co
     if (url.includes("/catalog/facets")) return jsonResponse({ data: { categories: ["Branding"], cities: ["Makassar"] } });
     if (url.includes("/creators/")) return jsonResponse({ data: {
       id: "seller-1", name: "Studio One", category: "Branding", city: "Makassar", bio: "Bio",
-      image_url: null, portfolio_link: null, specialties: ["Identity"], public_location: null,
+      image_url: "/images/sellers/covers/cover-01.jpg", avatar_url: "/images/sellers/avatars/seller-01.jpg", cover_image_url: "/images/sellers/covers/cover-01.jpg", portfolio_link: null, specialties: ["Identity"], public_location: null,
       services: [serviceDto], portfolio: [],
     } });
     return jsonResponse({ data: serviceDto });
@@ -88,7 +89,8 @@ test("public detail, creator, and facet adapters use the mounted public route co
   const creator = await getPublicCreator("seller-1");
   assert.equal(creator.services[0].id, "svc-1");
   assert.deepEqual(creator.skills, ["Identity"]);
-  assert.equal(creator.image, "");
+  assert.equal(creator.image, "/images/sellers/avatars/seller-01.jpg");
+  assert.equal(creator.coverImage, "/images/sellers/covers/cover-01.jpg");
   assert.deepEqual(await getCatalogFacets(), { categories: ["Branding"], cities: ["Makassar"] });
   assert.ok(urls.some((url) => url.endsWith("/api/v1/services/svc-1")));
   assert.ok(urls.some((url) => url.endsWith("/api/v1/creators/seller-1")));

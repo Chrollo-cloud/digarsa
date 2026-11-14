@@ -78,6 +78,7 @@ export function toPublicService(row: PublicServiceRow) {
     created_at: row.createdAt.toISOString(),
     updated_at: row.updatedAt.toISOString(),
     studio: row.seller.displayName,
+    seller_image_url: row.seller.image,
     city: row.seller.city,
     public_location: row.delivery === "Onsite" ? sanitizedLocation(internalLocation) : null,
     bookable: isCatalogVisible(row) && row.status === "OPEN",

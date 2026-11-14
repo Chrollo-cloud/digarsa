@@ -205,7 +205,7 @@
   clip-path: inset(50%);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .notification-bell__trigger, .notification-popover {
     display: none;
   }

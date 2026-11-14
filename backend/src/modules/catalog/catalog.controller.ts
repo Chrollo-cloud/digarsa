@@ -136,6 +136,8 @@ export async function getPublicCreator(req: Request, res: Response) {
     city: creator.city,
     bio: creator.bio ?? "",
     image_url: creator.image,
+    avatar_url: creator.image,
+    cover_image_url: creator.coverImage,
     portfolio_link: creator.portfolioLink,
     specialties: creator.specialties.length ? creator.specialties : [creator.category],
     public_location: toPublicCreatorLocation(creator.publicLocation),

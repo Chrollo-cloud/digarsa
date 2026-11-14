@@ -3,8 +3,10 @@ import { apiRequest } from "../../lib/apiClient.js";
 const stringOrEmpty = (value) => typeof value === "string" ? value : "";
 const safeImage = (value) => {
   if (typeof value !== "string" || !value) return "";
+  const trimmed = value.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
   try {
-    const url = new URL(value);
+    const url = new URL(trimmed);
     return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password ? url.href : "";
   } catch {
     return "";
@@ -37,7 +39,7 @@ export function mapPublicService(row) {
     images,
     studio: stringOrEmpty(row.studio),
     city: stringOrEmpty(row.city),
-    creator: { id: row.seller_profile_id, name: stringOrEmpty(row.studio), city: stringOrEmpty(row.city), image: "" },
+    creator: { id: row.seller_profile_id, name: stringOrEmpty(row.studio), city: stringOrEmpty(row.city), image: safeImage(row.seller_image_url) },
     publicLocation: row.public_location && typeof row.public_location === "object" ? row.public_location : null,
     bookable: row.bookable === true,
     avgRating: average,
@@ -66,7 +68,8 @@ export function mapPublicCreator(row) {
     category: stringOrEmpty(row.category),
     city: stringOrEmpty(row.city),
     bio: stringOrEmpty(row.bio),
-    image: safeImage(row.image_url),
+    image: safeImage(row.avatar_url) || safeImage(row.image_url),
+    coverImage: safeImage(row.cover_image_url) || safeImage(row.image_url),
     portfolioLink: typeof row.portfolio_link === "string" ? row.portfolio_link : "",
     skills: Array.isArray(row.specialties) ? row.specialties.filter((item) => typeof item === "string") : [],
     publicLocation: row.public_location && typeof row.public_location === "object" ? row.public_location : null,

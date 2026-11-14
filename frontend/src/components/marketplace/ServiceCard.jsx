@@ -3,6 +3,7 @@ import { money } from "../../utils/money.js";
 import CatalogRating from "../../features/catalog/CatalogRating";
 import Availability from "./Availability";
 import ServiceActions from "../../features/customer/ServiceActions.jsx";
+import ImageWithFallback from "./ImageWithFallback.jsx";
 
 export default function ServiceCard({ service }) {
   const creator = service.creator;
@@ -15,7 +16,7 @@ export default function ServiceCard({ service }) {
         to={`/service/${service.id}`}
         aria-label={`Show services ${service.title}, ${service.availability}`}
       >
-        {service.image ? <img src={service.image} alt={service.alt || service.title} loading="lazy" /> : <span className="market-image-placeholder" role="img" aria-label="Service image unavailable">DIGARSA</span>}
+        <ImageWithFallback src={service.image} alt={service.alt || service.title} fallback={<span className="market-image-placeholder" role="img" aria-label="Service image unavailable">DIGARSA</span>} />
         <Availability value={service.availability} />
       </Link>
       <div className="market-card__body">
@@ -27,7 +28,7 @@ export default function ServiceCard({ service }) {
           <Link to={`/service/${service.id}`}>{service.title}</Link>
         </h3>
         <Link className="market-identity" to={`/seller/${creator.id}`}>
-          {creator.image ? <img src={creator.image} alt="" loading="lazy" /> : <span className="market-avatar-placeholder" aria-hidden="true">{initials || "D"}</span>}
+          <ImageWithFallback src={creator.image} alt="" fallback={<span className="market-avatar-placeholder" aria-hidden="true">{initials || "D"}</span>} />
           <span>
             <strong>{creator.name}</strong>
             <small>{creator.city}</small>

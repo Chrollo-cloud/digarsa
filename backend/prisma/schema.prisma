@@ -319,6 +319,7 @@ model SellerProfile {
   city               String             @default("")
   bio                String? // = description di frontend
   image              String?
+  coverImage         String?
   specialties        String[]           @default([])
   portfolioLink      String?
   publicLocation     Json?

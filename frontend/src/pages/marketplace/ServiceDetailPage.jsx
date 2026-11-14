@@ -6,6 +6,7 @@ import Availability from "../../components/marketplace/Availability";
 import NotFound from "../../components/marketplace/NotFound";
 import CatalogRating from "../../features/catalog/CatalogRating";
 import ServiceActions from "../../features/customer/ServiceActions.jsx";
+import ImageWithFallback from "../../components/marketplace/ImageWithFallback.jsx";
 import { usePublicCreator, usePublicService } from "../../features/catalog/usePublicCatalog";
 import "./marketplace.css";
 
@@ -79,7 +80,7 @@ export default function ServiceDetailsPage() {
               className="market-panel market-identity"
               to={`/seller/${service.creatorId}`}
             >
-              {creator?.image ? <img src={creator.image} alt="" /> : <span className="market-avatar-placeholder" aria-hidden="true">{(service.studio || "D").slice(0, 1).toUpperCase()}</span>}
+              <ImageWithFallback src={creator?.image} alt="" fallback={<span className="market-avatar-placeholder" aria-hidden="true">{(service.studio || "D").slice(0, 1).toUpperCase()}</span>} />
               <span>
                 <small>KREATOR</small>
                 <strong>{creator?.name || service.studio || "Creator"}</strong>

@@ -576,6 +576,18 @@
   height: 100%;
   object-fit: cover;
 }
+.market-gallery__empty,
+.market-gallery__thumb-empty {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--color-indigo);
+  background: var(--color-cyan-pale);
+}
+.market-gallery__thumb-empty {
+  display: block;
+}
 .market-profile-gallery span {
   position: absolute;
   inset: auto 0 0;

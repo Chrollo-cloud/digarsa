@@ -4,6 +4,7 @@ import ServiceCard from "../../components/marketplace/ServiceCard";
 import PortfolioLink from "../../components/marketplace/PortfolioLink";
 import NotFound from "../../components/marketplace/NotFound";
 import { usePublicCreator } from "../../features/catalog/usePublicCatalog";
+import ImageWithFallback from "../../components/marketplace/ImageWithFallback.jsx";
 import "./marketplace.css";
 
 export default function CreatorProfilePage() {
@@ -18,6 +19,7 @@ export default function CreatorProfilePage() {
   if (!creator) return <NotFound type="Creator" />;
 
   const initials = creator.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const profileImage = creator.coverImage || creator.portfolio[0]?.image || "";
 
   return (
     <div className="market-page market-profile">
@@ -29,13 +31,13 @@ export default function CreatorProfilePage() {
 
         <div className="market-profile-cover">
           <div className="market-profile-cover__inner">
-            {creator.image ? <img src={creator.image} alt={`Cover for ${creator.name}`} /> : <div className="market-profile-image-placeholder" role="img" aria-label="Creator image unavailable">DIGARSA</div>}
+            <ImageWithFallback src={profileImage} alt={`Cover for ${creator.name}`} fallback={<div className="market-profile-image-placeholder" role="img" aria-label="Creator image unavailable">DIGARSA</div>} />
           </div>
         </div>
 
         <section className="market-profile-intro" aria-labelledby="creator-name">
           <div className="market-profile-avatar-frame">
-            {creator.image ? <img className="market-profile-avatar" src={creator.image} alt={`Profile of ${creator.name}`} /> : <span className="market-profile-avatar market-avatar-placeholder" aria-hidden="true">{initials || "D"}</span>}
+            <ImageWithFallback className="market-profile-avatar" src={creator.image} alt={`Profile of ${creator.name}`} fallback={<span className="market-profile-avatar market-avatar-placeholder" aria-hidden="true">{initials || "D"}</span>} />
           </div>
           <div>
             <span className="market-kicker">{creator.category || "Creator"}</span>
@@ -68,7 +70,7 @@ export default function CreatorProfilePage() {
           <h2 id="creator-portfolio">Portfolio<span>.</span></h2>
           {creator.portfolio.length ? (
             <div className="market-profile-gallery">
-              {creator.portfolio.map((work) => <Link key={work.serviceId} to={`/service/${work.serviceId}`}><img src={work.image} alt={work.alt || work.title || "Creator portfolio work"} loading="lazy" /><span>{work.title || "Service work"}</span></Link>)}
+              {creator.portfolio.map((work) => <Link key={work.serviceId} to={`/service/${work.serviceId}`}><ImageWithFallback src={work.image} alt={work.alt || work.title || "Creator portfolio work"} fallback={<span className="market-image-placeholder" role="img" aria-label="Portfolio image unavailable">DIGARSA</span>} /><span>{work.title || "Service work"}</span></Link>)}
             </div>
           ) : <p className="market-panel">No portfolio images are available.</p>}
         </section>

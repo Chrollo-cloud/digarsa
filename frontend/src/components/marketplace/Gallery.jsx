@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ImageWithFallback from "./ImageWithFallback.jsx";
 
 export default function Gallery({ images, title }) {
   const [active, setActive] = useState(0);
@@ -10,7 +11,7 @@ export default function Gallery({ images, title }) {
   return (
     <section className="market-gallery" aria-label={`Galeri ${title}`}>
       <div className="market-gallery__stage">
-        <img src={images[active].src} alt={images[active].alt} />
+        <ImageWithFallback src={images[active].src} alt={images[active].alt || title} loading="eager" fallback={<div className="market-gallery__empty" role="img" aria-label="Service image unavailable">Image unavailable</div>} />
         <button
           type="button"
           className="is-prev"
@@ -42,7 +43,7 @@ export default function Gallery({ images, title }) {
             aria-pressed={active === index}
             onClick={() => setActive(index)}
           >
-            <img src={image.src} alt="" />
+            <ImageWithFallback src={image.src} alt="" fallback={<span className="market-gallery__thumb-empty" aria-hidden="true" />} />
           </button>
         ))}
       </div>

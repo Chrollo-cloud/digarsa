@@ -29,7 +29,7 @@ export default function NotificationBell({ onNavigate }) {
     const pointer = (event) => controller.pointerDown(event.target);
     const end = () => controller.pointerEnd();
     const escape = (event) => controller.escape(event, () => trigger.current?.focus());
-    const resize = () => { if (window.innerWidth <= 760) setOpen(false); };
+    const resize = () => { if (window.innerWidth <= 900) setOpen(false); };
     document.addEventListener("keydown", escape, true);
     document.addEventListener("pointerdown", pointer, true);
     document.addEventListener("pointerup", end);
