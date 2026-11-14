@@ -10,10 +10,11 @@ type UserRow = {
   createdAt: Date;
 };
 
-type SellerRow = { id: string } | null;
+type SellerRow = { id: string; verificationStatus: "PENDING" | "APPROVED" | "REJECTED" } | null;
 
 export function toFrontendAccount(user: UserRow, seller: SellerRow) {
-  const activeSellerId = seller?.id ?? null;
+  const sellerProfileId = seller?.id ?? null;
+  const hasApprovedSellerCapability = seller?.verificationStatus === "APPROVED";
   return {
     id: user.id,
     name: user.name,
@@ -23,8 +24,8 @@ export function toFrontendAccount(user: UserRow, seller: SellerRow) {
     gender: user.gender ?? "",
     avatarUrl: user.avatarUrl ?? "",
     createdAt: user.createdAt.toISOString(),
-    sellerProfileId: activeSellerId,
-    capabilities: ["buyer", ...(activeSellerId ? ["seller"] : [])],
+    sellerProfileId,
+    capabilities: ["buyer", ...(hasApprovedSellerCapability ? ["seller"] : [])],
     permissions: user.role === "ADMIN" ? ["admin:access"] : [],
   };
 }

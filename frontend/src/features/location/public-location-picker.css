@@ -1,0 +1,50 @@
+.public-location-picker {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-indigo);
+  background: white;
+  box-shadow: 0 24px 90px #15192945;
+  overflow: auto;
+}
+.public-location-picker::backdrop { background: #151929a6; }
+.public-location-picker__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 22px 26px 10px;
+}
+.public-location-picker__header h2 { font: 700 clamp(25px, 4vw, 34px)/1.1 var(--font-display); margin: 8px 0; }
+.public-location-picker__close {
+  width: 44px; height: 44px; flex: none; border: 1px solid var(--color-border);
+  border-radius: 50%; background: var(--color-paper); color: var(--color-indigo); font-size: 25px;
+}
+.public-location-picker__intro { margin: 0; padding: 0 26px 18px; font-size: 12px; line-height: 1.6; }
+.public-location-picker__map { min-height: 200px; background: var(--color-paper); }
+.public-location-picker__map .location-map { height: clamp(220px, 34dvh, 320px); border-radius: 0; }
+.public-location-picker__map .location-map-note { padding: 8px 20px; margin: 0; font-size: 10px; }
+.public-location-picker__map .location-map-wrap { border: 0; }
+.public-location-picker__details { padding: 20px 26px 24px; }
+.public-location-picker__area { display: flex; gap: 12px; align-items: start; margin-bottom: 18px; }
+.public-location-picker__area > span { color: var(--color-blue); font-size: 27px; }
+.public-location-picker__area strong { overflow-wrap: anywhere; }
+.public-location-picker__area p, .public-location-picker__privacy { font-size: 11px; line-height: 1.7; color: var(--color-muted); margin: 5px 0 0; }
+.public-location-picker label { font-size: 12px; }
+.public-location-picker__preview { display: flex; gap: 14px; justify-content: space-between; align-items: center; margin: 12px 0; font-size: 11px; }
+.public-location-picker__preview p { margin: 0; }
+.public-location-picker__preview button { flex: none; }
+.public-location-picker__actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; margin-top: 16px; border-top: 1px solid var(--color-border); }
+.public-location-picker :disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .public-location-picker { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); }
+  .public-location-picker__header { padding: 18px 16px 8px; }
+  .public-location-picker__intro { padding: 0 16px 14px; }
+  .public-location-picker__details { padding: 16px; }
+  .public-location-picker__actions { flex-direction: column-reverse; }
+  .public-location-picker__actions .button { width: 100%; justify-content: center; white-space: normal; text-align: center; }
+  .public-location-picker__preview { align-items: start; flex-direction: column; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-location-picker *, .location-selection-pin { animation: none; transition: none; }
+}

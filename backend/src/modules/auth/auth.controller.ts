@@ -104,7 +104,7 @@ export const login: RequestHandler = async (req, res) => {
       ...(passwordCheck.needsRehash ? { passwordHash: await hashPassword(input.password) } : {}),
     },
   });
-  const seller = await prisma.sellerProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
+  const seller = await prisma.sellerProfile.findUnique({ where: { userId: user.id }, select: { id: true, verificationStatus: true } });
   const accessToken = createAccessToken(user.id, user.role, user.tokenVersion);
   await writeAuditLog(user.id, "ACCOUNT_LOGIN", "USER", user.id);
   res.status(200).json({
@@ -123,9 +123,12 @@ export const getMe: RequestHandler = async (_req, res) => {
   }
   const sellerProfile = await prisma.sellerProfile.findUnique({
     where: { userId },
-    select: { id: true, displayName: true },
+    select: { id: true, displayName: true, verificationStatus: true },
   });
-  res.status(200).json({ data: { user: toFrontendAccount(user, sellerProfile), sellerProfile } });
+  const sellerProfileResponse = sellerProfile
+    ? { id: sellerProfile.id, displayName: sellerProfile.displayName }
+    : null;
+  res.status(200).json({ data: { user: toFrontendAccount(user, sellerProfile), sellerProfile: sellerProfileResponse } });
 };
 
 export const updateMe: RequestHandler = async (req, res) => {
@@ -142,7 +145,7 @@ export const updateMe: RequestHandler = async (req, res) => {
     },
     select: PUBLIC_USER,
   });
-  const seller = await prisma.sellerProfile.findUnique({ where: { userId }, select: { id: true } });
+  const seller = await prisma.sellerProfile.findUnique({ where: { userId }, select: { id: true, verificationStatus: true } });
   await writeAuditLog(userId, "PROFILE_UPDATED", "USER", userId);
   res.status(200).json({ data: { user: toFrontendAccount(user, seller) } });
 };

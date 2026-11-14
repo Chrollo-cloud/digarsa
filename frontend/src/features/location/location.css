@@ -1,0 +1,267 @@
+.buyer-location,
+.location-fields {
+  min-width: 0;
+  padding: 24px;
+  margin: 24px 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: white;
+  color: var(--color-indigo);
+}
+.buyer-location h2 {
+  font: 700 28px var(--font-display);
+  letter-spacing: -0.04em;
+  margin: 0 0 12px;
+}
+.buyer-location p,
+.location-fields p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--color-muted);
+}
+.buyer-location form,
+.location-fields {
+  display: grid;
+  gap: 16px;
+}
+.buyer-location label,
+.location-fields label {
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.location-fields legend {
+  padding-inline: 8px;
+  font: 700 17px var(--font-display);
+}
+.location-fields p {
+  margin: 0;
+}
+.location-fields small,
+.location-caption {
+  font-size: 10px !important;
+  line-height: 1.8;
+}
+.location-coordinate-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.location-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.location-check {
+  display: flex !important;
+  align-items: start;
+  gap: 10px !important;
+  font-size: 11px;
+  line-height: 1.8;
+  font-weight: 500 !important;
+}
+.location-check input {
+  flex: none;
+  margin-top: 4px;
+  accent-color: var(--color-indigo);
+  width: 16px;
+  height: 16px;
+}
+.location-error,
+.location-success {
+  padding: 14px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.location-error {
+  background: #fff0ed;
+  color: #913a2c;
+}
+.location-success {
+  background: #eaf7f3;
+  color: #285d4c;
+}
+.location-link {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-blue);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.location-map-wrap {
+  min-width: 0;
+  position: relative;
+}
+.location-map {
+  height: 540px;
+  background: #e6eeee;
+  isolation: isolate;
+  z-index: 0;
+  border-radius: 8px;
+}
+.location-map .leaflet-control-attribution {
+  font-size: 10px;
+}
+.location-map-note {
+  font-size: 10px;
+  line-height: 1.8;
+  margin: 10px 0;
+  color: var(--color-muted);
+}
+.location-map-note a {
+  color: var(--color-blue);
+  text-decoration: underline;
+}
+.location-map-error {
+  margin: 8px 0;
+  font-size: 11px;
+  color: #913a2c;
+  line-height: 1.7;
+}
+.location-pin {
+  display: grid !important;
+  place-items: start center;
+  background: transparent;
+  border: 0;
+}
+.location-pin > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 3px;
+  transform: rotate(-45deg);
+  background: var(--color-indigo);
+  border: 3px solid white;
+  color: white;
+  box-shadow: 0 3px 12px #15192940;
+  font: 700 12px var(--font-body);
+}
+.location-pin > span > b {
+  transform: rotate(45deg);
+  font: inherit;
+}
+.location-pin.is-selected > span {
+  background: var(--color-blue);
+  outline: 4px solid var(--color-aqua);
+}
+.location-picker .location-map {
+  height: 300px;
+}
+@media (max-width: 1000px) {
+  .location-map {
+    height: 460px;
+  }
+}
+@media (max-width: 760px) {
+  .location-map {
+    height: 360px;
+  }
+}
+@media (max-width: 480px) {
+  .buyer-location,
+  .location-fields {
+    padding: 18px;
+  }
+  .location-coordinate-fields {
+    grid-template-columns: 1fr;
+  }
+  .location-form-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .location-map * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.location-selection-pin {
+  display: grid !important;
+  place-items: start center;
+  background: transparent;
+  border: 0;
+}
+.location-selection-pin > span {
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 50% 50% 50% 3px; transform: rotate(-45deg);
+  background: var(--color-indigo); color: var(--color-aqua); border: 3px solid white;
+  box-shadow: 0 3px 12px #15192955;
+}
+.location-selection-pin > span > i {
+  transform: rotate(45deg); font: 700 20px/1 var(--font-body); font-style: normal;
+}
+
+/* Interaksi peta */
+.location-map {
+  cursor: grab;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+.location-map:active {
+  cursor: grabbing;
+}
+
+/* Pin lokasi pencarian pembeli */
+.location-map .leaflet-interactive {
+  cursor: pointer;
+}
+
+/* Kontrol zoom Leaflet */
+.location-map .leaflet-control-zoom a {
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-size: 20px;
+}
+
+/* Popup lokasi */
+.location-map .leaflet-popup-content {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Alamat bergaya checkout */
+.location-address {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.location-address legend {
+  padding-inline: 8px;
+  font: 700 15px var(--font-display);
+}
+.location-address__wide {
+  grid-column: 1 / -1;
+}
+.location-address textarea {
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+}
+.location-lookup {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--color-blue);
+}
+@media (max-width: 560px) {
+  .location-address {
+    grid-template-columns: 1fr;
+  }
+}

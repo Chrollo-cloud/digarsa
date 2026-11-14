@@ -27,7 +27,10 @@ export const visibleCatalogWhere = {
   isHidden: false,
   moderationStatus: "APPROVED",
   category: { is: { isActive: true } },
-  seller: { is: { verificationStatus: "APPROVED", user: { is: { accountStatus: "ACTIVE" } } } },
+  seller: { is: {
+    verificationStatus: "APPROVED",
+    user: { is: { accountStatus: "ACTIVE" } },
+  } },
 } satisfies Prisma.ServiceWhereInput;
 
 export function sanitizedLocation(value: Prisma.JsonValue | null | undefined) {
@@ -51,7 +54,8 @@ export function sanitizedLocation(value: Prisma.JsonValue | null | undefined) {
 
 export function isCatalogVisible(row: PublicServiceRow) {
   return row.active && !row.isHidden && row.moderationStatus === "APPROVED"
-    && row.category.isActive && row.seller.verificationStatus === "APPROVED" && row.seller.user.accountStatus === "ACTIVE";
+    && row.category.isActive && row.seller.verificationStatus === "APPROVED"
+    && row.seller.user.accountStatus === "ACTIVE";
 }
 
 export function toPublicService(row: PublicServiceRow) {
@@ -74,13 +78,14 @@ export function toPublicService(row: PublicServiceRow) {
     created_at: row.createdAt.toISOString(),
     updated_at: row.updatedAt.toISOString(),
     studio: row.seller.displayName,
+    seller_image_url: row.seller.image,
     city: row.seller.city,
     public_location: row.delivery === "Onsite" ? sanitizedLocation(internalLocation) : null,
     bookable: isCatalogVisible(row) && row.status === "OPEN",
     source: "seller" as const,
     alt: image ? `Contoh pekerjaan ${row.title}` : null,
     images,
-    avg_rating: row.avgRating,
+    avg_rating: row.reviewCount > 0 ? row.avgRating : null,
     review_count: row.reviewCount,
   };
 }

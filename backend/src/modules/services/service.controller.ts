@@ -3,14 +3,16 @@ import { Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../lib/http.js";
 import { sanitizedLocation } from "../catalog/catalog.service.js";
+import { revisionPolicyDto } from "../bookings/revision-policy.js";
 import {
   availabilitySlotSchema,
-  createMarketplaceServiceSchema,
-  marketplaceServiceListSchema,
+  createServiceSchema,
+  serviceListSchema,
   serviceModerationSchema,
   updateServiceActiveSchema,
-  updateMarketplaceServiceSchema,
-  updateMarketplaceServiceStatusSchema,
+  updateServiceSchema,
+  updateServiceAvailabilitySchema,
+  updateServiceStatusSchema,
   updateServiceVisibilitySchema,
 } from "./service.schema.js";
 
@@ -66,8 +68,9 @@ function toFrontendService(row: ServiceWithCard, publicView = false) {
     publicLocation: sanitizedLocation(seller.publicLocation),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    avgRating: row.avgRating,
+    avgRating: row.reviewCount > 0 ? row.avgRating : null,
     reviewCount: row.reviewCount,
+    revision_policy: revisionPolicyDto(row),
   };
 }
 
@@ -77,39 +80,6 @@ function jsonColumn(value: unknown) {
 
 function timeDate(value: string) {
   return new Date(`1970-01-01T${value}:00.000Z`);
-}
-
-function isSerializationConflict(error: unknown, seen = new Set<object>()): boolean {
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
-    return true;
-  }
-
-  if (typeof error !== "object" || error === null) return false;
-  if (seen.has(error)) return false;
-  seen.add(error);
-  const candidate = error as {
-    code?: unknown;
-    meta?: { code?: unknown };
-    cause?: unknown;
-  };
-  if (candidate.code === "40001" || candidate.meta?.code === "40001") return true;
-  return candidate.cause !== undefined
-    && isSerializationConflict(candidate.cause, seen);
-}
-
-async function withAvailabilityConflictHandling<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (isSerializationConflict(error)) {
-      throw new HttpError(
-        409,
-        "AVAILABILITY_CONFLICT",
-        "Jadwal berubah karena permintaan lain. Muat ulang jadwal lalu coba kembali.",
-      );
-    }
-    throw error;
-  }
 }
 
 function slotDate(value: Date) {
@@ -141,14 +111,17 @@ export async function listCategories(_req: Request, res: Response) {
 }
 
 export async function listServices(req: Request, res: Response) {
-  const parsed = marketplaceServiceListSchema.safeParse(req.query);
+  const parsed = serviceListSchema.safeParse(req.query);
   if (!parsed.success) raiseValidation(parsed.error);
   const { q, category, region, minPrice, maxPrice, sort, page, limit } = parsed.data;
   const where = {
     moderationStatus: "APPROVED" as const,
     isHidden: false,
     active: true,
-    seller: { is: { verificationStatus: "APPROVED" as const, user: { is: { accountStatus: "ACTIVE" as const } } } },
+    seller: { is: {
+      verificationStatus: "APPROVED" as const,
+      user: { is: { accountStatus: "ACTIVE" as const } },
+    } },
     category: { is: { isActive: true, ...(category ? { name: category } : {}) } },
     ...(region ? { region: { contains: region, mode: "insensitive" as const } } : {}),
     ...(minPrice !== undefined || maxPrice !== undefined ? { price: { ...(minPrice !== undefined ? { gte: minPrice } : {}), ...(maxPrice !== undefined ? { lte: maxPrice } : {}) } } : {}),
@@ -166,34 +139,41 @@ export async function listServices(req: Request, res: Response) {
 }
 
 export async function createService(req: Request, res: Response) {
-  const parsed = createMarketplaceServiceSchema.safeParse(req.body);
+  const parsed = createServiceSchema.safeParse(req.body);
   if (!parsed.success) raiseValidation(parsed.error);
   const sellerId = res.locals.sellerProfileId as string;
-  const [seller, category] = await Promise.all([
-    prisma.sellerProfile.findUnique({ where: { id: sellerId }, select: { region: true } }),
-    prisma.category.findUnique({ where: { name: parsed.data.category }, select: { id: true, isActive: true } }),
-  ]);
-  if (!seller) throw new HttpError(404, "SELLER_PROFILE_NOT_FOUND", "Profil seller tidak ditemukan.");
-  if (!category?.isActive) throw new HttpError(400, "INVALID_CATEGORY", "Kategori tidak tersedia.");
   const input = parsed.data;
-  const service = await prisma.service.create({
-    data: {
-      sellerId,
-      categoryId: category.id,
-      title: input.title,
-      description: input.description,
-      price: input.price,
-      delivery: input.delivery,
-      turnaround: input.turnaround,
-      image: input.image,
-      region: seller.region,
-      status: input.availability === "Full-book" ? "FULL_BOOK" : "OPEN",
-      active: true,
-      ...(input.serviceLocation !== undefined ? { serviceLocation: jsonColumn(input.serviceLocation) } : {}),
-    },
-    include: serviceCard,
+  const service = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "SellerProfile" WHERE "id" = ${sellerId} FOR UPDATE`;
+    const [seller, category] = await Promise.all([
+      tx.sellerProfile.findUnique({ where: { id: sellerId }, select: { region: true } }),
+      tx.category.findUnique({ where: { name: input.category }, select: { id: true, isActive: true } }),
+    ]);
+    if (!seller) throw new HttpError(404, "SELLER_PROFILE_NOT_FOUND", "Profil seller tidak ditemukan.");
+    if (!category?.isActive) throw new HttpError(400, "INVALID_CATEGORY", "Kategori tidak tersedia.");
+    const created = await tx.service.create({
+      data: {
+        sellerId,
+        categoryId: category.id,
+        title: input.title,
+        description: input.description,
+        price: input.price,
+        delivery: input.delivery,
+        turnaround: input.turnaround,
+        revisionFreeCount: input.revisionFreeCount,
+        revisionRequestWindowHours: input.revisionRequestWindowHours,
+        revisionTerms: input.revisionTerms,
+        image: input.image,
+        region: seller.region,
+        status: input.availability === "Full-book" ? "FULL_BOOK" : "OPEN",
+        active: true,
+        ...(input.serviceLocation !== undefined ? { serviceLocation: jsonColumn(input.serviceLocation) } : {}),
+      },
+      include: serviceCard,
+    });
+    await tx.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_CREATED", targetType: "SERVICE", targetId: created.id } });
+    return created;
   });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_CREATED", targetType: "SERVICE", targetId: service.id } });
   res.status(201).json({ data: toFrontendService(service) });
 }
 
@@ -207,8 +187,11 @@ export async function getServiceById(req: Request, res: Response) {
   const item = await prisma.service.findFirst({
     where: {
       id: serviceId(req), moderationStatus: "APPROVED", isHidden: false, active: true,
-      seller: { is: { verificationStatus: "APPROVED", user: { is: { accountStatus: "ACTIVE" } } } },
       category: { is: { isActive: true } },
+      seller: { is: {
+        verificationStatus: "APPROVED",
+        user: { is: { accountStatus: "ACTIVE" } },
+      } },
     },
     include: serviceCard,
   });
@@ -217,41 +200,55 @@ export async function getServiceById(req: Request, res: Response) {
 }
 
 export async function updateService(req: Request, res: Response) {
-  const parsed = updateMarketplaceServiceSchema.safeParse(req.body);
+  const parsed = updateServiceSchema.safeParse(req.body);
   if (!parsed.success) raiseValidation(parsed.error);
   const id = serviceId(req);
   const sellerId = res.locals.sellerProfileId as string;
-  const [existing, category] = await Promise.all([
-    prisma.service.findUnique({ where: { id }, include: { category: { select: { id: true, name: true } } } }),
-    parsed.data.category ? prisma.category.findUnique({ where: { name: parsed.data.category }, select: { id: true, isActive: true } }) : null,
-  ]);
-  if (!existing) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
-  if (existing.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
-  if (parsed.data.category && !category?.isActive) throw new HttpError(400, "INVALID_CATEGORY", "Kategori tidak tersedia.");
-  const contentChanged = (parsed.data.title !== undefined && parsed.data.title !== existing.title)
-    || (parsed.data.description !== undefined && parsed.data.description !== existing.description)
-    || (parsed.data.image !== undefined && parsed.data.image !== existing.image)
-    || (parsed.data.delivery !== undefined && parsed.data.delivery !== existing.delivery)
-    || (parsed.data.turnaround !== undefined && parsed.data.turnaround !== existing.turnaround)
-    || (parsed.data.category !== undefined && parsed.data.category !== existing.category.name);
   const input = parsed.data;
-  const updated = await prisma.service.update({
-    where: { id },
-    data: {
-      ...(input.title !== undefined ? { title: input.title } : {}),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(input.price !== undefined ? { price: input.price } : {}),
-      ...(input.category !== undefined && category ? { categoryId: category.id } : {}),
-      ...(input.delivery !== undefined ? { delivery: input.delivery } : {}),
-      ...(input.turnaround !== undefined ? { turnaround: input.turnaround } : {}),
-      ...(input.image !== undefined ? { image: input.image } : {}),
-      ...(input.availability !== undefined ? { status: input.availability === "Full-book" ? "FULL_BOOK" : "OPEN" } : {}),
-      ...(Object.hasOwn(input, "serviceLocation") ? { serviceLocation: jsonColumn(input.serviceLocation) } : {}),
-      ...(contentChanged ? { moderationStatus: "PENDING", moderationNote: null, moderatedById: null, moderatedAt: null } : {}),
-    },
-    include: serviceCard,
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "SellerProfile" WHERE "id" = ${sellerId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT "id" FROM "Service" WHERE "id" = ${id} FOR UPDATE`;
+    const existing = await tx.service.findUnique({ where: { id }, include: { category: { select: { id: true, name: true } } } });
+    if (!existing) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
+    if (existing.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
+    const category = input.category
+      ? await tx.category.findUnique({ where: { name: input.category }, select: { id: true, isActive: true } })
+      : null;
+    if (input.category && !category?.isActive) throw new HttpError(400, "INVALID_CATEGORY", "Kategori tidak tersedia.");
+    const contentChanged = (input.title !== undefined && input.title !== existing.title)
+      || (input.description !== undefined && input.description !== existing.description)
+      || (input.image !== undefined && input.image !== existing.image)
+      || (input.category !== undefined && input.category !== existing.category.name);
+    const revisionPolicyChanged = input.revisionFreeCount !== undefined && (
+      input.revisionFreeCount !== existing.revisionFreeCount
+      || input.revisionRequestWindowHours !== existing.revisionRequestWindowHours
+      || input.revisionTerms !== existing.revisionTerms
+    );
+    const service = await tx.service.update({
+      where: { id },
+      data: {
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.price !== undefined ? { price: input.price } : {}),
+        ...(input.category !== undefined && category ? { categoryId: category.id } : {}),
+        ...(input.delivery !== undefined ? { delivery: input.delivery } : {}),
+        ...(input.turnaround !== undefined ? { turnaround: input.turnaround } : {}),
+        ...(input.revisionFreeCount !== undefined ? {
+          revisionFreeCount: input.revisionFreeCount,
+          revisionRequestWindowHours: input.revisionRequestWindowHours!,
+          revisionTerms: input.revisionTerms!,
+          ...(revisionPolicyChanged ? { revisionPolicyVersion: { increment: 1 } } : {}),
+        } : {}),
+        ...(input.image !== undefined ? { image: input.image } : {}),
+        ...(input.availability !== undefined ? { status: input.availability === "Full-book" ? "FULL_BOOK" : "OPEN" } : {}),
+        ...(Object.hasOwn(input, "serviceLocation") ? { serviceLocation: jsonColumn(input.serviceLocation) } : {}),
+        ...(contentChanged ? { moderationStatus: "PENDING", moderationNote: null, moderatedById: null, moderatedAt: null } : {}),
+      },
+      include: serviceCard,
+    });
+    await tx.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_UPDATED", targetType: "SERVICE", targetId: id } });
+    return service;
   });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_UPDATED", targetType: "SERVICE", targetId: id } });
   res.status(200).json({ data: toFrontendService(updated) });
 }
 
@@ -262,15 +259,35 @@ async function ownedService(id: string, sellerId: string) {
 }
 
 export async function updateServiceStatus(req: Request, res: Response) {
-  const parsed = updateMarketplaceServiceStatusSchema.safeParse(req.body);
+  const parsed = updateServiceStatusSchema.safeParse(req.body);
   if (!parsed.success) raiseValidation(parsed.error);
   const id = serviceId(req);
   const sellerId = res.locals.sellerProfileId as string;
-  await ownedService(id, sellerId);
   const availability = parsed.data.availability;
-  const updated = await prisma.service.update({ where: { id }, data: { status: availability === "Full-book" || availability === "FULL_BOOK" ? "FULL_BOOK" : "OPEN" }, include: serviceCard });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_AVAILABILITY_UPDATED", targetType: "SERVICE", targetId: id } });
+  const updated = await setServiceAvailability(id, sellerId, availability === "Full-book" || availability === "FULL_BOOK" ? "FULL_BOOK" : "OPEN", auth(res).userId);
   res.status(200).json({ data: toFrontendService(updated) });
+}
+
+export async function updateSellerServiceAvailability(req: Request, res: Response) {
+  const parsed = updateServiceAvailabilitySchema.safeParse(req.body);
+  if (!parsed.success) raiseValidation(parsed.error);
+  const id = typeof req.params.service_id === "string" ? req.params.service_id : "";
+  if (!id) throw new HttpError(400, "SERVICE_ID_REQUIRED", "ID layanan wajib diisi.");
+  const sellerId = res.locals.sellerProfileId as string;
+  const updated = await setServiceAvailability(id, sellerId, parsed.data.status, auth(res).userId);
+  res.status(200).json({ data: { service_id: updated.id, status: updated.status } });
+}
+
+async function setServiceAvailability(id: string, sellerId: string, status: "OPEN" | "FULL_BOOK", userId: string) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Service" WHERE "id" = ${id} FOR UPDATE`;
+    const existing = await tx.service.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!existing) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
+    if (existing.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
+    const updated = await tx.service.update({ where: { id }, data: { status }, include: serviceCard });
+    await tx.activityLog.create({ data: { userId, action: "SERVICE_AVAILABILITY_UPDATED", targetType: "SERVICE", targetId: id } });
+    return updated;
+  });
 }
 
 export async function updateServiceVisibility(req: Request, res: Response) {
@@ -278,9 +295,15 @@ export async function updateServiceVisibility(req: Request, res: Response) {
   if (!parsed.success) raiseValidation(parsed.error);
   const id = serviceId(req);
   const sellerId = res.locals.sellerProfileId as string;
-  await ownedService(id, sellerId);
-  const updated = await prisma.service.update({ where: { id }, data: parsed.data, include: serviceCard });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: parsed.data.isHidden ? "SERVICE_HIDDEN" : "SERVICE_UNHIDDEN", targetType: "SERVICE", targetId: id } });
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Service" WHERE "id" = ${id} FOR UPDATE`;
+    const existing = await tx.service.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!existing) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
+    if (existing.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
+    const service = await tx.service.update({ where: { id }, data: parsed.data, include: serviceCard });
+    await tx.activityLog.create({ data: { userId: auth(res).userId, action: parsed.data.isHidden ? "SERVICE_HIDDEN" : "SERVICE_UNHIDDEN", targetType: "SERVICE", targetId: id } });
+    return service;
+  });
   res.status(200).json({ data: toFrontendService(updated) });
 }
 
@@ -289,24 +312,34 @@ export async function updateServiceActive(req: Request, res: Response) {
   if (!parsed.success) raiseValidation(parsed.error);
   const id = serviceId(req);
   const sellerId = res.locals.sellerProfileId as string;
-  await ownedService(id, sellerId);
-  const updated = await prisma.service.update({ where: { id }, data: { active: parsed.data.active }, include: serviceCard });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: parsed.data.active ? "SERVICE_ACTIVATED" : "SERVICE_DEACTIVATED", targetType: "SERVICE", targetId: id } });
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Service" WHERE "id" = ${id} FOR UPDATE`;
+    const existing = await tx.service.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!existing) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
+    if (existing.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
+    const service = await tx.service.update({ where: { id }, data: { active: parsed.data.active }, include: serviceCard });
+    await tx.activityLog.create({ data: { userId: auth(res).userId, action: parsed.data.active ? "SERVICE_ACTIVATED" : "SERVICE_DEACTIVATED", targetType: "SERVICE", targetId: id } });
+    return service;
+  });
   res.status(200).json({ data: toFrontendService(updated) });
 }
 
 export async function deleteService(req: Request, res: Response) {
   const id = serviceId(req);
   const sellerId = res.locals.sellerProfileId as string;
-  await ownedService(id, sellerId);
-  const activeCount = await prisma.booking.count({ where: { serviceId: id, status: { in: ["REQUESTED", "ACCEPTED", "PAID", "DELIVERED"] } } });
-  if (activeCount > 0) throw new HttpError(409, "ACTIVE_BOOKINGS_EXIST", "Layanan masih memiliki booking aktif.");
-  const bookingCount = await prisma.booking.count({ where: { serviceId: id } });
-  const retainedForBookingHistory = bookingCount > 0;
-  if (retainedForBookingHistory) await prisma.service.update({ where: { id }, data: { active: false } });
-  else await prisma.service.delete({ where: { id } });
-  await prisma.activityLog.create({ data: { userId: auth(res).userId, action: retainedForBookingHistory ? "SERVICE_DEACTIVATED" : "SERVICE_DELETED", targetType: "SERVICE", targetId: id } });
-  res.status(200).json({ data: { message: retainedForBookingHistory ? "Layanan dinonaktifkan karena memiliki riwayat booking." : "Layanan berhasil dihapus." } });
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "SellerProfile" WHERE "id" = ${sellerId} FOR UPDATE`;
+    const service = await tx.service.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!service) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
+    if (service.sellerId !== sellerId) throw new HttpError(403, "FORBIDDEN", "Anda tidak memiliki akses ke layanan ini.");
+    const activeCount = await tx.booking.count({ where: { serviceId: id, status: { in: ["REQUESTED", "ACCEPTED", "PAID", "DELIVERED"] } } });
+    if (activeCount > 0) throw new HttpError(409, "ACTIVE_BOOKINGS_EXIST", "Layanan masih memiliki booking aktif.");
+    const bookingCount = await tx.booking.count({ where: { serviceId: id } });
+    if (bookingCount > 0) await tx.service.update({ where: { id }, data: { active: false } });
+    else await tx.service.delete({ where: { id } });
+    await tx.activityLog.create({ data: { userId: auth(res).userId, action: "SERVICE_DELETED", targetType: "SERVICE", targetId: id } });
+  });
+  res.status(200).json({ data: { message: "Layanan berhasil dihapus." } });
 }
 
 export async function listServicesForModeration(req: Request, res: Response) {
@@ -357,14 +390,14 @@ export async function createAvailability(req: Request, res: Response) {
   const sellerId = res.locals.sellerProfileId as string;
   await ownedService(id, sellerId);
   const date = new Date(`${parsed.data.date}T00:00:00.000Z`);
-  const slot = await withAvailabilityConflictHandling(() => prisma.$transaction(async (tx) => {
+  const slot = await prisma.$transaction(async (tx) => {
     const overlap = await tx.sellerAvailabilitySlot.findFirst({
       where: { serviceId: id, date, startTime: { lt: timeDate(parsed.data.endTime) }, endTime: { gt: timeDate(parsed.data.startTime) } },
       select: { id: true },
     });
     if (overlap) throw new HttpError(409, "AVAILABILITY_OVERLAP", "Jadwal bertabrakan dengan slot yang sudah dibuat.");
     return tx.sellerAvailabilitySlot.create({ data: { serviceId: id, sellerId, date, startTime: timeDate(parsed.data.startTime), endTime: timeDate(parsed.data.endTime), note: parsed.data.note } });
-  }, { isolationLevel: "Serializable" }));
+  }, { isolationLevel: "Serializable" });
   res.status(201).json({ data: toFrontendSlot(slot, auth(res).userId) });
 }
 
@@ -377,7 +410,7 @@ export async function updateAvailability(req: Request, res: Response) {
   const sellerId = res.locals.sellerProfileId as string;
   await ownedService(id, sellerId);
   const date = new Date(`${parsed.data.date}T00:00:00.000Z`);
-  const slot = await withAvailabilityConflictHandling(() => prisma.$transaction(async (tx) => {
+  const slot = await prisma.$transaction(async (tx) => {
     const existing = await tx.sellerAvailabilitySlot.findFirst({ where: { id: slotId, serviceId: id, sellerId }, select: { id: true } });
     if (!existing) throw new HttpError(404, "AVAILABILITY_NOT_FOUND", "Jadwal tidak ditemukan.");
     const overlap = await tx.sellerAvailabilitySlot.findFirst({
@@ -386,7 +419,7 @@ export async function updateAvailability(req: Request, res: Response) {
     });
     if (overlap) throw new HttpError(409, "AVAILABILITY_OVERLAP", "Jadwal bertabrakan dengan slot yang sudah dibuat.");
     return tx.sellerAvailabilitySlot.update({ where: { id: slotId }, data: { date, startTime: timeDate(parsed.data.startTime), endTime: timeDate(parsed.data.endTime), note: parsed.data.note } });
-  }, { isolationLevel: "Serializable" }));
+  }, { isolationLevel: "Serializable" });
   res.status(200).json({ data: toFrontendSlot(slot, auth(res).userId) });
 }
 

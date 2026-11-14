@@ -1,0 +1,38 @@
+:root {
+  --color-indigo: #464B71;
+  --color-blue: #118AB2;
+  --color-aqua: #7CD5C7;
+  --color-paper: #F2F2ED;
+  --color-ink: #151929;
+  --color-ink-soft: #171A2B;
+  --color-navy: #232946;
+  --color-cyan: #BCECF4;
+  --color-cyan-pale: #D5F2F5;
+  --color-card-back: #26314F;
+  --color-electric: #102FFF;
+  --color-white: #FFFFFF;
+  --color-muted: #5F6675;
+  --color-border: rgba(70, 75, 113, .15);
+  --color-nav: rgba(20, 30, 102, .45);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-metadata: 'DM Mono', monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 100px;
+  --radius-control: 4px;
+  --radius-button: 5px;
+  --radius-panel: 7px;
+  --radius-card: 9px;
+  --nav-height: 76px;
+}
+
+@media (max-width: 760px) {
+  :root { --nav-height: 65px; }
+}

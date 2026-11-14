@@ -1,0 +1,514 @@
+/* Shared shell for Seller Center and Admin Dashboard (Phase 7). Prefix: ws- */
+.ws-page {
+  background: var(--color-paper);
+  color: var(--color-ink-soft);
+  min-height: 70vh;
+}
+.ws-shell {
+  width: min(1120px, calc(100% - 48px));
+  margin-inline: auto;
+  padding: 46px 0 90px;
+}
+.ws-kicker {
+  display: block;
+  color: var(--color-blue);
+  font: 700 10px/1.6 var(--font-display);
+  letter-spacing: 0.12em;
+}
+.ws-heading {
+  max-width: 850px;
+  margin-bottom: 26px;
+}
+.ws-heading h1 {
+  margin: 8px 0 10px;
+  font: 700 clamp(36px, 5.5vw, 62px)/1.05 var(--font-display);
+  letter-spacing: -0.055em;
+  color: var(--color-indigo);
+  overflow-wrap: anywhere;
+}
+.ws-page p {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.ws-heading p {
+  margin: 0;
+  max-width: 640px;
+}
+.ws-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.ws-nav a {
+  flex: none;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-indigo);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-nav a:hover {
+  border-color: var(--color-blue);
+  color: var(--color-blue);
+}
+.ws-nav a[aria-current="page"] {
+  background: var(--color-indigo);
+  border-color: var(--color-indigo);
+  color: var(--color-white);
+}
+.ws-alert,
+.ws-notice,
+.ws-success {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 4px;
+  font-size: 13px !important;
+  line-height: 1.6;
+}
+.ws-alert {
+  background: #fff0ed;
+  color: #9b3a2a !important;
+}
+.ws-success {
+  background: #e9f7f0;
+  color: #28724a !important;
+}
+.ws-notice {
+  background: #e8f5f2;
+  color: #40575b !important;
+}
+.ws-demo {
+  margin-top: 36px;
+  font-size: 11px !important;
+}
+.ws-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.ws-stat {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-white);
+}
+a.ws-stat:hover {
+  border-color: var(--color-blue);
+}
+.ws-stat span {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.ws-stat strong {
+  font: 700 clamp(26px, 3.4vw, 36px)/1.1 var(--font-display);
+  color: var(--color-indigo);
+  overflow-wrap: anywhere;
+}
+.ws-stat small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+.ws-section {
+  margin-top: 36px;
+  padding-top: 26px;
+  border-top: 1px solid var(--color-border);
+}
+.ws-section > header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 20px;
+  margin-bottom: 16px;
+}
+.ws-page h2 {
+  margin: 4px 0;
+  color: var(--color-indigo);
+  letter-spacing: -0.04em;
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.15;
+}
+.ws-page h3 {
+  margin: 0;
+  color: var(--color-indigo);
+  letter-spacing: -0.02em;
+}
+.ws-link,
+.ws-section > header a {
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-panel,
+.ws-empty {
+  min-width: 0;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-white);
+}
+.ws-empty h2 {
+  margin: 0 0 10px;
+}
+.ws-empty .button {
+  margin-top: 8px;
+}
+.ws-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 18px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-white);
+}
+.ws-row h3 {
+  font-size: 16px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.ws-row p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.ws-row__side {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+.ws-row__side a,
+.ws-row__actions a {
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-price {
+  font: 700 15px var(--font-display);
+  color: var(--color-indigo);
+  white-space: nowrap;
+}
+.ws-status {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: #eaf0fb;
+  color: #345184;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ws-status.is-accepted,
+.ws-status.is-paid,
+.ws-status.is-completed,
+.ws-status.is-open,
+.ws-status.is-live {
+  background: #e9f7f0;
+  color: #28724a;
+}
+.ws-status.is-declined,
+.ws-status.is-cancelled,
+.ws-status.is-hidden {
+  background: #fff0ed;
+  color: #9b3a2a;
+}
+.ws-status.is-full-book,
+.ws-status.is-closed {
+  background: #f1efe6;
+  color: #6a5f3a;
+}
+.ws-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+.ws-toolbar .field {
+  min-width: 200px;
+}
+.ws-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.ws-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  align-items: start;
+}
+.ws-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  margin: 20px 0;
+}
+.ws-facts dt {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+.ws-facts dd {
+  margin: 4px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.ws-preline {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.ws-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+.ws-timeline li {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-top: 3px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.ws-timeline li.is-reached {
+  border-color: var(--color-aqua);
+  color: var(--color-indigo);
+}
+.ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.ws-actions .button {
+  justify-content: center;
+}
+.button--danger {
+  background: transparent;
+  color: #9b3a2a;
+  border-color: #9b3a2a;
+}
+.ws-form {
+  display: grid;
+  gap: 18px;
+}
+.ws-form textarea.field__control {
+  resize: vertical;
+  min-height: 110px;
+}
+.ws-form .field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.ws-service {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-white);
+}
+.ws-service > img {
+  width: 96px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--color-cyan-pale);
+}
+.ws-service h3 {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.ws-service p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.ws-service__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ws-service__actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+.ws-service__actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.ws-link-button {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-link-button.is-danger {
+  color: #9b3a2a;
+}
+.ws-switch {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ws-switch button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 0;
+  background: var(--color-white);
+  color: var(--color-indigo);
+  font-size: 11px;
+  font-weight: 700;
+}
+.ws-switch button[aria-pressed="true"] {
+  background: var(--color-indigo);
+  color: var(--color-white);
+}
+.ws-inline-confirm {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 4px;
+  background: #fff0ed;
+  font-size: 12px;
+}
+.ws-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-white);
+}
+.ws-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ws-table th,
+.ws-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.ws-table th {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.ws-table tr:last-child td {
+  border-bottom: 0;
+}
+.ws-table td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+.ws-profile-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+.ws-profile-card img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-cyan-pale);
+}
+.ws-avatar {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-indigo);
+  color: var(--color-white);
+  font: 700 24px var(--font-display);
+}
+.ws-back {
+  display: inline-block;
+  padding-bottom: 18px;
+  color: var(--color-blue);
+  font-size: 12px;
+  font-weight: 700;
+}
+@media (max-width: 900px) {
+  .ws-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ws-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .ws-shell {
+    width: calc(100% - 36px);
+    padding-top: 30px;
+  }
+  .ws-grid-2,
+  .ws-facts,
+  .ws-form .field-pair {
+    grid-template-columns: 1fr;
+  }
+  .ws-timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ws-row {
+    grid-template-columns: 1fr;
+  }
+  .ws-row__side {
+    justify-content: flex-start;
+  }
+  .ws-service {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .ws-service > img {
+    width: 72px;
+    height: 64px;
+  }
+  .ws-service__actions {
+    grid-column: 1/-1;
+    justify-items: start;
+  }
+  .ws-service__actions > div {
+    justify-content: flex-start;
+  }
+}

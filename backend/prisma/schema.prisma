@@ -26,6 +26,13 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum SellerActivationReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
 enum ModerationStatus {
   PENDING
   APPROVED
@@ -52,15 +59,75 @@ enum BookingStatus {
 enum PaymentStatus {
   PENDING
   PAID
+  DEMO_PAID
   FAILED
   EXPIRED
+  REFUND_PENDING
   REFUNDED
 }
 
 enum PayoutStatus {
   NONE
   HELD
+  ELIGIBLE
   RELEASED
+}
+
+enum AdditionalRevisionRequestStatus {
+  OPEN
+  CLARIFICATION_REQUIRED
+  OFFERED
+  REJECTED
+  WITHDRAWN
+  AGREED
+  CLOSED
+}
+
+enum AdditionalRevisionOfferStatus {
+  ACTIVE
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+enum AdditionalRevisionAgreementStatus {
+  AWAITING_PAYMENT
+  FUNDED
+  IN_PROGRESS
+  DELIVERED
+  IN_REVIEW
+  COMPLETED
+  DISPUTED
+  CANCELLATION_PENDING
+  CANCELLED
+  DEMO_FUNDED
+  DEMO_IN_PROGRESS
+  DEMO_IN_REVIEW
+  DEMO_COMPLETED
+}
+
+enum PaymentProvenance {
+  REAL_PROVIDER
+  DEMO_SIMULATION
+}
+
+enum PaymentRefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REVERSED
+}
+
+enum SellerPayoutStatus {
+  HELD
+  ELIGIBLE
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  REVERSED
+  COMPLIANCE_HOLD
 }
 
 enum FlagSeverity {
@@ -77,6 +144,7 @@ enum NotificationType {
   SELLER_VERIFICATION
   SERVICE_MODERATION
   COMPLAINT
+  SELLER_ACTIVATION_REVIEW
 }
 
 enum ReportTarget {
@@ -94,62 +162,146 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum CancellationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DisputeCategory {
+  SERVICE_NOT_AS_DESCRIBED
+  DELIVERY_ISSUE
+  REVISION_ISSUE
+  CANCELLATION_ISSUE
+  OTHER
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_REVIEW
+  WAITING_CUSTOMER
+  WAITING_SELLER
+  DECIDED
+}
+
+enum DisputeNextAction {
+  CONTINUE_BOOKING
+  RETURN_TO_REVISION
+  CANCEL_BOOKING
+}
+
+enum DisputeClarificationRecipient {
+  CUSTOMER
+  SELLER
+}
+
+enum DisputeClarificationStatus {
+  PENDING
+  RESPONDED
+  CLOSED_WITHOUT_RESPONSE
+}
+
+enum DisputeRevisionAuthorizationStatus {
+  AVAILABLE
+  USED
+  REVOKED
+}
+
+enum AppealStatus {
+  SUBMITTED
+  IN_REVIEW
+  DECIDED
+}
+
+enum AppealOutcome {
+  UPHELD
+  MODIFIED
+}
+
 // ───────────── AKUN ─────────────
 
 model User {
-  id            String        @id @default(uuid())
-  email         String        @unique
-  passwordHash  String
-  name          String
-  phone         String?
-  birthDate     DateTime?     @db.Date
-  gender        String?
-  role          Role          @default(USER)
-  accountStatus AccountStatus @default(ACTIVE)
-  region        String?
-  lat           Float?
-  lng           Float?
-  avatarUrl     String?
+  id                String        @id @default(uuid())
+  email             String        @unique
+  passwordHash      String
+  name              String
+  phone             String?
+  birthDate         DateTime?     @db.Date
+  gender            String?
+  role              Role          @default(USER)
+  accountStatus     AccountStatus @default(ACTIVE)
+  region            String?
+  lat               Float?
+  lng               Float?
+  avatarUrl         String?
   discoveryLocation Json?
-  tokenVersion  Int           @default(0) // naikkan untuk membatalkan semua token lama
-  lastLoginAt   DateTime?
-  deletedAt     DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  tokenVersion      Int           @default(0) // naikkan untuk membatalkan semua token lama
+  lastLoginAt       DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   sellerProfile SellerProfile?
+  additionalRevisionRequests AdditionalRevisionRequest[] @relation("AdditionalRevisionCustomer")
+  additionalRevisionAgreements AdditionalRevisionAgreement[] @relation("AdditionalRevisionAgreementCustomer")
+  additionalRevisionEvents AdditionalRevisionEvent[] @relation("AdditionalRevisionEventActor")
 
   // relasi balik
-  passwordResets PasswordReset[]
-  verificationsReviewed SellerVerification[] @relation("VerificationReviewer")
-  servicesModerated Service[] @relation("ServiceModerator")
-  favorites Favorite[]
-  cartItems CartItem[]
-  serviceViews ServiceView[]
-  bookingsAsCustomer Booking[] @relation("BookingCustomer")
-  reviewsWritten Review[] @relation("ReviewAuthor")
-  conversationsAsCustomer Conversation[] @relation("ConversationCustomer")
-  messagesSent Message[] @relation("MessageSender")
-  notifications Notification[]
-  reportsFiled Report[] @relation("ReportReporter")
-  reportsResolved Report[] @relation("ReportResolver")
-  feedbacks Feedback[]
-  activityLogs ActivityLog[]
+  passwordResets               PasswordReset[]
+  verificationsReviewed        SellerVerification[]     @relation("VerificationReviewer")
+  activationReviewsSubmitted   SellerActivationReview[] @relation("ActivationReviewSubmitter")
+  activationReviewsReviewed    SellerActivationReview[] @relation("ActivationReviewReviewer")
+  servicesModerated            Service[]                @relation("ServiceModerator")
+  favorites                    Favorite[]
+  cartItems                    CartItem[]
+  serviceViews                 ServiceView[]
+  bookingsAsCustomer           Booking[]                @relation("BookingCustomer")
+  reviewsWritten               Review[]                 @relation("ReviewAuthor")
+  conversationsAsCustomer      Conversation[]           @relation("ConversationCustomer")
+  messagesSent                 Message[]                @relation("MessageSender")
+  notifications                Notification[]
+  reportsFiled                 Report[]                 @relation("ReportReporter")
+  reportsResolved              Report[]                 @relation("ReportResolver")
+  feedbacks                    Feedback[]
+  activityLogs                 ActivityLog[]
+  bookingStatusEvents          BookingStatusEvent[]
+  cancellationRequestsFiled    CancellationRequest[]    @relation("CancellationRequester")
+  cancellationRequestsReviewed CancellationRequest[]    @relation("CancellationReviewer")
+  bookingOperationReceipts     BookingOperationReceipt[]
+  deliveryCycleReceipts        DeliveryCycleCompletionReceipt[]
+  reviewTimerPausesStarted     BookingReviewPauseInterval[] @relation("ReviewTimerPauseStarter")
+  reviewTimerPausesEnded       BookingReviewPauseInterval[] @relation("ReviewTimerPauseEnder")
+  deliveryCyclePausesStarted   DeliveryCyclePauseInterval[] @relation("DeliveryCyclePauseStarter")
+  deliveryCyclePausesEnded     DeliveryCyclePauseInterval[] @relation("DeliveryCyclePauseEnder")
+  disputesCreated              Dispute[] @relation("DisputeCreator")
+  disputesDecided               Dispute[] @relation("DisputeDecisionAdmin")
+  disputeEvents                 DisputeEvent[] @relation("DisputeEventActor")
+  disputeClarificationsAsked    DisputeClarification[] @relation("DisputeClarificationRequester")
+  disputeClarificationsAnswered DisputeClarification[] @relation("DisputeClarificationResponder")
+  disputeClarificationsReceived DisputeClarification[] @relation("DisputeClarificationRecipientUser")
+  disputeClarificationsClosed   DisputeClarification[] @relation("DisputeClarificationCloser")
+  disputeReportEvidenceLinks    DisputeReportEvidence[] @relation("DisputeReportLinker")
+  disputeMessageEvidenceLinks   DisputeMessageEvidence[] @relation("DisputeMessageLinker")
+  disputeEvidenceAccesses       DisputeEvidenceAccess[] @relation("DisputeEvidenceViewer")
+  appealsSubmitted              DisputeAppeal[] @relation("AppealAppellant")
+  appealsAssigned               DisputeAppeal[] @relation("AppealReviewer")
+  appealsAssignedBy             DisputeAppeal[] @relation("AppealAssigner")
+  appealEvents                  DisputeAppealEvent[] @relation("AppealEventActor")
 }
 
 model PasswordReset {
-  id                   String    @id @default(uuid())
-  userId               String
-  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  otpHash              String
-  attempts             Int       @default(0)
-  expiresAt            DateTime
-  verifiedAt           DateTime?
-  resetTokenHash       String?
-  resetTokenExpiresAt  DateTime?
-  usedAt               DateTime?
-  requestIp            String?
-  createdAt            DateTime  @default(now())
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otpHash             String
+  attempts            Int       @default(0)
+  expiresAt           DateTime
+  verifiedAt          DateTime?
+  resetTokenHash      String?
+  resetTokenExpiresAt DateTime?
+  usedAt              DateTime?
+  requestIp           String?
+  createdAt           DateTime  @default(now())
 
   @@index([userId, createdAt])
 }
@@ -160,11 +312,14 @@ model SellerProfile {
   id                 String             @id @default(uuid())
   userId             String             @unique
   user               User               @relation(fields: [userId], references: [id])
+  additionalRevisionRequests AdditionalRevisionRequest[] @relation("AdditionalRevisionSeller")
+  additionalRevisionAgreements AdditionalRevisionAgreement[] @relation("AdditionalRevisionAgreementSeller")
   displayName        String // = store_name di frontend
   category           String             @default("Branding")
   city               String             @default("")
   bio                String? // = description di frontend
   image              String?
+  coverImage         String?
   specialties        String[]           @default([])
   portfolioLink      String?
   publicLocation     Json?
@@ -178,14 +333,15 @@ model SellerProfile {
   updatedAt          DateTime           @updatedAt
 
   // relasi balik
-  sellerVerifications SellerVerification[]
+  sellerVerifications    SellerVerification[]
+  activationReviews      SellerActivationReview[]
   sellerUnavailableDates SellerUnavailableDate[]
-  availabilitySlots SellerAvailabilitySlot[]
-  portfolioItems PortfolioItem[]
-  services Service[]
-  bookings Booking[]
-  reviews Review[]
-  conversations Conversation[]
+  availabilitySlots      SellerAvailabilitySlot[]
+  portfolioItems         PortfolioItem[]
+  services               Service[]
+  bookings               Booking[]
+  reviews                Review[]
+  conversations          Conversation[]
 }
 
 model SellerVerification {
@@ -204,6 +360,30 @@ model SellerVerification {
 
   @@index([sellerId, status])
   @@index([status, submittedAt])
+}
+
+// Non-government-ID seller activation review; independent of legacy SellerVerification.
+model SellerActivationReview {
+  id                    String                       @id @default(uuid())
+  sellerId              String
+  seller                SellerProfile                @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  submittedById         String
+  submittedBy           User                         @relation("ActivationReviewSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  status                SellerActivationReviewStatus @default(PENDING)
+  activeSellerId        String?                      @unique
+  profileSnapshot       Json                         @db.JsonB
+  portfolioSnapshot     Json                         @db.JsonB
+  serviceOffersSnapshot Json                         @db.JsonB
+  snapshotHash          String
+  submittedAt           DateTime                     @default(now())
+  reviewedById          String?
+  reviewedBy            User?                        @relation("ActivationReviewReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt            DateTime?
+  rejectionReason       String?
+  withdrawnAt           DateTime?
+
+  @@index([sellerId, submittedAt, id])
+  @@index([status, submittedAt, id])
 }
 
 model SellerUnavailableDate {
@@ -269,6 +449,10 @@ model Service {
   price             Int
   delivery          String           @default("Remote")
   turnaround        String           @default("Belum ditentukan")
+  revisionPolicyVersion       Int      @default(1)
+  revisionFreeCount           Int?
+  revisionRequestWindowHours  Int?
+  revisionTerms               String?
   image             String?
   active            Boolean          @default(true)
   serviceLocation   Json?
@@ -289,19 +473,19 @@ model Service {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
+  // relasi balik
+  serviceImages     ServiceImage[]
+  favorites         Favorite[]
+  cartItems         CartItem[]
+  serviceViews      ServiceView[]
+  bookings          Booking[]
+  reviews           Review[]
+  conversations     Conversation[]
+  availabilitySlots SellerAvailabilitySlot[]
+
   @@index([status, categoryId, region])
   @@index([moderationStatus, isHidden])
   @@index([price])
-
-  // relasi balik
-  serviceImages ServiceImage[]
-  favorites Favorite[]
-  cartItems CartItem[]
-  serviceViews ServiceView[]
-  bookings Booking[]
-  reviews Review[]
-  conversations Conversation[]
-  availabilitySlots SellerAvailabilitySlot[]
 }
 
 model ServiceImage {
@@ -358,25 +542,990 @@ model Booking {
   customer      User          @relation("BookingCustomer", fields: [customerId], references: [id])
   sellerId      String // SellerProfile.id
   seller        SellerProfile @relation(fields: [sellerId], references: [id])
-  scheduledDate DateTime
+  scheduledDate DateTime?
+  serviceTitle  String?
+  sellerName    String?
+  deliveryMode  String?
+  requirements  String?
+  description   String?
+  location      String?
   notes         String?
   status        BookingStatus @default(REQUESTED)
   declineReason String?
   price         Int
   fee           Int
   total         Int
+  pricingPolicyVersion String? @db.VarChar(64)
   deliveredAt   DateTime?
   completedAt   DateTime?
+  revisionPolicyVersion Int?
+  revisionPolicyHash String?
+  revisionFreeCount Int?
+  revisionRequestWindowDuration Int?
+  revisionRequestWindowUnit String?
+  revisionRequestWindowAnchor String?
+  revisionTermsSnapshot String?
+  revisionPolicyAcknowledgedAt DateTime? @db.Timestamptz(3)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  // relasi balik
+  payment              Payment?
+  review               Review?
+  reports              Report[]
+  statusEvents         BookingStatusEvent[]
+  cancellationRequests CancellationRequest[]
+  reviewTimer          BookingReviewTimer?
+  operationReceipts    BookingOperationReceipt[]
+  deliveryCycles      DeliveryCycle[]
+  deliveryCycleJobs   DeliveryCycleJob[] @relation("DeliveryCycleJobBooking")
+  revisionRequests    RevisionRequest[]
+  revisionAssistanceRequests RevisionEscalationRequest[]
+  revisionQuotaLedger RevisionQuotaLedger[]
+  disputes             Dispute[]
+  additionalRevisionRequests AdditionalRevisionRequest[]
+  additionalRevisionAgreements AdditionalRevisionAgreement[]
+  paymentTransactions PaymentTransaction[]
+
   @@index([customerId])
   @@index([sellerId, status])
+}
 
-  // relasi balik
-  payment Payment?
-  review Review?
-  reports Report[]
+model AdditionalRevisionRequest {
+  id             String @id @default(uuid())
+  bookingId      String
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  customerId     String
+  customer       User @relation("AdditionalRevisionCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  sellerProfileId String
+  sellerProfile  SellerProfile @relation("AdditionalRevisionSeller", fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  description    String @db.VarChar(2000)
+  status         AdditionalRevisionRequestStatus @default(OPEN)
+  version        Int @default(1)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  offers         AdditionalRevisionOfferVersion[]
+  agreement      AdditionalRevisionAgreement?
+  events         AdditionalRevisionEvent[]
+
+  @@index([bookingId, createdAt, id])
+  @@index([customerId, createdAt])
+  @@index([sellerProfileId, createdAt])
+}
+
+model AdditionalRevisionOfferVersion {
+  id                    String @id @default(uuid())
+  requestId             String
+  request               AdditionalRevisionRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  version               Int
+  scope                 String @db.VarChar(4000)
+  terms                 String @db.VarChar(4000)
+  sellerPrice           Int
+  adminFee              Int
+  buyerTotal            Int
+  pricingPolicyVersion  String @db.VarChar(64)
+  estimatedDurationHours Int
+  status                AdditionalRevisionOfferStatus @default(ACTIVE)
+  expiresAt             DateTime @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  agreement             AdditionalRevisionAgreement?
+
+  @@unique([requestId, version])
+  @@index([requestId, status, expiresAt])
+}
+
+model AdditionalRevisionAgreement {
+  id                  String @id @default(uuid())
+  bookingId           String
+  booking             Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  requestId           String @unique
+  request             AdditionalRevisionRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  offerVersionId      String @unique
+  offerVersion        AdditionalRevisionOfferVersion @relation(fields: [offerVersionId], references: [id], onDelete: Restrict)
+  customerId          String
+  customer            User @relation("AdditionalRevisionAgreementCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  sellerProfileId     String
+  sellerProfile       SellerProfile @relation("AdditionalRevisionAgreementSeller", fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  scopeSnapshot       String @db.VarChar(4000)
+  termsSnapshot       String @db.VarChar(4000)
+  sellerPrice         Int
+  adminFee            Int
+  buyerTotal          Int
+  pricingPolicyVersion String @db.VarChar(64)
+  estimatedDurationHours Int
+  status              AdditionalRevisionAgreementStatus @default(AWAITING_PAYMENT)
+  acceptedAt          DateTime @default(now()) @db.Timestamptz(3)
+  fundedAt            DateTime? @db.Timestamptz(3)
+  startedAt           DateTime? @db.Timestamptz(3)
+  deliveredAt         DateTime? @db.Timestamptz(3)
+  reviewDeadlineAt    DateTime? @db.Timestamptz(3)
+  completedAt         DateTime? @db.Timestamptz(3)
+  deliveryNote        String? @db.VarChar(4000)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  events              AdditionalRevisionEvent[]
+  payments            PaymentTransaction[]
+  ledgerEntries       FinancialLedgerEntry[]
+  payouts             SellerPayout[]
+
+  @@index([bookingId, status])
+  @@index([customerId, createdAt])
+  @@index([sellerProfileId, createdAt])
+}
+
+model PaymentTransaction {
+  id                    String @id @default(uuid())
+  bookingId             String?
+  booking               Booking? @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  orderReference        String @unique
+  provider              String? @db.VarChar(32)
+  providerReference     String? @unique
+  idempotencyKey        String @unique
+  currency              String @default("IDR") @db.VarChar(3)
+  sellerPrice           Int
+  adminFee              Int
+  amount                Int
+  status                PaymentStatus @default(PENDING)
+  provenance            PaymentProvenance @default(REAL_PROVIDER)
+  simulatedAt           DateTime? @db.Timestamptz(3)
+  expiresAt             DateTime? @db.Timestamptz(3)
+  capturedAt            DateTime? @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  events                ProviderEventInbox[]
+  ledgerEntries         FinancialLedgerEntry[]
+  refunds               PaymentRefund[]
+  payouts               SellerPayout[]
+
+  @@index([bookingId, status])
+  @@index([additionalAgreementId, status])
+}
+
+model ProviderEventInbox {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String?
+  paymentTransaction    PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  provider              String @db.VarChar(32)
+  providerEventId       String @db.VarChar(255)
+  eventType             String @db.VarChar(100)
+  verified              Boolean @default(false)
+  processingStatus      String @default("RECEIVED") @db.VarChar(32)
+  receivedAt            DateTime @default(now()) @db.Timestamptz(3)
+  processedAt           DateTime? @db.Timestamptz(3)
+  safePayload           Json? @db.JsonB
+
+  @@unique([provider, providerEventId])
+  @@index([processingStatus, receivedAt])
+}
+
+model PaymentRefund {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String
+  paymentTransaction    PaymentTransaction @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  decisionReference     String @unique
+  idempotencyKey        String @unique
+  sellerPriceRefund     Int
+  adminFeeRefund        Int
+  amount                Int
+  status                PaymentRefundStatus @default(PENDING)
+  providerReference     String? @unique
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  ledgerEntries         FinancialLedgerEntry[]
+
+  @@index([paymentTransactionId, status])
+}
+
+model SellerPayout {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String
+  paymentTransaction    PaymentTransaction @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  idempotencyKey        String @unique
+  amount                Int
+  currency              String @default("IDR") @db.VarChar(3)
+  status                SellerPayoutStatus @default(HELD)
+  providerReference     String? @unique
+  submittedAt           DateTime? @db.Timestamptz(3)
+  confirmedAt           DateTime? @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  ledgerEntries         FinancialLedgerEntry[]
+
+  @@index([paymentTransactionId, status])
+  @@index([additionalAgreementId, status])
+}
+
+model FinancialLedgerEntry {
+  id                    String @id @default(uuid())
+  sourceType            String @db.VarChar(32)
+  sourceId              String @db.VarChar(255)
+  entryType             String @db.VarChar(48)
+  amount                Int
+  currency              String @default("IDR") @db.VarChar(3)
+  paymentTransactionId  String?
+  paymentTransaction    PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  refundId              String?
+  refund                PaymentRefund? @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  payoutId              String?
+  payout                SellerPayout? @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([sourceType, sourceId, entryType])
+  @@index([additionalAgreementId, createdAt])
+  @@index([paymentTransactionId, createdAt])
+}
+
+model AdditionalRevisionEvent {
+  id                    String @id @default(uuid())
+  requestId             String?
+  request               AdditionalRevisionRequest? @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  agreementId           String?
+  agreement             AdditionalRevisionAgreement? @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  actorUserId           String?
+  actor                 User? @relation("AdditionalRevisionEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  eventType             String @db.VarChar(64)
+  fromStatus            String? @db.VarChar(40)
+  toStatus              String? @db.VarChar(40)
+  payload               Json @db.JsonB
+  occurredAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([requestId, occurredAt, id])
+  @@index([agreementId, occurredAt, id])
+}
+
+model BookingStatusEvent {
+  id          String         @id @default(uuid())
+  bookingId   String
+  booking     Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fromStatus  BookingStatus?
+  toStatus    BookingStatus
+  actorUserId String?
+  actor       User?          @relation(fields: [actorUserId], references: [id])
+  source      String
+  occurredAt  DateTime       @default(now())
+  operationReceipt BookingOperationReceipt?
+  deliveryCycleReceipt DeliveryCycleCompletionReceipt?
+
+  @@index([bookingId, occurredAt, id])
+}
+
+// The interval ledger is authoritative. Summary fields support due-job queries
+// and must remain reconstructable from deliveryAt + pause intervals.
+model BookingReviewTimer {
+  id                String   @id @default(uuid())
+  bookingId         String   @unique
+  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  deliveryAt        DateTime @db.Timestamptz(3)
+  durationMs        Int      @default(259200000)
+  deadlineAt        DateTime? @db.Timestamptz(3)
+  remainingMs       Int?
+  pausedAt          DateTime? @db.Timestamptz(3)
+  version           Int      @default(1)
+  closedAt          DateTime? @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+  pauseIntervals    BookingReviewPauseInterval[]
+  scheduledJob      BookingReviewJob?
+
+  @@index([deadlineAt, closedAt])
+}
+
+// An interval is opened only on a 0 -> 1 blocker transition and closed only
+// when the aggregate blocker set becomes empty (or the booking is terminal).
+model BookingReviewPauseInterval {
+  id               String            @id @default(uuid())
+  timerId          String
+  timer            BookingReviewTimer @relation(fields: [timerId], references: [id], onDelete: Cascade)
+  openTimerId      String?            @unique
+  blockerType      String
+  source           String
+  startedAt        DateTime          @db.Timestamptz(3)
+  endedAt          DateTime?         @db.Timestamptz(3)
+  endType          String?
+  startedByUserId  String?
+  startedBy        User?             @relation("ReviewTimerPauseStarter", fields: [startedByUserId], references: [id], onDelete: SetNull)
+  endedByUserId    String?
+  endedBy          User?             @relation("ReviewTimerPauseEnder", fields: [endedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([timerId, startedAt, id])
+}
+
+enum BookingReviewJobStatus {
+  PENDING
+  CLAIMED
+  COMPLETED
+  CANCELLED
+}
+
+// A lease is stored in PostgreSQL so multiple server instances can safely
+// claim due completion work and recover claims after worker/server failure.
+model BookingReviewJob {
+  id             String                 @id @default(uuid())
+  timerId        String                 @unique
+  timer          BookingReviewTimer     @relation(fields: [timerId], references: [id], onDelete: Cascade)
+  scheduledAt    DateTime?              @db.Timestamptz(3)
+  timerVersion   Int
+  status         BookingReviewJobStatus @default(PENDING)
+  claimToken     String?
+  claimExpiresAt DateTime?              @db.Timestamptz(3)
+  attempts       Int                    @default(0)
+  lastError      String?
+  createdAt      DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime               @updatedAt @db.Timestamptz(3)
+  completedAt    DateTime?              @db.Timestamptz(3)
+
+  @@index([status, scheduledAt, id])
+  @@index([status, claimExpiresAt])
+}
+
+// Internal receipt for the one-way customer completion operation. No public
+// idempotency header is introduced; the logical result references the event.
+model BookingOperationReceipt {
+  id                 String            @id @default(uuid())
+  principalId        String
+  principal          User              @relation(fields: [principalId], references: [id], onDelete: Restrict)
+  bookingId          String
+  booking            Booking           @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  operation          String
+  requestFingerprint String
+  transitionEventId  String            @unique
+  transitionEvent    BookingStatusEvent @relation(fields: [transitionEventId], references: [id], onDelete: Restrict)
+  createdAt          DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@unique([principalId, operation, bookingId])
+}
+
+enum DeliveryCycleStatus {
+  REVIEW_ACTIVE
+  REVIEW_PAUSED
+  COMPLETED
+  SUPERSEDED
+  CANCELLED
+}
+
+enum DeliveryCycleJobStatus {
+  PENDING
+  CLAIMED
+  COMPLETED
+  CANCELLED
+}
+
+enum RevisionStatus {
+  REQUESTED
+  WAITING_CUSTOMER
+  IN_PROGRESS
+  REJECTED
+  WITHDRAWN
+  REJECTION_ACCEPTED
+  DELIVERED
+  FAILED
+}
+
+enum RevisionClarificationStatus {
+  WAITING_CUSTOMER
+  WAITING_SELLER
+  RESPONDED
+  CANCELLED
+}
+
+enum RevisionClarificationRequester {
+  CUSTOMER
+  SELLER
+}
+
+enum RevisionQuotaOperation {
+  RESERVE
+  CONSUME
+  RELEASE
+  EXPIRE
+  SYSTEM_ERROR_RETURN
+}
+
+enum RevisionEscalationTrigger {
+  SELLER_REJECTION
+  SELLER_RESPONSE_OVERDUE
+  CUSTOMER_CLARIFICATION_OVERDUE
+  SELLER_ESTIMATE_OVERDUE
+}
+
+enum RevisionEscalationStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+enum RevisionResponseClockType {
+  SELLER_RESPONSE
+  CUSTOMER_CLARIFICATION
+}
+
+enum RevisionEscalationActorType {
+  USER
+  SYSTEM
+}
+
+// Authoritative cycle aggregate for a single persisted seller delivery. The
+// active slot is constrained by the migration's PostgreSQL partial index.
+model DeliveryCycle {
+  id               String              @id @default(uuid())
+  bookingId        String
+  booking          Booking             @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  sequence         Int
+  status           DeliveryCycleStatus @default(REVIEW_ACTIVE)
+  active           Boolean             @default(true)
+  deliveryAt       DateTime            @db.Timestamptz(3)
+  durationMs       Int                 @default(259200000)
+  deadlineAt       DateTime?           @db.Timestamptz(3)
+  remainingMs      Int?
+  pausedAt         DateTime?           @db.Timestamptz(3)
+  version          Int                 @default(1)
+  closedAt         DateTime?           @db.Timestamptz(3)
+  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
+  pauseIntervals   DeliveryCyclePauseInterval[]
+  scheduledJob     DeliveryCycleJob?
+  completionReceipts DeliveryCycleCompletionReceipt[]
+  outboxEvents     NotificationOutbox[]
+  revisionRequests RevisionRequest[] @relation("RevisionRequestedOnCycle")
+  revisionRequestsDirect RevisionRequest[] @relation("RevisionCycleDirect")
+  quotaEntries     RevisionQuotaLedger[]
+  sourceRevisionId String? @unique
+  disputes         Dispute[]
+  sourceRevision   RevisionRequest? @relation("CycleCreatedByRevision", fields: [bookingId, sourceRevisionId], references: [bookingId, id], onDelete: Restrict, map: "DeliveryCycle_sourceRevision_fkey")
+  disputeRevisionAuthorizations DisputeRevisionAuthorization[]
+
+  @@unique([bookingId, sequence])
+  @@unique([bookingId, id])
+  @@unique([bookingId, sourceRevisionId])
+  @@index([bookingId, active])
+  @@index([deadlineAt, active])
+}
+
+model RevisionRequest {
+  id                       String        @id @default(uuid())
+  bookingId                String
+  booking                  Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  deliveryCycleId          String
+  deliveryCycle            DeliveryCycle @relation("RevisionRequestedOnCycle", fields: [bookingId, deliveryCycleId], references: [bookingId, id], onDelete: Restrict, map: "RevisionRequest_cycle_booking_fkey")
+  deliveryCycleDirect      DeliveryCycle @relation("RevisionCycleDirect", fields: [deliveryCycleId], references: [id], onDelete: Restrict, map: "RevisionRequest_cycle_fkey")
+  requestText              String
+  status                   RevisionStatus @default(REQUESTED)
+  requestedAt              DateTime      @db.Timestamptz(3)
+  sellerResponseDeadlineAt DateTime      @db.Timestamptz(3)
+  sellerResponseRemainingMs Int?
+  sellerResponsePausedAt DateTime? @db.Timestamptz(3)
+  responseRound            Int           @default(1)
+  reservationGeneration   Int           @default(1)
+  acceptedAt               DateTime?     @db.Timestamptz(3)
+  estimatedCompletionAt    DateTime?     @db.Timestamptz(3)
+  rejectedAt               DateTime?     @db.Timestamptz(3)
+  rejectionReason          String?
+  withdrawnAt              DateTime?     @db.Timestamptz(3)
+  rejectionAcceptedAt      DateTime?     @db.Timestamptz(3)
+  deliveredAt              DateTime?     @db.Timestamptz(3)
+  deliveryNote             String?
+  deliveryEvidence         Json?         @db.JsonB
+  failedAt                 DateTime?     @db.Timestamptz(3)
+  failureReason            String?
+  createdAt                DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime      @updatedAt @db.Timestamptz(3)
+  clarifications           RevisionClarification[]
+  quotaEntries             RevisionQuotaLedger[]
+  events                   RevisionEvent[]
+  operationReceipts        RevisionOperationReceipt[]
+  escalationRequests      RevisionEscalationRequest[]
+  assistanceRequestsByBooking RevisionEscalationRequest[] @relation("AssistanceBookingRevision")
+  responseClockPauses     RevisionResponseClockPause[]
+  deliveryCycleCreated     DeliveryCycle? @relation("CycleCreatedByRevision")
+  disputes                 Dispute[] @relation("DisputeRelatedRevision")
+  disputeAuthorization     DisputeRevisionAuthorization? @relation("DisputeAuthorizedRevision")
+
+  @@index([bookingId, requestedAt, id])
+  @@index([deliveryCycleId, status])
+  @@index([status, sellerResponseDeadlineAt])
+  @@unique([bookingId, id])
+}
+
+model RevisionClarification {
+  id              String                        @id @default(uuid())
+  revisionId      String
+  revision        RevisionRequest               @relation(fields: [revisionId], references: [id], onDelete: Restrict, map: "RevisionClarification_revision_fkey")
+  requesterRole   RevisionClarificationRequester
+  requesterId     String
+  requestText     String
+  status          RevisionClarificationStatus
+  responseDueAt   DateTime                      @db.Timestamptz(3)
+  responseRemainingMs Int?
+  responsePausedAt DateTime?                    @db.Timestamptz(3)
+  responseText    String?
+  respondedById   String?
+  respondedAt     DateTime?                     @db.Timestamptz(3)
+  closedAt        DateTime?                     @db.Timestamptz(3)
+  createdAt       DateTime                      @default(now()) @db.Timestamptz(3)
+  responseClockPauses RevisionResponseClockPause[]
+  responseClockPausesByRevision RevisionResponseClockPause[] @relation("PauseClockClarificationRevision")
+  assistanceRequests RevisionEscalationRequest[] @relation("AssistanceClarificationClock")
+
+  @@index([revisionId, createdAt, id])
+  @@index([status, responseDueAt])
+  @@unique([revisionId, id])
+}
+
+model RevisionEvent {
+  id            String          @id @default(uuid())
+  revisionId    String
+  revision      RevisionRequest @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  actorUserId   String?
+  eventType     String
+  fromStatus    RevisionStatus?
+  toStatus      RevisionStatus
+  payload       Json            @db.JsonB
+  occurredAt    DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@index([revisionId, occurredAt, id])
+}
+
+model RevisionQuotaLedger {
+  id                 String                 @id @default(uuid())
+  bookingId          String
+  booking            Booking                @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  revisionId         String?
+  revision           RevisionRequest?       @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  deliveryCycleId    String?
+  deliveryCycle      DeliveryCycle?         @relation(fields: [bookingId, deliveryCycleId], references: [bookingId, id], onDelete: Restrict)
+  operation          RevisionQuotaOperation
+  availableDelta     Int
+  reservedDelta      Int
+  consumedDelta      Int
+  expiredDelta       Int
+  operationReference String                 @unique
+  actorUserId        String?
+  reason             String?
+  evidenceReference  String?
+  createdAt          DateTime               @default(now()) @db.Timestamptz(3)
+
+  @@index([bookingId, createdAt, id])
+  @@index([revisionId, operation])
+}
+
+model RevisionOperationReceipt {
+  id                 String          @id @default(uuid())
+  revisionId         String
+  revision           RevisionRequest @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  principalId        String
+  operation          String
+  requestFingerprint String
+  result             Json            @db.JsonB
+  createdAt          DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@unique([revisionId, principalId, operation])
+}
+
+model RevisionEscalationRequest {
+  id            String                   @id @default(uuid())
+  revisionId    String
+  revision      RevisionRequest          @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  booking       Booking                  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  revisionWithBooking RevisionRequest    @relation("AssistanceBookingRevision", fields: [bookingId, revisionId], references: [bookingId, id], onDelete: Restrict)
+  parentAssistanceId String?
+  parentAssistance RevisionEscalationRequest? @relation("RevisionAssistanceChain", fields: [parentAssistanceId], references: [id], onDelete: Restrict)
+  followUpAssistance RevisionEscalationRequest[] @relation("RevisionAssistanceChain")
+  parentAssistanceForRevision RevisionEscalationRequest? @relation("RevisionAssistanceChainScoped", fields: [revisionId, parentAssistanceId], references: [revisionId, id], onDelete: Restrict)
+  revisionScopedFollowUps RevisionEscalationRequest[] @relation("RevisionAssistanceChainScoped")
+  bookingId     String
+  trigger       RevisionEscalationTrigger
+  requesterId   String
+  reason        String
+  responseClockType RevisionResponseClockType?
+  responseClarificationId String?
+  responseClarification RevisionClarification? @relation("AssistanceClarificationClock", fields: [revisionId, responseClarificationId], references: [revisionId, id], onDelete: Restrict)
+  status        RevisionEscalationStatus @default(OPEN)
+  version       Int                      @default(1)
+  createdAt     DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                 @default(now()) @updatedAt @db.Timestamptz(3)
+  slaDueAt      DateTime                 @db.Timestamptz(3)
+  slaBreachedAt DateTime?                @db.Timestamptz(3)
+  reviewStartedAt DateTime?              @db.Timestamptz(3)
+  resolvedAt    DateTime?                @db.Timestamptz(3)
+  closedAt      DateTime?                @db.Timestamptz(3)
+  resolutionDetails String?
+  permittedNextAction String?
+  events        RevisionEscalationEvent[]
+  operationReceipts RevisionEscalationOperationReceipt[]
+  responseClockPauses RevisionResponseClockPause[]
+  responseClockPausesByRevision RevisionResponseClockPause[] @relation("PauseClockAssistanceRevision")
+
+  @@unique([revisionId, id])
+  @@index([revisionId, trigger, status])
+  @@index([bookingId, status, createdAt])
+  @@index([status, slaDueAt])
+}
+
+model RevisionEscalationEvent {
+  id                 String                     @id @default(uuid())
+  assistanceId       String
+  assistance         RevisionEscalationRequest  @relation(fields: [assistanceId], references: [id], onDelete: Restrict)
+  actorUserId        String?
+  actorType          RevisionEscalationActorType
+  eventType          String
+  fromStatus         RevisionEscalationStatus?
+  toStatus           RevisionEscalationStatus
+  reason             String?
+  resolutionDetails  String?
+  permittedNextAction String?
+  requestFingerprint String?
+  occurredAt         DateTime                   @default(now()) @db.Timestamptz(3)
+
+  @@index([assistanceId, occurredAt, id])
+}
+
+model RevisionEscalationOperationReceipt {
+  id                 String                    @id @default(uuid())
+  assistanceId       String
+  assistance         RevisionEscalationRequest @relation(fields: [assistanceId], references: [id], onDelete: Restrict)
+  principalId        String
+  expectedVersion    Int
+  requestFingerprint String
+  result             Json                      @db.JsonB
+  createdAt          DateTime                  @default(now()) @db.Timestamptz(3)
+
+  @@unique([assistanceId, principalId, expectedVersion])
+}
+
+model RevisionResponseClockPause {
+  id                String                    @id @default(uuid())
+  revisionId        String
+  revision          RevisionRequest           @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  clarificationId  String?
+  clarification     RevisionClarification?    @relation(fields: [clarificationId], references: [id], onDelete: Restrict)
+  clarificationForRevision RevisionClarification? @relation("PauseClockClarificationRevision", fields: [revisionId, clarificationId], references: [revisionId, id], onDelete: Restrict)
+  assistanceId      String
+  assistance        RevisionEscalationRequest @relation(fields: [assistanceId], references: [id], onDelete: Restrict)
+  assistanceForRevision RevisionEscalationRequest @relation("PauseClockAssistanceRevision", fields: [revisionId, assistanceId], references: [revisionId, id], onDelete: Restrict)
+  clockType         RevisionResponseClockType
+  pausedAt          DateTime                  @db.Timestamptz(3)
+  remainingMs       Int
+  actorUserId       String?
+  resume            RevisionResponseClockResume?
+
+  @@index([revisionId, clockType, pausedAt])
+  @@index([assistanceId])
+}
+
+model RevisionResponseClockResume {
+  id                  String                    @id @default(uuid())
+  pauseId             String                    @unique
+  pause               RevisionResponseClockPause @relation(fields: [pauseId], references: [id], onDelete: Restrict)
+  resumedAt           DateTime                  @db.Timestamptz(3)
+  restoredDeadlineAt  DateTime                  @db.Timestamptz(3)
+  actorUserId         String?
+
+  @@index([resumedAt])
+}
+
+model DeliveryCyclePauseInterval {
+  id              String        @id @default(uuid())
+  deliveryCycleId String
+  deliveryCycle   DeliveryCycle @relation(fields: [deliveryCycleId], references: [id], onDelete: Restrict)
+  openCycleId     String?       @unique
+  blockerType     String
+  source          String
+  startedAt       DateTime      @db.Timestamptz(3)
+  endedAt         DateTime?     @db.Timestamptz(3)
+  endType         String?
+  startedByUserId String?
+  startedBy       User?         @relation("DeliveryCyclePauseStarter", fields: [startedByUserId], references: [id], onDelete: SetNull)
+  endedByUserId   String?
+  endedBy         User?         @relation("DeliveryCyclePauseEnder", fields: [endedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([deliveryCycleId, startedAt, id])
+}
+
+model DeliveryCycleJob {
+  id             String                  @id @default(uuid())
+  deliveryCycleId String                 @unique
+  bookingId      String
+  booking         Booking                 @relation("DeliveryCycleJobBooking", fields: [bookingId], references: [id], onDelete: Restrict)
+  deliveryCycle   DeliveryCycle          @relation(fields: [bookingId, deliveryCycleId], references: [bookingId, id], onDelete: Restrict)
+  scheduledAt    DateTime?               @db.Timestamptz(3)
+  generation     Int
+  status         DeliveryCycleJobStatus  @default(PENDING)
+  claimToken     String?
+  claimExpiresAt DateTime?               @db.Timestamptz(3)
+  attempts       Int                     @default(0)
+  lastError      String?
+  createdAt      DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(3)
+  completedAt    DateTime?               @db.Timestamptz(3)
+
+  @@index([status, scheduledAt, id])
+  @@index([status, claimExpiresAt])
+  @@index([bookingId, deliveryCycleId])
+  @@unique([bookingId, deliveryCycleId])
+}
+
+model DeliveryCycleCompletionReceipt {
+  id                 String        @id @default(uuid())
+  deliveryCycleId    String
+  deliveryCycle      DeliveryCycle @relation(fields: [deliveryCycleId], references: [id], onDelete: Restrict)
+  principalId        String?
+  principal          User?         @relation(fields: [principalId], references: [id], onDelete: Restrict)
+  operation          String
+  requestFingerprint String
+  transitionEventId  String        @unique
+  transitionEvent    BookingStatusEvent @relation(fields: [transitionEventId], references: [id], onDelete: Restrict)
+  createdAt          DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@unique([deliveryCycleId, principalId, operation])
+}
+
+enum NotificationOutboxStatus {
+  PENDING
+  CLAIMED
+  DELIVERED
+}
+
+// Transactional in-app notification outbox. This phase adds no external
+// provider; delivery creates Notification rows after the domain transaction.
+model NotificationOutbox {
+  id             String                  @id @default(uuid())
+  eventKey       String                  @unique
+  eventType      String
+  payload         Json                    @db.JsonB
+  status          NotificationOutboxStatus @default(PENDING)
+  availableAt     DateTime                @default(now()) @db.Timestamptz(3)
+  attempts        Int                     @default(0)
+  claimToken      String?
+  claimExpiresAt  DateTime?               @db.Timestamptz(3)
+  lastError       String?
+  createdAt       DateTime                @default(now()) @db.Timestamptz(3)
+  deliveredAt     DateTime?              @db.Timestamptz(3)
+  deliveryCycleId String?
+  deliveryCycle   DeliveryCycle?         @relation(fields: [deliveryCycleId], references: [id], onDelete: Restrict)
+
+  @@index([status, availableAt, id])
+  @@index([status, claimExpiresAt])
+  @@index([deliveryCycleId, createdAt])
+}
+
+model CancellationRequest {
+  id           String                    @id @default(uuid())
+  bookingId    String
+  booking      Booking                   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  requesterId  String
+  requester    User                      @relation("CancellationRequester", fields: [requesterId], references: [id])
+  reason       String
+  evidencePath String
+  status       CancellationRequestStatus @default(PENDING)
+  adminNote    String?
+  reviewedById String?
+  reviewedBy   User?                     @relation("CancellationReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  disputes     Dispute[]
+
+  @@index([status, createdAt])
+  @@index([bookingId, createdAt])
+  @@unique([bookingId, id])
+}
+
+model Dispute {
+  id                       String                  @id @default(uuid())
+  bookingId                String
+  booking                  Booking                 @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  deliveryCycleId          String?
+  deliveryCycle            DeliveryCycle?          @relation(fields: [bookingId, deliveryCycleId], references: [bookingId, id], onDelete: Restrict)
+  createdById              String
+  creator                  User                    @relation("DisputeCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  category                 DisputeCategory
+  description              String
+  relatedRevisionId        String?
+  relatedRevision          RevisionRequest?        @relation("DisputeRelatedRevision", fields: [bookingId, relatedRevisionId], references: [bookingId, id], onDelete: Restrict)
+  relatedCancellationId    String?
+  relatedCancellation      CancellationRequest?    @relation(fields: [bookingId, relatedCancellationId], references: [bookingId, id], onDelete: Restrict)
+  status                   DisputeStatus           @default(OPEN)
+  version                  Int                     @default(1)
+  createdAt                DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                @updatedAt @db.Timestamptz(3)
+  decisionAt               DateTime?               @db.Timestamptz(3)
+  decisionById             String?
+  decisionBy               User?                   @relation("DisputeDecisionAdmin", fields: [decisionById], references: [id], onDelete: Restrict)
+  decisionOutcome          DisputeNextAction?
+  decisionReason           String?
+  permittedNextAction      String?
+  evidenceRetainUntil      DateTime                @db.Timestamptz(3)
+  legalHoldAt              DateTime?               @db.Timestamptz(3)
+  legalHoldReason          String?
+  events                   DisputeEvent[]
+  clarifications           DisputeClarification[]
+  reportEvidence           DisputeReportEvidence[]
+  messageEvidence          DisputeMessageEvidence[]
+  evidenceAccesses         DisputeEvidenceAccess[]
+  appeals                  DisputeAppeal[]
+  revisionAuthorizations   DisputeRevisionAuthorization[]
+
+  @@unique([bookingId, id])
+  @@index([bookingId, status, createdAt])
+  @@index([status, createdAt, id])
+  @@index([decisionAt])
+}
+
+model DisputeRevisionAuthorization {
+  id                 String @id @default(uuid())
+  disputeId          String
+  dispute            Dispute @relation(fields: [bookingId, disputeId], references: [bookingId, id], onDelete: Restrict)
+  bookingId          String
+  deliveryCycleId    String
+  deliveryCycle      DeliveryCycle @relation(fields: [bookingId, deliveryCycleId], references: [bookingId, id], onDelete: Restrict)
+  status             DisputeRevisionAuthorizationStatus @default(AVAILABLE)
+  consumedRevisionId String? @unique
+  consumedRevision   RevisionRequest? @relation("DisputeAuthorizedRevision", fields: [bookingId, consumedRevisionId], references: [bookingId, id], onDelete: Restrict)
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  usedAt             DateTime? @db.Timestamptz(3)
+  revokedAt          DateTime? @db.Timestamptz(3)
+
+  @@unique([bookingId, consumedRevisionId])
+  @@unique([bookingId, id])
+  @@index([bookingId, deliveryCycleId, status])
+}
+
+model DisputeEvent {
+  id            String        @id @default(uuid())
+  disputeId     String
+  dispute       Dispute       @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  actorUserId   String?
+  actor         User?         @relation("DisputeEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  eventType     String
+  fromStatus    DisputeStatus?
+  toStatus      DisputeStatus
+  reason        String?
+  payload       Json          @db.JsonB
+  occurredAt    DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([disputeId, occurredAt, id])
+}
+
+model DisputeClarification {
+  id                String                       @id @default(uuid())
+  disputeId         String
+  dispute           Dispute                      @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  recipient         DisputeClarificationRecipient
+  recipientUserId   String
+  recipientUser     User                         @relation("DisputeClarificationRecipientUser", fields: [recipientUserId], references: [id], onDelete: Restrict)
+  requestedById     String
+  requestedBy       User                         @relation("DisputeClarificationRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  question          String
+  requestedAt       DateTime                     @db.Timestamptz(3)
+  responseDueAt     DateTime                     @db.Timestamptz(3)
+  status            DisputeClarificationStatus   @default(PENDING)
+  version           Int                          @default(1)
+  responseText      String?
+  respondedById     String?
+  respondedBy       User?                        @relation("DisputeClarificationResponder", fields: [respondedById], references: [id], onDelete: Restrict)
+  respondedAt       DateTime?                    @db.Timestamptz(3)
+  closedById        String?
+  closedBy          User?                        @relation("DisputeClarificationCloser", fields: [closedById], references: [id], onDelete: Restrict)
+  closedAt          DateTime?                    @db.Timestamptz(3)
+  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
+
+  @@index([disputeId, requestedAt, id])
+  @@index([status, responseDueAt])
+}
+
+model DisputeReportEvidence {
+  disputeId       String
+  dispute         Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  reportId        String
+  report          Report   @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  linkedByUserId  String
+  linkedBy        User     @relation("DisputeReportLinker", fields: [linkedByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([disputeId, reportId])
+  @@index([reportId])
+}
+
+model DisputeMessageEvidence {
+  disputeId       String
+  dispute         Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  messageId       String
+  message         Message  @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  linkedByUserId  String
+  linkedBy        User     @relation("DisputeMessageLinker", fields: [linkedByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([disputeId, messageId])
+  @@index([messageId])
+}
+
+model DisputeEvidenceAccess {
+  id          String   @id @default(uuid())
+  disputeId   String
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  viewerId    String
+  viewer      User     @relation("DisputeEvidenceViewer", fields: [viewerId], references: [id], onDelete: Restrict)
+  occurredAt  DateTime @default(now()) @db.Timestamptz(3)
+  accessType  String
+
+  @@index([disputeId, occurredAt, id])
+  @@index([viewerId, occurredAt])
+}
+
+model DisputeAppeal {
+  id                         String               @id @default(uuid())
+  disputeId                  String
+  dispute                    Dispute              @relation(fields: [disputeId], references: [id], onDelete: Restrict)
+  appellantId                String
+  appellant                  User                 @relation("AppealAppellant", fields: [appellantId], references: [id], onDelete: Restrict)
+  reason                     String
+  submittedAt                DateTime             @db.Timestamptz(3)
+  submissionDeadlineAt       DateTime             @db.Timestamptz(3)
+  status                     AppealStatus         @default(SUBMITTED)
+  version                    Int                  @default(1)
+  assignedReviewerId         String?
+  assignedReviewer           User?                @relation("AppealReviewer", fields: [assignedReviewerId], references: [id], onDelete: Restrict)
+  assignedById               String?
+  assignedBy                 User?                @relation("AppealAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
+  assignmentReason           String?
+  reviewStartedAt            DateTime?            @db.Timestamptz(3)
+  outcome                    AppealOutcome?
+  permittedNextAction        DisputeNextAction?
+  resolutionReason           String?
+  decidedAt                  DateTime?            @db.Timestamptz(3)
+  events                     DisputeAppealEvent[]
+  createdAt                  DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt                  DateTime             @updatedAt @db.Timestamptz(3)
+
+  @@unique([disputeId, appellantId])
+  @@index([status, submittedAt, id])
+  @@index([assignedReviewerId, status])
+}
+
+model DisputeAppealEvent {
+  id            String        @id @default(uuid())
+  appealId      String
+  appeal        DisputeAppeal @relation(fields: [appealId], references: [id], onDelete: Restrict)
+  actorUserId   String?
+  actor         User?         @relation("AppealEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  eventType     String
+  fromStatus    AppealStatus?
+  toStatus      AppealStatus
+  reason        String?
+  payload       Json          @db.JsonB
+  occurredAt    DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([appealId, occurredAt, id])
 }
 
 // = transactions di frontend; terpisah dari status booking
@@ -393,6 +1542,9 @@ model Payment {
   paidAt          DateTime?
   rawNotification Json?
   createdAt       DateTime      @default(now())
+  provenance      PaymentProvenance @default(REAL_PROVIDER)
+  simulatedAt     DateTime? @db.Timestamptz(3)
+  demoReference   String? @unique
 }
 
 model Review {
@@ -425,23 +1577,24 @@ model Conversation {
   seller     SellerProfile @relation(fields: [sellerId], references: [id])
   createdAt  DateTime      @default(now())
 
-  @@unique([serviceId, customerId])
-
   // relasi balik
   messages Message[]
+
+  @@unique([serviceId, customerId])
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
-  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+  sender         User          @relation("MessageSender", fields: [senderId], references: [id])
   body           String
-  isFlagged      Boolean      @default(false)
+  isFlagged      Boolean       @default(false)
   flagReasons    String[]
   flagSeverity   FlagSeverity?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime      @default(now())
+  disputeEvidenceLinks DisputeMessageEvidence[]
 
   @@index([conversationId, createdAt])
 }
@@ -454,6 +1607,7 @@ model Notification {
   title     String
   body      String? // = message di frontend
   refId     String?
+  sourceOutboxKey String? @unique
   readAt    DateTime? // is_read = readAt != null
   createdAt DateTime         @default(now())
 
@@ -480,6 +1634,7 @@ model Report {
   resolvedAt   DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  disputeEvidenceLinks DisputeReportEvidence[]
 
   @@index([status, createdAt])
   @@index([targetType, targetId])
