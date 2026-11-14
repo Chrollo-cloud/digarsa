@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, NavLink, useParams } from "react-router-dom";
-import { messageSafety } from "../messaging/contracts.js";
+import { messageSafetyForMessage } from "../messaging/contracts.js";
 import { Empty } from "../workspace/WorkspaceFrame.jsx";
 import SellerFrame from "./SellerFrame.jsx";
 import { sellerMessaging } from "./sellerMessagingClient.js";
@@ -273,7 +273,7 @@ function Chat({ conversationId, data, error, user }) {
         )}
         {messages.map((message, index) => {
           const mine = message.sender_user_id === user.id;
-          const safety = messageSafety(message.content);
+          const safety = messageSafetyForMessage(message);
           const isNewDay =
             index === 0 ||
             new Date(message.created_at).toDateString() !==
@@ -287,8 +287,10 @@ function Chat({ conversationId, data, error, user }) {
               )}
               <article className={`seller-message-bubble${mine ? " is-mine" : ""}`} aria-label={`Message ${mine ? "from you" : `from ${conversation.customer_name}`}`}>
                 <p>{message.content}</p>
-                {safety.off_platform_payment_suspected && (
-                  <aside className="seller-message-safety">{safety.advisory}</aside>
+                {safety.warning && (
+                  <aside className="seller-message-safety" role="note" aria-label="Digarsa message safety notice">
+                    {safety.advisory}
+                  </aside>
                 )}
                 <footer>
                   <time dateTime={message.created_at} title={formatTime(message.created_at, true)}>{formatTime(message.created_at)}</time>

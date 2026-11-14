@@ -96,6 +96,56 @@ export function messageSafety(content) {
       "Pesan pengguna bukan instruksi pembayaran tepercaya atau bukti pembayaran. Jangan lakukan pembayaran di luar alur resmi Digarsa.",
   };
 }
+
+const moderationReasonCopy = Object.freeze({
+  OFF_PLATFORM_PAYMENT: "This message may request payment outside Digarsa.",
+  OFF_PLATFORM_PAYMENT_REQUEST: "This message may request payment outside Digarsa.",
+  PHISHING_ATTEMPT: "This message may contain a phishing attempt.",
+  SUSPICIOUS_LINK: "This message contains a link that may be unsafe.",
+  CREDENTIAL_REQUEST: "This message may request a password, PIN, or OTP.",
+});
+
+/**
+ * Uses backend moderation metadata when present; otherwise preserves the demo
+ * client's existing local advisory. This function never treats message text as
+ * trusted payment instructions.
+ */
+export function messageSafetyForMessage(message) {
+  const moderation = message?.moderation;
+  if (moderation && typeof moderation.flagged === "boolean") {
+    const reasons = Array.isArray(moderation.reasons)
+      ? moderation.reasons.filter((reason) => Object.hasOwn(moderationReasonCopy, reason))
+      : [];
+    const severity = ["LOW", "MEDIUM", "HIGH"].includes(moderation.severity)
+      ? moderation.severity
+      : null;
+    const flagged = moderation.flagged;
+    const explanation = reasons.map((reason) => moderationReasonCopy[reason]);
+    const severityLabel = severity ? `Severity: ${severity.toLowerCase()}. ` : "";
+    return {
+      is_trusted_payment_instruction: false,
+      flagged,
+      warning: flagged,
+      reasons,
+      severity,
+      off_platform_payment_suspected: reasons.some((reason) =>
+        ["OFF_PLATFORM_PAYMENT", "OFF_PLATFORM_PAYMENT_REQUEST"].includes(reason),
+      ),
+      advisory: flagged
+        ? `Digarsa safety notice. ${severityLabel}${explanation.join(" ") || "This message was flagged for review."} Do not share passwords or OTPs, or pay outside Digarsa.`
+        : "",
+    };
+  }
+
+  const local = messageSafety(message?.content);
+  return {
+    ...local,
+    flagged: local.off_platform_payment_suspected,
+    warning: local.off_platform_payment_suspected,
+    reasons: local.off_platform_payment_suspected ? ["OFF_PLATFORM_PAYMENT"] : [],
+    severity: null,
+  };
+}
 export const emptyEnvelope = () => ({
   version: 1,
   conversations: [],

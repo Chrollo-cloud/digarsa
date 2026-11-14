@@ -6,6 +6,7 @@ import {
   MESSAGING_KEY,
   fields,
   messageSafety,
+  messageSafetyForMessage,
   notificationTypes,
 } from "../src/features/messaging/contracts.js";
 import { createMessagingAdapters } from "../src/features/messaging/adapters.js";
@@ -559,6 +560,75 @@ test("payment solicitation and arbitrary user markup never become trusted paymen
     false,
   );
   assert.equal(f.bookings[0].status, "Requested");
+});
+
+test("chat views render backend moderation metadata as a non-blocking safety warning", () => {
+  const payment = messageSafetyForMessage({
+    content: "Please use the official booking flow.",
+    moderation: {
+      flagged: true,
+      reasons: ["OFF_PLATFORM_PAYMENT"],
+      severity: "HIGH",
+    },
+  });
+  assert.equal(payment.warning, true);
+  assert.equal(payment.severity, "HIGH");
+  assert.match(payment.advisory, /payment outside Digarsa/i);
+
+  const phaseOne = messageSafetyForMessage({
+    content: "Please pay through the official marketplace flow.",
+    moderation: {
+      flagged: true,
+      reasons: ["OFF_PLATFORM_PAYMENT_REQUEST"],
+      severity: "MEDIUM",
+    },
+  });
+  assert.equal(phaseOne.off_platform_payment_suspected, true);
+  assert.equal(phaseOne.severity, "MEDIUM");
+  assert.match(phaseOne.advisory, /outside Digarsa/i);
+
+  const phishing = messageSafetyForMessage({
+    content: "Please review this message.",
+    moderation: {
+      flagged: true,
+      reasons: ["PHISHING_ATTEMPT", "CREDENTIAL_REQUEST"],
+      severity: "HIGH",
+    },
+  });
+  assert.equal(phishing.warning, true);
+  assert.match(phishing.advisory, /phishing attempt/i);
+  assert.match(phishing.advisory, /password, PIN, or OTP/i);
+});
+
+test("backend moderation result takes precedence while demo messages retain their existing advisory", () => {
+  const unflagged = messageSafetyForMessage({
+    content: "Transfer langsung ke rekening pribadi 1234567890",
+    moderation: { flagged: false, reasons: [], severity: null },
+  });
+  assert.equal(unflagged.warning, false);
+
+  const demo = messageSafetyForMessage({
+    content: "Transfer langsung ke rekening pribadi 1234567890",
+  });
+  assert.equal(demo.warning, true);
+  assert.equal(demo.is_trusted_payment_instruction, false);
+});
+
+test("unknown moderation reasons and severities remain safe and non-crashing", () => {
+  const unsupported = messageSafetyForMessage({
+    content: "This message was flagged by a future classifier.",
+    moderation: { flagged: true, reasons: ["FUTURE_REASON"], severity: "CRITICAL" },
+  });
+  assert.equal(unsupported.warning, true);
+  assert.equal(unsupported.severity, null);
+  assert.match(unsupported.advisory, /flagged for review/i);
+
+  const malformed = messageSafetyForMessage({
+    content: "A normal message.",
+    moderation: { flagged: "true", reasons: {}, severity: {} },
+  });
+  assert.equal(malformed.warning, false);
+  assert.equal(malformed.reasons.length, 0);
 });
 
 test("subscribers are notified only after successful writes and can unsubscribe", () => {
