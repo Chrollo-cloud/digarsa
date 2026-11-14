@@ -6,6 +6,7 @@ import { Empty, Stat } from "../workspace/WorkspaceFrame";
 import AdminFrame from "./AdminFrame";
 import { useAdmin } from "./useAdmin";
 
+
 export default function AdminPaymentsPage() {
   const { bookings, accounts, creatorName } = useAdmin();
   const [query, setQuery] = useState(""); const [status, setStatus] = useState(""); const [from, setFrom] = useState(""); const [to, setTo] = useState("");
