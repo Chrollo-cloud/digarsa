@@ -17,25 +17,32 @@ const blank = {
   turnaround: "",
   availability: "Open",
   image: "",
+  revisionFreeCount: "0",
+  revisionRequestWindowHours: "24",
+  revisionTerms: "",
 };
 
 function ServiceForm({ initial, serviceId, catalog }) {
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  function submit(event) {
+  const [saving, setSaving] = useState(false);
+  async function submit(event) {
     event.preventDefault();
     setError("");
+    setSaving(true);
     const form = new FormData(event.currentTarget);
     try {
       const input = {
         ...Object.fromEntries(form),
         serviceLocation: publicLocationFromForm(form),
       };
-      if (serviceId) catalog.update(serviceId, input);
-      else catalog.create(input);
-      navigate("/seller-dashboard/services");
+      if (serviceId) await catalog.update(serviceId, input);
+      else await catalog.create(input);
+      navigate("/seller-dashboard/services", { state: { sellerSuccess: serviceId ? "Service berhasil diperbarui." : "Service berhasil dibuat." } });
     } catch (failure) {
-      setError(failure.message);
+      setError(failure.message || "Layanan tidak dapat disimpan.");
+    } finally {
+      setSaving(false);
     }
   }
   return (
@@ -130,14 +137,31 @@ function ServiceForm({ initial, serviceId, catalog }) {
         </select>
       </div>
       <PublicLocationFields initial={initial.serviceLocation} inherit />
+      <section className="ws-section" aria-labelledby="revision-policy-heading">
+        <header><h2 id="revision-policy-heading">Kebijakan revisi</h2></header>
+        <div className="field-pair">
+          <Input label="Revisi gratis" name="revisionFreeCount" type="number" min="0" step="1" defaultValue={initial.revisionFreeCount ?? "0"} required />
+          <div className="field">
+            <label htmlFor="revision-window">Batas waktu permintaan revisi</label>
+            <select id="revision-window" name="revisionRequestWindowHours" className="field__control" defaultValue={initial.revisionRequestWindowHours ?? "24"} required>
+              {[12, 24, 48, 72].map((hours) => <option key={hours} value={hours}>{hours} jam</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="field">
+          <label htmlFor="revision-terms">Ketentuan revisi</label>
+          <textarea id="revision-terms" name="revisionTerms" className="field__control" defaultValue={initial.revisionTerms || ""} maxLength={2000} required />
+          <span className="field__hint">Jelaskan cakupan revisi dan hal yang tidak termasuk (maksimal 2000 karakter).</span>
+        </div>
+      </section>
       {error && (
         <p className="ws-alert" role="alert">
           {error}
         </p>
       )}
       <div className="ws-actions">
-        <button className="button button--primary" type="submit">
-          {serviceId ? "Save perubahan" : "Publish service"}
+        <button className="button button--primary" type="submit" disabled={saving}>
+          {saving ? "Menyimpan…" : serviceId ? "Save perubahan" : "Publish service"}
         </button>
         <Link
           className="button button--secondary"
@@ -152,10 +176,12 @@ function ServiceForm({ initial, serviceId, catalog }) {
 
 export default function ServiceFormPage() {
   const { serviceId } = useParams();
-  const { services, catalog, user } = useSeller();
+  const { services, servicesStatus, servicesError, catalog, user } = useSeller();
   const existing = serviceId
     ? services.find((item) => item.id === serviceId)
     : null;
+  if (serviceId && servicesStatus === "loading") return <SellerFrame title="Memuat layanan…"><p role="status" className="ws-notice">Memuat layanan seller.</p></SellerFrame>;
+  if (serviceId && servicesStatus === "error") return <SellerFrame title="Layanan tidak dapat dimuat."><p role="alert" className="ws-alert">{servicesError} <button type="button" className="location-link" onClick={() => void catalog.refresh().catch(() => {})}>Coba lagi</button></p></SellerFrame>;
   if (serviceId && !existing)
     return (
       <SellerFrame title="Service not found.">

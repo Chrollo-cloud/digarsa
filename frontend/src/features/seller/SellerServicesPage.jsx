@@ -1,25 +1,30 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { money } from "../../data/marketplace";
 import { Empty, StatusBadge } from "../workspace/WorkspaceFrame";
 import SellerFrame from "./SellerFrame";
 import { useSeller } from "./useSeller";
 
 export default function SellerServicesPage() {
-  const { services, catalog } = useSeller();
+  const location = useLocation();
+  const { services, servicesStatus, servicesError, catalog } = useSeller();
   const [confirming, setConfirming] = useState("");
   const [error, setError] = useState("");
-  const [done, setDone] = useState("");
+  const [done, setDone] = useState(location.state?.sellerSuccess || "");
+  const [saving, setSaving] = useState(false);
 
-  function run(action, success) {
+  async function run(action, success) {
     setError("");
     setDone("");
+    setSaving(true);
     try {
-      action();
+      await action();
       setConfirming("");
       setDone(success);
     } catch (failure) {
-      setError(failure.message);
+      setError(failure.message || "Perubahan tidak dapat disimpan.");
+    } finally {
+      setSaving(false);
     }
   }
   return (
@@ -31,7 +36,7 @@ export default function SellerServicesPage() {
         <Link className="button button--primary" to="/seller-dashboard/services/new">
           Add service +
         </Link>
-        <p>{services.length} services</p>
+        <p>{servicesStatus === "ready" ? `${services.length} services` : ""}</p>
       </div>
       {done && (
         <p className="ws-success" role="status">
@@ -43,11 +48,13 @@ export default function SellerServicesPage() {
           {error}
         </p>
       )}
-      {services.length === 0 ? (
+      {servicesStatus === "loading" && <p className="ws-notice" role="status">Memuat layanan…</p>}
+      {servicesStatus === "error" && <p className="ws-alert" role="alert">{servicesError} <button type="button" className="location-link" onClick={() => void catalog.refresh().catch(() => {})}>Coba lagi</button></p>}
+      {servicesStatus === "ready" && services.length === 0 ? (
         <Empty title="No services yet.">
           Add your first service so customers can find and book it.
         </Empty>
-      ) : (
+      ) : servicesStatus === "ready" ? (
         <ul className="ws-list">
           {services.map((service) => (
             <li key={service.id} className="ws-service">
@@ -92,6 +99,7 @@ export default function SellerServicesPage() {
                       key={String(active)}
                       type="button"
                       aria-pressed={service.active === active}
+                      disabled={saving}
                       onClick={() =>
                         service.active !== active &&
                         run(
@@ -110,6 +118,7 @@ export default function SellerServicesPage() {
                       key={value}
                       type="button"
                       aria-pressed={service.availability === value}
+                      disabled={saving}
                       onClick={() =>
                         service.availability !== value &&
                         run(
@@ -143,7 +152,8 @@ export default function SellerServicesPage() {
                   <button
                     type="button"
                     className="ws-link-button is-danger"
-                    onClick={() => setConfirming(service.id)}
+                        disabled={saving}
+                        onClick={() => setConfirming(service.id)}
                   >
                     Hapus
                   </button>
@@ -155,9 +165,8 @@ export default function SellerServicesPage() {
                       <button
                         type="button"
                         className="button button--danger"
-                        onClick={() =>
-                          run(() => catalog.remove(service.id), "Service dihapus.")
-                        }
+                        disabled={saving}
+                        onClick={() => void run(() => catalog.remove(service.id), "Service dihapus.")}
                       >
                         Ya, hapus
                       </button>
@@ -175,7 +184,7 @@ export default function SellerServicesPage() {
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </SellerFrame>
   );
 }

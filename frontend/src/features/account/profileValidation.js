@@ -58,7 +58,15 @@ export function validateProfilePatch(input) {
   }
   if (
     "gender" in result &&
-    !["", "Female", "Male", "Prefer not to say"].includes(
+    ![
+      "",
+      "Female",
+      "Male",
+      "Prefer not to say",
+      "Perempuan",
+      "Laki-laki",
+      "Tidak ingin menyebutkan",
+    ].includes(
       result.gender,
     )
   )

@@ -1,13 +1,14 @@
 import { useAuth } from "../account/authContext";
 import { customerStore } from "../customer/customerClient";
 import { useStoreSync } from "../workspace/useStoreSync";
-import { sellerStore } from "./sellerClient";
+import { useSellerServices } from "./sellerServicesContext.js";
 
 // Seller-scoped view of the shared booking store plus the seller's own services.
 // Reads never throw into render: failures surface as `error`.
 export function useSeller() {
   const { user, store } = useAuth();
   useStoreSync();
+  const serverServices = useSellerServices();
   const attempt = (read, fallback) => {
     try {
       return [read(), ""];
@@ -17,10 +18,6 @@ export function useSeller() {
   };
   const [orders, ordersError] = attempt(() => customerStore.sellerView(), {
     bookings: [],
-    error: "",
-  });
-  const [services, servicesError] = attempt(() => sellerStore.mine(), {
-    services: [],
     error: "",
   });
   const [profile] = attempt(
@@ -38,11 +35,13 @@ export function useSeller() {
     user,
     profile,
     bookings: orders.bookings,
-    services: services.services,
+    services: serverServices.services,
+    servicesStatus: serverServices.status,
+    servicesError: serverServices.error,
     customers,
-    error: ordersError || orders.error || servicesError || services.error,
+    error: ordersError || orders.error,
     accounts: store,
     orders: customerStore,
-    catalog: sellerStore,
+    catalog: serverServices,
   };
 }

@@ -1,4 +1,6 @@
-import { getAccessToken } from "./authToken.js";
+import { clearAccessToken, getAccessToken } from "./authToken.js";
+
+export const AUTH_UNAUTHORIZED_EVENT = "digarsa:authenticated-request-unauthorized";
 
 const configuredBase = import.meta.env?.VITE_API_BASE_URL?.trim();
 export const API_BASE_URL = (configuredBase || "http://localhost:3000").replace(/\/+$/, "");
@@ -13,13 +15,28 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest(path, { method = "GET", body, headers = {}, signal, auth = true } = {}) {
+function clearRejectedSession(requestToken) {
+  if (!requestToken || getAccessToken() !== requestToken) return;
+  try {
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+  } catch {
+    // A broken event bridge must not prevent local token invalidation.
+  } finally {
+    // AuthProvider normally clears state synchronously from the event. This also
+    // clears storage when the client is used without a mounted provider.
+    if (getAccessToken() === requestToken) clearAccessToken();
+  }
+}
+
+export async function apiRequest(path, {
+  method = "GET", body, headers = {}, signal, auth = true, handleUnauthorized = true,
+} = {}) {
   const requestHeaders = new Headers(headers);
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isFormData) requestHeaders.set("Content-Type", "application/json");
+  const requestToken = auth ? getAccessToken() : null;
   if (auth) {
-    const token = getAccessToken();
-    if (token) requestHeaders.set("Authorization", `Bearer ${token}`);
+    if (requestToken) requestHeaders.set("Authorization", `Bearer ${requestToken}`);
   }
 
   let response;
@@ -33,6 +50,10 @@ export async function apiRequest(path, { method = "GET", body, headers = {}, sig
   } catch (error) {
     if (error?.name === "AbortError") throw error;
     throw new ApiError({ status: 0, code: "NETWORK_ERROR", message: "Could not reach the Digarsa server. Check your connection and try again." });
+  }
+
+  if (response.status === 401 && handleUnauthorized && requestToken) {
+    clearRejectedSession(requestToken);
   }
 
   const contentType = response.headers.get("content-type") || "";

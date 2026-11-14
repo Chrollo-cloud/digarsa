@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { devAdminPlugin } from "../devAdminPlugin.js";
 
 function fixture(root = "/tmp") {
@@ -38,12 +40,12 @@ test('dev setup is explicit and missing ignored credentials produce a recoverabl
   assert.match(JSON.parse(result.body).error, /env.demo-admin.local/);
   const page = await request('/__demo/admin', {host:'localhost:5173'}, 'GET');
   assert.equal(page.statusCode, 200);
-  assert.match(page.body, /Ketik ID akun/);
+  assert.match(page.body, /(?:Ketik ID akun|Enter the verified account ID)/);
   assert.equal((await request('/admin', {host:'localhost:5173'})).next, true);
 });
 
 test('explicit localhost action reads only the chosen ignored demo environment at request time', async () => {
-  const root = await mkdtemp('/tmp/digarsa-admin-env-test-');
+  const root = await mkdtemp(join(tmpdir(), 'digarsa-admin-env-test-'));
   try {
     const request = fixture(root);
     await writeFile(`${root}/.env.demo-admin.local`, 'DIGARSA_DEMO_ADMIN_PASSWORD=Fixture-only-password-8742!\n');

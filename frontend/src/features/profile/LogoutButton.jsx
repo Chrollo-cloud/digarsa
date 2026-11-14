@@ -20,8 +20,9 @@ export default function LogoutButton() {
         <span className="market-kicker">SESI AKUN</span>
         <h2>Completed untuk sekarang?</h2>
         <p>
-          Log out menghapus sesi dari browser ini. Sesi server dapat tetap aktif
-          sampai token kedaluwarsa.
+          Log out menghapus sesi browser ini dan meminta server mengeluarkan
+          semua sesi akun. Jika server tidak dapat dijangkau, sesi browser tetap
+          dihapus; sesi server dapat berlaku sampai token kedaluwarsa.
         </p>
       </div>
       <button

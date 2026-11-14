@@ -1,5 +1,7 @@
 
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "../account/authContext";
+import { SellerServicesProvider } from "./SellerServicesProvider.jsx";
 import SellerOverviewPage from "./SellerOverviewPage";
 import SellerOrdersPage from "./SellerOrdersPage";
 import SellerOrderDetailPage from "./SellerOrderDetailPage";
@@ -13,7 +15,9 @@ import SellerNotificationsPage from "./SellerNotificationsPage";
 import UnsupportedFinancePage from "./UnsupportedFinancePage";
 
 export default function SellerCenter() {
+  const { user, logout } = useAuth();
   return (
+    <SellerServicesProvider userId={user?.id} onUnauthorized={logout}>
     <Routes>
       <Route index element={<SellerOverviewPage />} />
       <Route path="orders" element={<SellerOrdersPage />} />
@@ -34,5 +38,6 @@ export default function SellerCenter() {
       <Route path="notifications" element={<SellerNotificationsPage />} />
       <Route path="*" element={<Navigate to="/seller-dashboard" replace />} />
     </Routes>
+    </SellerServicesProvider>
   );
 }

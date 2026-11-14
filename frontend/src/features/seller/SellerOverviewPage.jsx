@@ -8,7 +8,7 @@ import SellerFrame from "./SellerFrame";
 import { useSeller } from "./useSeller";
 
 export default function SellerOverviewPage() {
-  const { profile, services } = useSeller();
+  const { profile, services, servicesStatus, servicesError, catalog } = useSeller();
   const { user, logout } = useAuth();
   const bookingPage = useBookingList("seller", "", user?.id, logout);
   const bookings = bookingPage.items;
@@ -18,11 +18,13 @@ export default function SellerOverviewPage() {
       <div className="ws-stats seller-kpis" aria-label="Seller statistics">
         <Stat to="/seller-dashboard/orders" label="Total bookings" value={bookingPage.status === "ready" ? bookingPage.total : "—"} note="Server total" />
         <Stat to="/seller-dashboard/orders?status=Requested" label="Incoming requests" value={bookings.filter((row) => row.status === "Requested").length} note="On the loaded page" />
-        <Stat to="/seller-dashboard/services" label="Active services" value={live} note="Service workspace" />
+        <Stat to="/seller-dashboard/services" label="Active services" value={servicesStatus === "ready" ? live : "—"} note={servicesStatus === "error" ? "Service data unavailable" : "Service workspace"} />
         <Stat label="Finance" value="Unavailable" note="Payment and payout are not connected" />
       </div>
       {bookingPage.status === "loading" && <p role="status" className="ws-notice">Loading server bookings…</p>}
       {bookingPage.error && <p role="alert" className="ws-alert">{bookingPage.error} <button type="button" className="location-link" onClick={bookingPage.refresh}>Try again</button></p>}
+      {servicesStatus === "loading" && <p role="status" className="ws-notice">Loading seller services…</p>}
+      {servicesStatus === "error" && <p role="alert" className="ws-alert">{servicesError} <button type="button" className="location-link" onClick={() => void catalog.refresh().catch(() => {})}>Try again</button></p>}
       <section className="ws-section" aria-labelledby="waiting-heading">
         <header><h2 id="waiting-heading">Recent booking activity.</h2><Link to="/seller-dashboard/orders">All bookings</Link></header>
         {bookings.length ? <ul className="ws-list">{bookings.slice(0, 5).map((booking) => <li className="ws-row" key={booking.id}>

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AuthContext } from "./authContext";
 import { demoStore } from "./demoStore";
 import { clearAccessToken, getAccessToken, setAccessToken } from "../../lib/authToken.js";
-import { getCurrentAccount, loginAccount, registerAccount, updateCurrentAccount } from "./authApi.js";
+import { AUTH_UNAUTHORIZED_EVENT } from "../../lib/apiClient.js";
+import { getCurrentAccount, loginAccount, logoutAllSessions, registerAccount, updateCurrentAccount } from "./authApi.js";
 
 function syncLegacyFeatureSession(user) {
   try { demoStore.syncBackendUser(user); } catch { /* Legacy demo storage is optional. */ }
@@ -11,6 +12,12 @@ function syncLegacyFeatureSession(user) {
 export default function AuthProvider({ children }) {
   const [state, setState] = useState({ status: "loading", user: null, storageError: "" });
   const requestVersion = useRef(0);
+  const clearLocalSession = useCallback(() => {
+    requestVersion.current += 1;
+    clearAccessToken();
+    try { demoStore.logout(); } catch { /* Legacy local data must not block browser logout. */ }
+    setState({ status: "unauthenticated", user: null, storageError: "" });
+  }, []);
   const restore = useCallback(async (signal) => {
     const version = ++requestVersion.current;
     const token = getAccessToken();
@@ -47,11 +54,11 @@ export default function AuthProvider({ children }) {
   const login = useCallback((email, password) => authenticate(loginAccount(email, password)), [authenticate]);
   const register = useCallback((input) => authenticate(registerAccount(input)), [authenticate]);
   const logout = useCallback(() => {
-    requestVersion.current += 1;
-    clearAccessToken();
-    try { demoStore.logout(); } catch { /* Legacy local data must not block browser logout. */ }
-    setState({ status: "unauthenticated", user: null, storageError: "" });
-  }, []);
+    const token = getAccessToken();
+    clearLocalSession();
+    if (!token) return Promise.resolve();
+    return logoutAllSessions(token).catch(() => undefined);
+  }, [clearLocalSession]);
   const acceptAccount = useCallback((user) => {
     syncLegacyFeatureSession(user);
     setState({ status: "authenticated", user, storageError: "" });
@@ -90,6 +97,16 @@ export default function AuthProvider({ children }) {
       controller.abort();
     };
   }, [restore]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      // Ignore stale 401s after another request has already cleared or replaced
+      // the rejected session. This keeps concurrent failures from looping.
+      if (getAccessToken()) clearLocalSession();
+    };
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [clearLocalSession]);
 
   const retrySession = useCallback(() => {
     setState({ status: "loading", user: null, storageError: "" });

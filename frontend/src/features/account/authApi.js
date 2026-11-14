@@ -20,6 +20,19 @@ export async function loginAccount(email, password) {
   }));
 }
 
+// The backend endpoint revokes every session for this account, not only this
+// browser. The caller clears local state immediately and treats server failure
+// as best-effort revocation.
+export async function logoutAllSessions(accessToken) {
+  if (!accessToken) return;
+  return apiRequest("/api/auth/logout-all", {
+    method: "POST",
+    auth: false,
+    handleUnauthorized: false,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
 export async function getCurrentAccount(signal) {
   const payload = await apiRequest("/api/auth/me", { signal });
   if (!payload?.data?.user || typeof payload.data.user.id !== "string") {
