@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate, requireRole } from "../../middleware/auth.middleware.js";
+import { geminiModerationRateLimit } from "./gemini-moderation-rate-limit.js";
 import {
   createServiceConversation,
   listConversationMessages,
@@ -12,6 +13,6 @@ const router = Router();
 router.post("/services/:service_id/conversations", authenticate, requireRole("USER"), createServiceConversation);
 router.get("/me/conversations", authenticate, listMyConversations);
 router.get("/conversations/:conversation_id/messages", authenticate, listConversationMessages);
-router.post("/conversations/:conversation_id/messages", authenticate, sendConversationMessage);
+router.post("/conversations/:conversation_id/messages", authenticate, geminiModerationRateLimit, sendConversationMessage);
 
 export default router;

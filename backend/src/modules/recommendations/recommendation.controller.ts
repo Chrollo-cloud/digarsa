@@ -5,7 +5,13 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../lib/http.js";
 import { publicServiceInclude, toPublicService, visibleCatalogWhere } from "../catalog/catalog.service.js";
 import { recommendationQuerySchema, type RecommendationQuery } from "./recommendation.schema.js";
-import { deterministicRecommendationEngine, type RecommendationEngine } from "./recommendation.service.js";
+import {
+  deterministicRecommendationEngine,
+  type RecommendationEngine,
+  type RecommendationProvider,
+  validateProviderResults,
+} from "./recommendation.service.js";
+import { geminiRecommendationProvider } from "./gemini-recommendation.provider.js";
 
 type RecommendationDatabase = Pick<PrismaClient, "service">;
 
@@ -34,6 +40,7 @@ function searchWhere(query: string): Prisma.ServiceWhereInput {
 export function createRecommendationHandler(
   database: RecommendationDatabase,
   engine: RecommendationEngine = deterministicRecommendationEngine,
+  provider: RecommendationProvider = geminiRecommendationProvider,
 ) {
   return async function getRecommendations(req: Request, res: Response) {
     const query = parseQuery(req.query);
@@ -58,20 +65,71 @@ export function createRecommendationHandler(
       ...(query.city ? { city: query.city } : {}),
       ...(query.query ? { query: query.query } : {}),
     };
-    const ranked = engine.rank(candidates, preferences).slice(0, query.limit);
+    const deterministicRanked = engine.rank(candidates, preferences);
+    let ranked = deterministicRanked.slice(0, query.limit);
+    let rankingSource: "rule_based" | "gemini" = "rule_based";
+    let fallbackReason: string | undefined;
+
+    if (query.mode === "gemini") {
+      const availability = provider.availability();
+      if (availability !== "AVAILABLE") {
+        fallbackReason = availability;
+      } else {
+        const shortlist = deterministicRanked.slice(0, Math.min(12, Math.max(query.limit, 6)));
+        let providerResult;
+        try {
+          providerResult = await provider.recommend({
+            ...(query.query ? { query: query.query } : {}),
+            preferences,
+            candidates: shortlist.map(({ service }) => ({
+              service_id: service.id,
+              title: service.title,
+              category: service.category.name,
+              description: service.description,
+              price: service.price,
+              delivery: service.delivery,
+              city: service.seller.city,
+              avg_rating: service.reviewCount > 0 ? service.avgRating : null,
+              review_count: service.reviewCount,
+            })),
+            limit: query.limit,
+          });
+        } catch {
+          providerResult = { ok: false as const, code: "PROVIDER_ERROR" as const };
+        }
+        const validated = providerResult.ok
+          ? validateProviderResults(shortlist.map(({ service }) => service), providerResult.value, query.limit)
+          : [];
+        if (validated.length) {
+          const deterministicById = new Map(deterministicRanked.map((item) => [item.service.id, item]));
+          ranked = validated.flatMap((service) => {
+            const existing = deterministicById.get(service.id);
+            return existing ? [{
+              ...existing,
+              explanation: ["Gemini memilih layanan ini berdasarkan permintaanmu.", ...existing.explanation],
+            }] : [];
+          });
+          rankingSource = "gemini";
+        } else {
+          fallbackReason = providerResult.ok ? "INVALID_RESPONSE" : providerResult.code;
+        }
+      }
+    }
+
     res.status(200).json({
       data: ranked.map(({ service, score, explanation }) => ({
         ...toPublicService(service),
         recommendation: {
           score,
           explanation,
-          ranking_source: "rule_based",
+          ranking_source: rankingSource,
         },
       })),
       meta: {
-        ranking_source: "rule_based",
-        provider_configured: false,
+        ranking_source: rankingSource,
+        provider_configured: provider.availability() === "AVAILABLE",
         candidate_limit: 250,
+        ...(query.mode === "gemini" ? { mode: "gemini", ...(fallbackReason ? { fallback_reason: fallbackReason } : {}) } : {}),
       },
     });
   };

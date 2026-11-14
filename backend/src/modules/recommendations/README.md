@@ -1,8 +1,10 @@
 # Recommendations API
 
-`GET /api/v1/recommendations` returns real, public catalog services from Prisma. The current source is explicitly `rule_based`; no AI provider is configured or called.
+`GET /api/v1/recommendations` returns real, public catalog services from Prisma. The default source is explicitly `rule_based`; Gemini is used only when a signed-in user opts in with `mode=gemini` and server configuration has `AI_ENABLED=true` plus a key.
 
-Optional query parameters are `category`, `max_budget`, `city`, `query`, and `limit` (1–50, default 10). Category, budget, and city are ranking preferences. `query` narrows candidates using public service title, description, category, creator name, and specialties.
+Optional query parameters are `category`, `max_budget`, `city`, `query`, `limit` (1–50, default 10), and `mode` (`rule_based` by default or `gemini`). Category, budget, and city are ranking preferences. `query` narrows candidates using public service title, description, category, creator name, and specialties. The opt-in Gemini mode requires JWT authentication and is rate-limited to 8 calls per account per minute. Public rule-based requests remain anonymous and never call Gemini.
+
+Example opt-in request: `GET /api/v1/recommendations?query=logo%20UMKM&city=Makassar&mode=gemini`. The existing `data` entries remain catalog service DTOs; each gets `recommendation.ranking_source`, and `meta` reports the selected source plus a generic `fallback_reason` only when Gemini was unavailable or unusable. The model does not return service records or customer-facing factual claims.
 
 ## Eligibility and bounds
 
@@ -14,6 +16,8 @@ Initial relative weights are category 30%, budget 25%, location 20%, rating conf
 
 Explanations are derived from actual service category, price, seller city, and persisted ratings. Responses add `recommendation.score`, `recommendation.explanation`, and `recommendation.ranking_source` without changing catalog service fields.
 
-## Future provider integration
+## Gemini provider integration
 
-`RecommendationProvider` is the integration boundary for a future model. It accepts only bounded eligible candidate IDs and minimal preference/query context. Its output must pass `validateProviderResults`, which discards IDs absent from the candidate set and duplicate IDs. Any later provider must use server-side credentials, strict timeouts and usage limits, minimize personal data, and fall back to deterministic ranking on failure. Provider explanations remain untrusted and should be checked against service attributes before display. No API key or paid provider is required by this baseline.
+The Gemini provider accepts at most 12 deterministic shortlist candidates with only public service fields, capped text lengths, and the user query/preferences. Its structured output is Zod-validated; unknown and duplicate IDs are dropped, and the backend maps IDs back to eligible database rows. Only the verified catalog DTO is returned. Explanations are composed from verified row attributes, not trusted from model text. Disabled, unconfigured, timeout, quota, malformed, or thrown provider errors fall back to deterministic ranking with `ranking_source: rule_based` and a safe `fallback_reason`.
+
+Credentials are server-side only. AI requests use a single SDK attempt, bounded output tokens, an abort timeout, and account-scoped rate limiting. The current in-memory limiter is process-local; production multi-instance deployments need a shared rate-limit store. User query and seller descriptions are untrusted prompt data; no tools, arbitrary URL fetches, or database actions are available. Gemini processing requires appropriate privacy disclosure and approval before production activation. Tests inject fake clients; no live API calls are part of automated verification.

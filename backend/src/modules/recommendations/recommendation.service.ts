@@ -1,4 +1,5 @@
 import type { PublicServiceRow } from "../catalog/catalog.service.js";
+import type { GeminiResult } from "../../lib/ai/gemini-provider.js";
 
 export type RecommendationPreferences = {
   category?: string;
@@ -18,11 +19,22 @@ export type RankedRecommendation<T> = {
 
 export type ProviderRecommendation = {
   service_id: string;
-  explanation: string[];
+};
+
+export type RecommendationProviderCandidate = {
+  service_id: string;
+  title: string;
+  category: string;
+  description: string;
+  price: number;
+  delivery: string;
+  city: string;
+  avg_rating: number | null;
+  review_count: number;
 };
 
 /**
- * Contract for a later external provider. Pass only a bounded list of eligible
+ * Contract for the external Gemini reranker. Pass only a bounded list of eligible
  * service IDs plus the minimum query/preferences needed for interpretation.
  * Provider responses are untrusted and must pass validateProviderResults.
  */
@@ -30,12 +42,14 @@ export interface RecommendationProvider {
   recommend(input: {
     query?: string;
     preferences: RecommendationPreferences;
-    candidate_service_ids: readonly string[];
-  }): Promise<ProviderRecommendation[]>;
+    candidates: readonly RecommendationProviderCandidate[];
+    limit: number;
+  }): Promise<GeminiResult<ProviderRecommendation[]>>;
+  availability(): "AVAILABLE" | "DISABLED" | "NOT_CONFIGURED";
 }
 
 /**
- * Provider boundary for a future model-backed reranker. Implementations must
+ * Provider boundary for the model-backed reranker. Implementations must
  * return only IDs from the supplied eligible candidates; catalog eligibility
  * is always enforced by the controller before this interface is called.
  */
@@ -52,21 +66,19 @@ export function validateProviderResults<T extends { id: string }>(
   providerResults: unknown,
   limit: number,
 ) {
-  if (!Array.isArray(providerResults)) return [] as { service: T; explanation: string[] }[];
+  if (!Array.isArray(providerResults)) return [] as T[];
   const candidateById = new Map(candidates.map((candidate) => [candidate.id, candidate]));
   const seen = new Set<string>();
-  const validated: { service: T; explanation: string[] }[] = [];
+  const validated: T[] = [];
   for (const item of providerResults) {
-    if (validated.length >= limit || !item || typeof item !== "object") break;
+    if (validated.length >= limit) break;
+    if (!item || typeof item !== "object") continue;
     const result = item as { service_id?: unknown; explanation?: unknown };
     if (typeof result.service_id !== "string" || seen.has(result.service_id)) continue;
     const service = candidateById.get(result.service_id);
     if (!service) continue;
     seen.add(result.service_id);
-    const explanation = Array.isArray(result.explanation)
-      ? result.explanation.filter((line): line is string => typeof line === "string").slice(0, 3).map((line) => line.trim().slice(0, 200)).filter(Boolean)
-      : [];
-    validated.push({ service, explanation });
+    validated.push(service);
   }
   return validated;
 }

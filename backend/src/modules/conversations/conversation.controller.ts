@@ -4,6 +4,7 @@ import { HttpError } from "../../lib/http.js";
 import { visibleCatalogWhere } from "../catalog/catalog.service.js";
 import { conversationMessagePageSchema, createMessageSchema } from "./conversation.schema.js";
 import { classifyMessage, safeModerationMetadata } from "./message-moderation.js";
+import { moderateMessageOnce, moderateMessageWithGemini, type ModerationOutcome } from "./gemini-message-moderation.js";
 
 function currentUserId(res: Response) {
   return (res.locals.auth as { userId: string }).userId;
@@ -118,8 +119,21 @@ export async function listMyConversations(_req: Request, res: Response) {
 
 type ConversationMessageDatabase = typeof prisma;
 
+type MessageModerationResultLike = ReturnType<typeof classifyMessage>;
+
+function moderationDto(result: MessageModerationResultLike, source: "GEMINI" | "RULE_BASED") {
+  return {
+    ...safeModerationMetadata(result),
+    source: source === "GEMINI" ? "gemini" : "rule_based",
+    status: source === "GEMINI" ? "AI_COMPLETED" : "RULE_BASED_FALLBACK",
+  };
+}
+
 /** Injectable handler factory keeps endpoint behavior testable without a live database. */
-export function createConversationMessageHandlers(database: ConversationMessageDatabase = prisma) {
+export function createConversationMessageHandlers(
+  database: ConversationMessageDatabase = prisma,
+  moderate: (body: string) => Promise<ModerationOutcome> = moderateMessageWithGemini,
+) {
   async function getParticipantConversation(id: string, userId: string) {
     const conversation = await database.conversation.findFirst({
       where: { id, OR: [{ customerId: userId }, { seller: { is: { userId } } }] },
@@ -144,7 +158,7 @@ export function createConversationMessageHandlers(database: ConversationMessageD
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: query.limit + 1,
-      select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true },
+      select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true, moderationSource: true },
     });
     const hasMore = messages.length > query.limit;
     const pageMessages = hasMore ? messages.slice(0, query.limit) : messages;
@@ -155,11 +169,11 @@ export function createConversationMessageHandlers(database: ConversationMessageD
       sender_id: message.senderId,
       body: message.body,
       created_at: message.createdAt.toISOString(),
-      moderation: safeModerationMetadata({
+      moderation: moderationDto({
         flagged: message.isFlagged,
         reasons: message.flagReasons as ReturnType<typeof classifyMessage>["reasons"],
         severity: message.flagSeverity,
-      }),
+      }, message.moderationSource === "GEMINI" ? "GEMINI" : "RULE_BASED"),
     })), page: { next_cursor: nextCursor, has_more: hasMore, limit: query.limit } });
   }
 
@@ -167,7 +181,25 @@ export function createConversationMessageHandlers(database: ConversationMessageD
     const id = conversationId(req);
     const senderId = currentUserId(res);
     const input = parseMessage(req.body);
-    const moderation = classifyMessage(input.body);
+    const authorizedConversation = await database.conversation.findFirst({
+      where: { id, OR: [{ customerId: senderId }, { seller: { is: { userId: senderId } } }] },
+      select: { id: true },
+    });
+    if (!authorizedConversation) throw new HttpError(404, "CONVERSATION_NOT_FOUND", "Percakapan tidak ditemukan.");
+
+    // Keep the provider call outside the transaction. It always falls back to
+    // deterministic classification so a valid message can still be stored.
+    let moderation: ModerationOutcome;
+    try {
+      moderation = await moderateMessageOnce([id, senderId], input.body, moderate);
+    } catch {
+      moderation = {
+        result: classifyMessage(input.body),
+        source: "RULE_BASED",
+        status: "RULE_BASED_FALLBACK",
+        fallbackReason: "PROVIDER_ERROR",
+      };
+    }
     const message = await database.$transaction(async (tx) => {
       const conversation = await tx.conversation.findFirst({
         where: { id, OR: [{ customerId: senderId }, { seller: { is: { userId: senderId } } }] },
@@ -180,11 +212,12 @@ export function createConversationMessageHandlers(database: ConversationMessageD
           conversationId: id,
           senderId,
           body: input.body,
-          isFlagged: moderation.flagged,
-          flagReasons: moderation.reasons,
-          flagSeverity: moderation.severity,
+          isFlagged: moderation.result.flagged,
+          flagReasons: moderation.result.reasons,
+          flagSeverity: moderation.result.severity,
+          moderationSource: moderation.source,
         },
-        select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true },
+        select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true, moderationSource: true },
       });
       const recipientId = senderId === conversation.customerId ? conversation.seller.userId : conversation.customerId;
       if (recipientId !== senderId) {
@@ -205,11 +238,11 @@ export function createConversationMessageHandlers(database: ConversationMessageD
       sender_id: message.senderId,
       body: message.body,
       created_at: message.createdAt.toISOString(),
-      moderation: safeModerationMetadata({
+      moderation: moderationDto({
         flagged: message.isFlagged,
         reasons: message.flagReasons as ReturnType<typeof classifyMessage>["reasons"],
         severity: message.flagSeverity,
-      }),
+      }, message.moderationSource === "GEMINI" ? "GEMINI" : "RULE_BASED"),
     } });
   }
 
