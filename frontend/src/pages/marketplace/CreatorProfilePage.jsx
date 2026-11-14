@@ -39,7 +39,7 @@ export default function CreatorProfilePage() {
           <div className="market-profile-avatar-frame">
             <ImageWithFallback className="market-profile-avatar" src={creator.image} alt={`Profile of ${creator.name}`} fallback={<span className="market-profile-avatar market-avatar-placeholder" aria-hidden="true">{initials || "D"}</span>} />
           </div>
-          <div>
+          <div className="market-profile-intro__content">
             <span className="market-kicker">{creator.category || "Creator"}</span>
             <h1 id="creator-name">{creator.name}</h1>
             {creator.city && <p>{creator.city}</p>}

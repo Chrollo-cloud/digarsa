@@ -521,6 +521,7 @@
   padding-inline: 28px;
   position: relative;
   margin-top: -48px;
+  min-width: 0;
 }
 .market-profile-avatar {
   width: 104px;
@@ -530,14 +531,20 @@
   object-fit: cover;
   flex: none;
 }
-.market-profile-intro > div {
-  padding-top: 43px;
+.market-profile-intro__content {
+  flex: 1 1 0%;
   min-width: 0;
+  max-width: 100%;
+  padding-top: 43px;
 }
 .market-profile-intro h1 {
   margin: 7px 0;
   font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
+.market-profile-intro .market-kicker { overflow-wrap: anywhere; }
 .market-profile-intro p {
   font-size: 12px;
 }
@@ -698,11 +705,11 @@
     height: 76px;
     border-width: 4px;
   }
-  .market-profile-intro > div {
+  .market-profile-intro__content {
     padding-top: 38px;
   }
   .market-profile-intro h1 {
-    font-size: 27px;
+    font-size: clamp(25px, 6vw, 32px);
   }
   .market-profile-bio {
     margin-inline: 10px;
