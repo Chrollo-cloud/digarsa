@@ -26,7 +26,7 @@ export const authenticate: RequestHandler = async (req, res, next) => {
   const token = authHeader.slice(7).trim();
   const secret = process.env.JWT_SECRET;
 
-  if (!secret) {
+  if (!secret || secret.length < 32) {
     res.status(500).json({
       error: {
         code: "SERVER_CONFIG_ERROR",

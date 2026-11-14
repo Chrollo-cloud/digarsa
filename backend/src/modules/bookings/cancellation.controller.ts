@@ -8,6 +8,8 @@ import {
   uploadCancellationEvidence,
 } from "../../lib/storage.js";
 import { z } from "zod";
+import { lockBookingAndActiveCycle, syncDeliveryCycleBlockers, closeActiveDeliveryCycle } from "./delivery-cycle.js";
+import { enqueueInAppNotices } from "./notification-outbox.js";
 
 const requestSchema = z.object({ reason: z.string().trim().min(10).max(1000) });
 const decisionSchema = z.object({
@@ -36,7 +38,9 @@ export async function requestBookingCancellation(req: Request, res: Response) {
   await uploadCancellationEvidence(evidencePath, req.file);
   try {
     const result = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "Booking" WHERE "id" = ${bookingId} AND "customerId" = ${customerId} FOR UPDATE`;
+      await lockBookingAndActiveCycle(tx, bookingId);
+      const activeDispute = await tx.dispute.findFirst({ where: { bookingId, status: { not: "DECIDED" } }, select: { id: true } });
+      if (activeDispute) throw new HttpError(409, "ACTIVE_DISPUTE_BLOCKS_CANCELLATION", "Pengajuan pembatalan ditahan selama sengketa booking masih aktif.");
       const booking = await tx.booking.findFirst({ where: { id: bookingId, customerId }, select: { id: true, status: true, seller: { select: { userId: true } } } });
       if (!booking) throw new HttpError(404, "BOOKING_NOT_FOUND", "Pesanan tidak ditemukan.");
       if (!["REQUESTED", "ACCEPTED", "PAID", "DELIVERED"].includes(booking.status)) {
@@ -45,21 +49,22 @@ export async function requestBookingCancellation(req: Request, res: Response) {
       const pending = await tx.cancellationRequest.findFirst({ where: { bookingId, status: "PENDING" }, select: { id: true } });
       if (pending) throw new HttpError(409, "CANCELLATION_ALREADY_PENDING", "Pengajuan pembatalan pesanan ini masih ditinjau.");
       const cancellation = await tx.cancellationRequest.create({ data: { bookingId, requesterId: customerId, reason: input.reason, evidencePath } });
+      const now = new Date();
+      const deliveryCycleId = await syncDeliveryCycleBlockers(tx, bookingId, now, customerId);
       const admins = await tx.user.findMany({ where: { role: "ADMIN", accountStatus: "ACTIVE" }, select: { id: true } });
-      await tx.notification.createMany({ data: admins.map((admin) => ({
+      await enqueueInAppNotices(tx, deliveryCycleId ? `delivery-cycle:${deliveryCycleId}:cancellation-requested:${cancellation.id}` : `cancellation:requested:${cancellation.id}`, "CANCELLATION_REQUESTED", [...admins.map((admin) => ({
         userId: admin.id,
         type: "COMPLAINT" as const,
         title: "Pengajuan pembatalan pesanan",
         body: "Ada pengajuan pembatalan pesanan dengan bukti yang perlu ditinjau.",
         refId: cancellation.id,
-      })) });
-      await tx.notification.create({ data: {
+      })), {
         userId: booking.seller.userId,
         type: "BOOKING_UPDATE",
         title: "Pembatalan pesanan sedang ditinjau",
         body: "Buyer mengajukan pembatalan. Pesanan dan dana tidak berubah sampai admin meninjau bukti.",
         refId: bookingId,
-      } });
+      }], deliveryCycleId ?? undefined);
       return cancellation;
     });
     res.status(201).json({ data: { id: result.id, booking_id: result.bookingId, status: result.status, created_at: result.createdAt.toISOString() } });
@@ -97,11 +102,17 @@ export async function decideCancellationRequest(req: Request, res: Response) {
   const id = typeof req.params.cancellation_id === "string" ? req.params.cancellation_id : "";
   const input = parsed<ReturnType<typeof decisionSchema.parse>>(decisionSchema, req.body);
   const result = await prisma.$transaction(async (tx) => {
+    const pointer = await tx.cancellationRequest.findUnique({ where: { id }, select: { bookingId: true } });
+    if (!pointer) throw new HttpError(404, "CANCELLATION_NOT_FOUND", "Pengajuan pembatalan tidak ditemukan.");
+    await lockBookingAndActiveCycle(tx, pointer.bookingId);
+    const activeDispute = await tx.dispute.findFirst({ where: { bookingId: pointer.bookingId, status: { not: "DECIDED" } }, select: { id: true } });
+    if (activeDispute) throw new HttpError(409, "ACTIVE_DISPUTE_BLOCKS_CANCELLATION", "Keputusan pembatalan ditahan selama sengketa booking masih aktif.");
     await tx.$queryRaw`SELECT "id" FROM "CancellationRequest" WHERE "id" = ${id} FOR UPDATE`;
-    const existing = await tx.cancellationRequest.findUnique({ where: { id }, include: { booking: { include: { payment: true, seller: { select: { userId: true } } } } } });
+    const existing = await tx.cancellationRequest.findUnique({ where: { id }, include: { booking: { select: { id: true, status: true, seller: { select: { userId: true } } } } } });
     if (!existing) throw new HttpError(404, "CANCELLATION_NOT_FOUND", "Pengajuan pembatalan tidak ditemukan.");
     if (existing.status !== "PENDING") throw new HttpError(409, "CANCELLATION_ALREADY_REVIEWED", "Pengajuan ini sudah ditinjau.");
     const booking = existing.booking;
+    let deliveryCycleId: string | null = null;
     if (input.status === "APPROVED") {
       if (!["REQUESTED", "ACCEPTED", "PAID", "DELIVERED"].includes(booking.status)) {
         throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah; pembatalan tidak dapat disetujui.");
@@ -111,9 +122,6 @@ export async function decideCancellationRequest(req: Request, res: Response) {
         data: { status: "CANCELLED" },
       });
       if (changed.count !== 1) throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah.");
-      if (booking.payment?.status === "PAID") {
-        await tx.payment.update({ where: { bookingId: booking.id }, data: { status: "REFUND_PENDING", payoutStatus: "HELD" } });
-      }
       await tx.bookingStatusEvent.create({ data: {
         bookingId: booking.id,
         fromStatus: booking.status,
@@ -121,18 +129,20 @@ export async function decideCancellationRequest(req: Request, res: Response) {
         actorUserId: adminId,
         source: "ADMIN_CANCELLATION_APPROVAL",
       } });
+      deliveryCycleId = (await closeActiveDeliveryCycle(tx, booking.id, new Date(), "CANCELLED", adminId))?.id ?? null;
     }
     const cancellation = await tx.cancellationRequest.update({
       where: { id },
       data: { status: input.status, adminNote: input.admin_note ?? null, reviewedById: adminId, reviewedAt: new Date() },
     });
-    await tx.notification.createMany({ data: [
+    if (input.status === "REJECTED") deliveryCycleId = await syncDeliveryCycleBlockers(tx, booking.id, new Date(), adminId);
+    await enqueueInAppNotices(tx, deliveryCycleId ? `delivery-cycle:${deliveryCycleId}:cancellation-decision:${cancellation.id}` : `cancellation:decision:${cancellation.id}`, "CANCELLATION_DECIDED", [
       {
         userId: existing.requesterId,
         type: "BOOKING_UPDATE",
         title: input.status === "APPROVED" ? "Pembatalan disetujui" : "Pembatalan ditolak",
-        body: input.status === "APPROVED" && booking.payment?.status === "PAID"
-          ? "Pembatalan disetujui. Pengembalian dana menunggu konfirmasi penyedia pembayaran."
+        body: input.status === "APPROVED"
+          ? "Pembatalan disetujui. Keputusan ini bukan konfirmasi pemrosesan atau pengembalian dana."
           : input.admin_note ?? null,
         refId: booking.id,
       },
@@ -143,7 +153,7 @@ export async function decideCancellationRequest(req: Request, res: Response) {
         body: input.admin_note ?? null,
         refId: booking.id,
       },
-    ] });
+    ], deliveryCycleId ?? undefined);
     return cancellation;
   });
   res.status(200).json({ data: { id: result.id, booking_id: result.bookingId, status: result.status, admin_note: result.adminNote, reviewed_at: result.reviewedAt?.toISOString() ?? null } });

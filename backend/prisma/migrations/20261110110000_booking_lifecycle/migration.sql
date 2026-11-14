@@ -1,4 +1,4 @@
-﻿-- Add booking brief snapshots and immutable status history. Existing rows remain readable.
+-- Add booking brief snapshots and immutable status history. Existing rows remain readable.
 ALTER TABLE "Booking"
   ALTER COLUMN "scheduledDate" DROP NOT NULL,
   ADD COLUMN "serviceTitle" TEXT,

@@ -26,6 +26,7 @@ export const requireApprovedSeller: RequestHandler = async (_req, res, next) => 
     next(new HttpError(401, "UNAUTHORIZED", "Silakan login terlebih dahulu."));
     return;
   }
+
   const profile = await prisma.sellerProfile.findUnique({
     where: { userId: auth.userId },
     select: { id: true, verificationStatus: true },
@@ -35,9 +36,10 @@ export const requireApprovedSeller: RequestHandler = async (_req, res, next) => 
     return;
   }
   if (profile.verificationStatus !== "APPROVED") {
-    next(new HttpError(403, "SELLER_NOT_APPROVED", "Seller harus disetujui admin sebelum mengelola layanan."));
+    next(new HttpError(403, "SELLER_VERIFICATION_REQUIRED", "Verifikasi seller harus disetujui sebelum mengakses Seller Center."));
     return;
   }
+
   res.locals.sellerProfileId = profile.id;
   next();
 };

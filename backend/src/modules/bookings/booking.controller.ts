@@ -2,6 +2,12 @@ import type { Request, Response } from "express";
 import { BookingStatus, Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../lib/http.js";
+import { checkCompletionEligibility } from "./completion-eligibility.js";
+import { closeActiveDeliveryCycle, createDeliveryCycle, lockBookingAndActiveCycle, syncDeliveryCycleBlockers } from "./delivery-cycle.js";
+import { enqueueInAppNotices } from "./notification-outbox.js";
+import { createHash } from "node:crypto";
+import { revisionPolicyDto, revisionPolicyHash, REVISION_WINDOW_ANCHOR, REVISION_WINDOW_UNIT } from "./revision-policy.js";
+import { expireUnusedRevisionQuota } from "./revision-ledger.js";
 import {
   bookingDraftSchema,
   bookingListQuerySchema,
@@ -12,6 +18,7 @@ import {
 
 const bookingInclude = {
   payment: { select: { status: true, payoutStatus: true, amount: true, paidAt: true } },
+  deliveryCycles: { where: { active: true }, select: { id: true, sequence: true, status: true, deliveryAt: true, deadlineAt: true, pausedAt: true, remainingMs: true, version: true } },
 } satisfies Prisma.BookingInclude;
 
 function currentUserId(res: Response) {
@@ -54,8 +61,28 @@ function toDto(booking: Prisma.BookingGetPayload<{ include: typeof bookingInclud
     created_at: booking.createdAt.toISOString(),
     updated_at: booking.updatedAt.toISOString(),
     decline_reason: booking.declineReason,
+    revision_policy_snapshot: booking.revisionPolicyHash ? {
+      version: booking.revisionPolicyVersion,
+      hash: booking.revisionPolicyHash,
+      free_revision_count: booking.revisionFreeCount,
+      request_window_duration: booking.revisionRequestWindowDuration,
+      request_window_unit: booking.revisionRequestWindowUnit,
+      request_window_anchor: booking.revisionRequestWindowAnchor,
+      terms: booking.revisionTermsSnapshot,
+      acknowledged_at: booking.revisionPolicyAcknowledgedAt?.toISOString() ?? null,
+    } : null,
     delivered_at: booking.deliveredAt?.toISOString() ?? null,
     completed_at: booking.completedAt?.toISOString() ?? null,
+    active_delivery_cycle: booking.deliveryCycles[0] ? {
+      id: booking.deliveryCycles[0].id,
+      sequence: booking.deliveryCycles[0].sequence,
+      status: booking.deliveryCycles[0].status,
+      delivered_at: booking.deliveryCycles[0].deliveryAt.toISOString(),
+      review_deadline_at: booking.deliveryCycles[0].deadlineAt?.toISOString() ?? null,
+      paused_at: booking.deliveryCycles[0].pausedAt?.toISOString() ?? null,
+      remaining_review_ms: booking.deliveryCycles[0].remainingMs,
+      version: booking.deliveryCycles[0].version,
+    } : null,
     payment: booking.payment ? {
       status: booking.payment.status,
       payout_status: booking.payment.payoutStatus,
@@ -74,15 +101,17 @@ async function validateBookableService(serviceId: string, userId: string) {
       status: "OPEN",
       moderationStatus: "APPROVED",
       category: { is: { isActive: true } },
-      seller: { is: { user: { is: { accountStatus: "ACTIVE" } } } },
+      seller: { is: { verificationStatus: "APPROVED", user: { is: { accountStatus: "ACTIVE" } } } },
     },
     select: {
       id: true, title: true, price: true, delivery: true, status: true,
+      revisionPolicyVersion: true, revisionFreeCount: true, revisionRequestWindowHours: true, revisionTerms: true,
       sellerId: true,
       seller: { select: { displayName: true, userId: true } },
     },
   });
   if (!service) throw new HttpError(409, "SERVICE_NOT_BOOKABLE", "Layanan tidak tersedia untuk menerima pesanan.");
+  if (!revisionPolicyDto(service)) throw new HttpError(409, "REVISION_POLICY_NOT_CONFIGURED", "Seller belum mengatur ketentuan revisi untuk layanan ini.");
   if (service.seller.userId === userId) throw new HttpError(422, "SELF_BOOKING", "Anda tidak dapat memesan layanan milik sendiri.");
   if (!Number.isSafeInteger(service.price) || service.price < 0) {
     throw new HttpError(503, "CATALOG_UNAVAILABLE", "Harga layanan tidak dapat diverifikasi saat ini.");
@@ -115,6 +144,7 @@ export async function validateBooking(req: Request, res: Response) {
     service_id: service.id,
     estimated_price: service.price,
     delivery_mode: service.delivery.toLowerCase(),
+    revision_policy: revisionPolicyDto(service),
   } });
 }
 
@@ -135,12 +165,22 @@ export async function createBooking(req: Request, res: Response) {
         status: "OPEN",
         moderationStatus: "APPROVED",
         category: { is: { isActive: true } },
-        seller: { is: { user: { is: { accountStatus: "ACTIVE" } } } },
+        seller: { is: { verificationStatus: "APPROVED", user: { is: { accountStatus: "ACTIVE" } } } },
       },
-      select: { id: true, title: true, price: true, delivery: true, sellerId: true, seller: { select: { displayName: true, userId: true } } },
+      select: {
+        id: true, title: true, price: true, delivery: true, sellerId: true,
+        revisionPolicyVersion: true, revisionFreeCount: true, revisionRequestWindowHours: true, revisionTerms: true,
+        seller: { select: { displayName: true, userId: true } },
+      },
     });
     if (!currentService || currentService.seller.userId === userId || currentService.delivery !== service.delivery) {
       throw new HttpError(409, "SERVICE_NOT_BOOKABLE", "Layanan berubah dan tidak dapat menerima pesanan.");
+    }
+    const currentPolicy = revisionPolicyDto(currentService);
+    const currentPolicyHash = revisionPolicyHash(currentService);
+    if (!currentPolicy || !currentPolicyHash) throw new HttpError(409, "REVISION_POLICY_NOT_CONFIGURED", "Seller belum mengatur ketentuan revisi untuk layanan ini.");
+    if (input.revision_policy_hash !== currentPolicyHash || input.revision_policy_acknowledged !== true) {
+      throw new HttpError(409, "REVISION_POLICY_CHANGED", "Ketentuan revisi berubah. Tinjau kembali dan setujui sebelum mengirim booking.");
     }
     const created = await tx.booking.create({
       data: {
@@ -158,6 +198,14 @@ export async function createBooking(req: Request, res: Response) {
         price: currentService.price,
         fee: 0,
         total: currentService.price,
+        revisionPolicyVersion: currentService.revisionPolicyVersion,
+        revisionPolicyHash: currentPolicyHash,
+        revisionFreeCount: currentService.revisionFreeCount,
+        revisionRequestWindowDuration: currentService.revisionRequestWindowHours,
+        revisionRequestWindowUnit: REVISION_WINDOW_UNIT,
+        revisionRequestWindowAnchor: REVISION_WINDOW_ANCHOR,
+        revisionTermsSnapshot: currentService.revisionTerms,
+        revisionPolicyAcknowledgedAt: new Date(),
       },
       include: bookingInclude,
     });
@@ -168,13 +216,10 @@ export async function createBooking(req: Request, res: Response) {
       actorUserId: userId,
       source: "CUSTOMER",
     } });
-    await tx.notification.create({ data: {
-      userId: currentService.seller.userId,
-      type: "BOOKING_UPDATE",
-      title: "Pesanan baru",
-      body: `${currentService.title} menerima permintaan pesanan baru.`,
-      refId: created.id,
-    } });
+    await enqueueInAppNotices(tx, `booking:requested:${created.id}`, "BOOKING_REQUESTED", [{
+      userId: currentService.seller.userId, type: "BOOKING_UPDATE", title: "Pesanan baru",
+      body: `${currentService.title} menerima permintaan pesanan baru.`, refId: created.id,
+    }]);
     return created;
   });
   res.status(201).json({ data: toDto(booking) });
@@ -255,37 +300,47 @@ async function sellerTransition(req: Request, res: Response, action: "accept" | 
   }
 
   const updated = await prisma.$transaction(async (tx) => {
+    await lockBookingAndActiveCycle(tx, id);
     const existing = await tx.booking.findFirst({ where: { id, sellerId }, include: bookingInclude });
     if (!existing) throw new HttpError(404, "BOOKING_NOT_FOUND", "Pesanan tidak ditemukan.");
+    const activeDispute = await tx.dispute.findFirst({ where: { bookingId: id, status: { not: "DECIDED" } }, select: { id: true } });
+    if (activeDispute) throw new HttpError(409, "ACTIVE_DISPUTE_BLOCKS_BOOKING", "Tindakan pesanan ditahan selama sengketa masih aktif.");
     if (existing.status !== validExpected) throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah atau tindakan ini tidak tersedia.");
     if (action === "deliver" && existing.payment?.status !== "PAID") {
       throw new HttpError(409, "PAYMENT_NOT_CONFIRMED", "Pesanan belum memiliki konfirmasi pembayaran tepercaya.");
     }
+    const transitionAt = new Date();
     const won = await tx.booking.updateMany({
       where: { id, sellerId, status: validExpected },
       data: {
         status: toStatus,
         declineReason: action === "decline" ? input.reason ?? null : null,
-        ...(action === "deliver" ? { deliveredAt: new Date() } : {}),
+        ...(action === "deliver" ? { deliveredAt: transitionAt } : {}),
       },
     });
     if (won.count !== 1) throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah.");
-    const result = await tx.booking.findUniqueOrThrow({ where: { id }, include: bookingInclude });
-    await tx.bookingStatusEvent.create({ data: {
+    const event = await tx.bookingStatusEvent.create({ data: {
       bookingId: id,
       fromStatus: validExpected,
       toStatus,
       actorUserId: userId,
       source: "SELLER",
     } });
-    await tx.notification.create({ data: {
+    let cycleId: string | undefined;
+    if (action === "deliver") {
+      const cycle = await createDeliveryCycle(tx, id, transitionAt);
+      cycleId = cycle.id;
+      // A cancellation request may already be pending while the booking is PAID.
+      await syncDeliveryCycleBlockers(tx, id, transitionAt, userId);
+    }
+    await enqueueInAppNotices(tx, cycleId ? `delivery-cycle:${cycleId}:delivered:${event.id}` : `booking:${action}:${id}:${transitionAt.toISOString()}`, `BOOKING_${action.toUpperCase()}`, [{
       userId: existing.customerId,
       type: "BOOKING_UPDATE",
       title: action === "accept" ? "Pesanan diterima" : action === "decline" ? "Pesanan ditolak" : "Hasil pesanan dikirim",
       body: action === "decline" ? input.reason ?? "Seller menolak pesanan." : null,
       refId: id,
-    } });
-    return result;
+    }], cycleId);
+    return tx.booking.findUniqueOrThrow({ where: { id }, include: bookingInclude });
   });
   res.status(200).json({ data: toDto(updated) });
 }
@@ -299,32 +354,59 @@ export async function completeBooking(req: Request, res: Response) {
   const id = typeof req.params.booking_id === "string" ? req.params.booking_id : "";
   const input = parse<ReturnType<typeof customerCompletionSchema.parse>>(customerCompletionSchema, req.body);
   const updated = await prisma.$transaction(async (tx) => {
+    const owned = await tx.booking.findFirst({ where: { id, customerId: userId }, select: { id: true } });
+    if (!owned) throw new HttpError(404, "BOOKING_NOT_FOUND", "Pesanan tidak ditemukan.");
+    const fingerprint = createHash("sha256").update(JSON.stringify({ expected_status: input.expected_status })).digest("hex");
+    const eligibility = await checkCompletionEligibility(tx, id, "CUSTOMER", new Date());
+    if (!eligibility.eligible) {
+      if (eligibility.reason === "ACTIVE_BLOCKER") throw new HttpError(409, "BOOKING_COMPLETION_BLOCKED", "Pesanan tidak dapat diselesaikan selama ada proses yang masih aktif.");
+      if (eligibility.reason === "LEGACY_REVIEW_REQUIRED") throw new HttpError(409, "LEGACY_BOOKING_REVIEW_REQUIRED", "Penyelesaian pesanan lama memerlukan pemeriksaan admin berdasarkan bukti yang tersedia.");
+      if (eligibility.reason === "BOOKING_STATE") {
+        const completed = await tx.booking.findFirst({ where: { id, customerId: userId, status: "COMPLETED" }, include: bookingInclude });
+        if (completed) {
+          const latest = await tx.deliveryCycle.findFirst({ where: { bookingId: id }, orderBy: { sequence: "desc" }, select: { id: true } });
+          const receipt = latest ? await tx.deliveryCycleCompletionReceipt.findFirst({ where: { deliveryCycleId: latest.id, principalId: userId, operation: "CUSTOMER_COMPLETE" } }) : null;
+          if (receipt && receipt.requestFingerprint === fingerprint) return completed;
+        }
+        throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah.");
+      }
+      throw new HttpError(409, "BOOKING_TIMER_INVALID", "Timer peninjauan pesanan tidak valid. Pesanan ditahan untuk pemeriksaan.");
+    }
     const existing = await tx.booking.findFirst({ where: { id, customerId: userId }, include: bookingInclude });
     if (!existing) throw new HttpError(404, "BOOKING_NOT_FOUND", "Pesanan tidak ditemukan.");
+    if (existing.status === "COMPLETED") {
+      const receipt = await tx.deliveryCycleCompletionReceipt.findFirst({ where: { deliveryCycleId: eligibility.cycle.id, principalId: userId, operation: "CUSTOMER_COMPLETE" } });
+      if (receipt && receipt.requestFingerprint === fingerprint) return existing;
+      throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Pesanan sudah selesai atau permintaan penyelesaiannya berbeda.");
+    }
     if (existing.status !== "DELIVERED" || input.expected_status !== statusName(existing.status)) {
       throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Pesanan hanya dapat dikonfirmasi selesai setelah hasil dikirim seller.");
     }
+    const transitionAt = new Date();
     const won = await tx.booking.updateMany({
       where: { id, customerId: userId, status: "DELIVERED" },
-      data: { status: "COMPLETED", completedAt: new Date() },
+      data: { status: "COMPLETED", completedAt: transitionAt },
     });
     if (won.count !== 1) throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah.");
     if (existing.payment?.status === "PAID" && existing.payment.payoutStatus === "HELD") {
       await tx.payment.update({ where: { bookingId: id }, data: { payoutStatus: "ELIGIBLE" } });
     }
-    await tx.bookingStatusEvent.create({ data: {
+    const event = await tx.bookingStatusEvent.create({ data: {
       bookingId: id,
       fromStatus: "DELIVERED",
       toStatus: "COMPLETED",
       actorUserId: userId,
       source: "CUSTOMER",
     } });
-    await tx.notification.create({ data: {
+    await tx.deliveryCycleCompletionReceipt.create({ data: { deliveryCycleId: eligibility.cycle.id, principalId: userId, operation: "CUSTOMER_COMPLETE", requestFingerprint: fingerprint, transitionEventId: event.id } });
+    await expireUnusedRevisionQuota(tx, id, eligibility.cycle.id, transitionAt);
+    await closeActiveDeliveryCycle(tx, id, transitionAt, "COMPLETED", userId);
+    await enqueueInAppNotices(tx, `delivery-cycle:${eligibility.cycle.id}:completed:${event.id}`, "BOOKING_COMPLETED", [{
       userId: (await tx.sellerProfile.findUniqueOrThrow({ where: { id: existing.sellerId }, select: { userId: true } })).userId,
       type: "BOOKING_UPDATE",
       title: "Pesanan dikonfirmasi selesai",
       refId: id,
-    } });
+    }], eligibility.cycle.id);
     return tx.booking.findUniqueOrThrow({ where: { id }, include: bookingInclude });
   });
   res.status(200).json({ data: toDto(updated) });

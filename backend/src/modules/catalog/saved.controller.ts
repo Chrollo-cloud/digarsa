@@ -3,6 +3,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../lib/http.js";
 import { isCatalogVisible, publicServiceInclude, toPublicService, visibleCatalogWhere } from "./catalog.service.js";
+import { addBookableCartItem, deleteCartItemRow, savedServiceAvailable } from "./saved-items.service.js";
 import { z } from "zod";
 
 const listQuerySchema = z.object({
@@ -41,7 +42,7 @@ type SavedRow = {
 };
 
 function savedDto(row: SavedRow) {
-  const available = isCatalogVisible(row.service) && row.service.status === "OPEN";
+  const available = savedServiceAvailable(row.service);
   return {
     service_id: row.serviceId,
     service: isCatalogVisible(row.service) ? toPublicService(row.service) : null,
@@ -82,20 +83,19 @@ async function addSaved(req: Request, res: Response, kind: "favorite" | "cart") 
   parse(emptyBodySchema, req.body ?? {});
   const ownerId = userId(res);
   const serviceId = typeof req.params.service_id === "string" ? req.params.service_id : "";
-  const service = await prisma.service.findFirst({ where: { id: serviceId, ...visibleCatalogWhere }, select: { id: true } });
-  if (!service) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
   if (kind === "favorite") {
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, ...visibleCatalogWhere },
+      select: { id: true },
+    });
+    if (!service) throw new HttpError(404, "SERVICE_NOT_FOUND", "Layanan tidak ditemukan.");
     await prisma.favorite.upsert({
       where: { userId_serviceId: { userId: ownerId, serviceId } },
       create: { userId: ownerId, serviceId },
       update: {},
     });
   } else {
-    await prisma.cartItem.upsert({
-      where: { userId_serviceId: { userId: ownerId, serviceId } },
-      create: { userId: ownerId, serviceId },
-      update: {},
-    });
+    await prisma.$transaction((tx) => addBookableCartItem(tx, ownerId, serviceId));
   }
   res.status(200).json({ data: { service_id: serviceId } });
 }
@@ -107,7 +107,7 @@ async function removeSaved(req: Request, res: Response, kind: "favorite" | "cart
   const ownerId = userId(res);
   const serviceId = typeof req.params.service_id === "string" ? req.params.service_id : "";
   if (kind === "favorite") await prisma.favorite.deleteMany({ where: { userId: ownerId, serviceId } });
-  else await prisma.cartItem.deleteMany({ where: { userId: ownerId, serviceId } });
+  else await deleteCartItemRow(prisma, ownerId, serviceId);
   res.status(204).end();
 }
 

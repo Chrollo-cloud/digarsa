@@ -24,6 +24,8 @@ export const bookingDraftSchema = z.object({
 export const createBookingSchema = bookingDraftSchema.extend({
   service_id: z.string().trim().min(1).max(128),
   confirmed: z.literal(true),
+  revision_policy_hash: z.string().regex(/^[0-9a-f]{64}$/),
+  revision_policy_acknowledged: z.literal(true),
 });
 
 export const bookingListQuerySchema = z.object({
