@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Digarsa · Local Admin Setup</title></head>
+<body>
+  <main style="font-family:system-ui;max-width:660px;margin:60px auto;padding:24px;line-height:1.6">
+    <h1>Local Admin demo</h1>
+    <p>Development localhost only. Credentials are read from a local file ignored by Git. Email address never grants permissions automatically.</p>
+    <p>Use the dedicated account <strong>srikandi@gmail.com</strong>. Existing accounts must log in with the same password; credentials are never overwritten.</p>
+    <button id="register">Create a demo account from the local file</button>
+    <button id="login">Log in to the demo account from the local file</button>
+    <p id="identity">Account not verified yet.</p>
+    <label for="account-id">Enter the verified account ID before changing permissions</label>
+    <input id="account-id" autocomplete="off" style="display:block;width:100%;margin:12px 0">
+    <button id="grant">Grant Admin access to this ID</button>
+    <button id="revoke">Revoke Admin access from this ID</button>
+    <p id="status" role="status"></p>
+    <a href="/admin">Open Admin Dashboard</a> · <a href="/">Home</a>
+    <p>localStorage contains editable demo data; it is not production authorization. Reload the app after changing permissions.</p>
+  </main>
+  <script type="module" src="/src/dev/adminSetup.js"></script>
+</body>
+</html>

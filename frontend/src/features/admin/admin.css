@@ -1,0 +1,140 @@
+.admin-capability-note {
+  margin-top: -2px !important;
+}
+.admin-toolbar .field,
+.admin-orders-toolbar .field {
+  flex: 1 1 200px;
+}
+.admin-account-table td strong {
+  color: var(--color-indigo);
+}
+.admin-account-details,
+.admin-booking-details,
+.admin-service-details {
+  margin-top: 8px;
+  font-size: 11px;
+}
+.admin-account-details summary,
+.admin-booking-details summary,
+.admin-service-details summary {
+  color: var(--color-blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-account-details dl,
+.admin-booking-details dl,
+.admin-service-details dl {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1fr);
+  gap: 5px 12px;
+  margin: 10px 0 2px;
+}
+.admin-account-details dt,
+.admin-booking-details dt,
+.admin-service-details dt {
+  color: var(--color-muted);
+}
+.admin-account-details dd,
+.admin-booking-details dd,
+.admin-service-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-ink-soft);
+}
+.admin-activity-stats {
+  margin-top: 8px;
+}
+.admin-activity-stats .ws-stat {
+  gap: 10px;
+  padding: 16px;
+}
+@media (max-width: 520px) {
+  .admin-account-details dl,
+  .admin-booking-details dl,
+  .admin-service-details dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .admin-account-details dd,
+  .admin-booking-details dd,
+  .admin-service-details dd {
+    margin-bottom: 8px;
+  }
+}
+.admin-payment-table,
+.admin-payout-table { min-width: 980px; }
+.admin-payment-table details,
+.admin-payout-table details { min-width: 130px; }
+.admin-payout-table td:last-child { display: flex; flex-wrap: wrap; gap: 6px; min-width: 190px; }
+.admin-payout-table .button { padding: 8px 10px; font-size: 12px; }
+.payment-status { border-radius: 10px; }
+@media (max-width: 640px) {
+  .admin-payment-table,
+  .admin-payout-table { min-width: 900px; }
+}
+
+.admin-account-moderation {
+  margin: 28px 0;
+}
+
+.admin-account-moderation .ws-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-account-moderation .ws-section-head h2 {
+  margin-bottom: 6px;
+}
+
+.admin-account-moderation .ws-section-head p {
+  margin-top: 0;
+}
+
+.admin-report-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-report-content > p {
+  overflow-wrap: anywhere;
+}
+
+.admin-account-moderation .ws-row__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .admin-account-moderation .ws-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-account-moderation .ws-row {
+    flex-direction: column;
+  }
+
+  .admin-account-moderation .ws-row__side {
+    align-items: flex-start;
+  }
+}
+
+
+/* Admin Center menggunakan layout Seller Center */
+.admin-center {
+  min-height: 100vh;
+}
+
+.admin-center .seller-sidebar {
+  align-self: stretch;
+}
+
+.admin-center .seller-center__content {
+  min-width: 0;
+}
