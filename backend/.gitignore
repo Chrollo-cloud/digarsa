@@ -11,3 +11,4 @@ coverage/
 Thumbs.db
 /src/generated/prisma
 /backup/
+.demo-accounts.local.txt

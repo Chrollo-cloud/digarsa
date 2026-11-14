@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bookingErrorMessage, bookingListQuery, createBooking, getBooking, listBookings, mapBooking, requestCancellation, sellerDecision, validateBooking } from "../src/features/bookings/bookingApi.js";
+import { bookingErrorMessage, bookingListQuery, createBooking, deliverBooking, getBooking, listBookings, mapBooking, requestCancellation, sellerDecision, validateBooking } from "../src/features/bookings/bookingApi.js";
 
 const bookingDto = {
   id: "booking-1", customer_user_id: "customer-1", seller_profile_id: "seller-1", service_id: "service-1",
@@ -34,7 +34,7 @@ test("validation and creation send only contract fields and acknowledged server 
   globalThis.fetch = async (url, init) => {
     calls.push({ url, init, body: init.body ? JSON.parse(init.body) : null });
     const payload = calls.length === 1
-      ? { data: { valid: true, service_id: "service-1", estimated_price: 1200000, delivery_mode: "remote", revision_policy: { hash: "a".repeat(64), terms: "One revision", free_revision_count: 1, request_window_duration: 48 } } }
+      ? { data: { valid: true, service_id: "service-1", estimated_price: 1200000, seller_price: 1200000, admin_fee: 60000, buyer_total: 1260000, pricing_policy_version: "buyer-paid-admin-fee-v1", delivery_mode: "remote", revision_policy: { hash: "a".repeat(64), terms: "One revision", free_revision_count: 1, request_window_duration: 48 } } }
       : { data: bookingDto };
     return new Response(JSON.stringify(payload), { status: calls.length === 1 ? 200 : 201, headers: { "content-type": "application/json" } });
   };
@@ -88,6 +88,28 @@ test("seller booking reads and decisions use authenticated server endpoints", as
     assert.equal(calls[2].url, "http://localhost:3000/api/v1/seller/bookings/booking-1/accept");
     assert.deepEqual(calls[2].body, { expected_status: "Requested" });
     for (const call of calls) assert.equal(call.init.headers.get("Authorization"), "Bearer seller-token");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
+});
+
+test("seller booking delivery uses the server-owned transition contract", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWindow = globalThis.window;
+  let request;
+  globalThis.window = { sessionStorage: { getItem: () => "seller-token" } };
+  globalThis.fetch = async (url, init) => {
+    request = { url, method: init.method, body: JSON.parse(init.body), authorization: init.headers.get("Authorization") };
+    return new Response(JSON.stringify({ data: { ...bookingDto, status: "Delivered" } }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const booking = await deliverBooking("booking-1");
+    assert.equal(booking.status, "Delivered");
+    assert.equal(request.url.endsWith("/seller/bookings/booking-1/deliver"), true);
+    assert.deepEqual(request.body, { expected_status: "Paid" });
+    assert.equal(request.authorization, "Bearer seller-token");
   } finally {
     globalThis.fetch = originalFetch;
     if (originalWindow === undefined) delete globalThis.window;

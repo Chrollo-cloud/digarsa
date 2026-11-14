@@ -30,8 +30,22 @@ import {
   requestDisputeClarification, respondToDisputeClarification, startDisputeReview,
   submitDisputeAppeal,
 } from "./dispute.controller.js";
+import {
+  acceptAdditionalRevisionOffer, createAdditionalRevisionOffer, createAdditionalRevisionRequest,
+  listCustomerAdditionalRevisionRequests, listSellerAdditionalRevisionRequests,
+  rejectAdditionalRevisionRequest, requestAdditionalRevisionClarification,
+  respondToAdditionalRevisionClarification, withdrawAdditionalRevisionRequest,
+} from "./additional-revision.controller.js";
+import { completeDemoAdditionalWork, deliverDemoAdditionalWork, getDemoPaymentAvailability, payAdditionalRevisionWithDemo, payBookingWithDemo, startDemoAdditionalWork } from "../payments/demo-payment.controller.js";
 
 const router = Router();
+
+router.get("/payments/demo/availability", authenticate, requireRole("USER"), getDemoPaymentAvailability);
+router.post("/me/bookings/:booking_id/demo-payment", authenticate, requireRole("USER"), payBookingWithDemo);
+router.post("/me/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-payment", authenticate, requireRole("USER"), payAdditionalRevisionWithDemo);
+router.post("/seller/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-start", authenticate, requireApprovedSeller, startDemoAdditionalWork);
+router.post("/seller/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-deliver", authenticate, requireApprovedSeller, deliverDemoAdditionalWork);
+router.post("/me/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-complete", authenticate, requireRole("USER"), completeDemoAdditionalWork);
 
 router.post("/services/:service_id/booking-validation", authenticate, requireRole("USER"), validateBooking);
 router.post("/bookings", authenticate, requireRole("USER"), createBooking);
@@ -46,9 +60,18 @@ router.post("/me/bookings/:booking_id/revisions/:revision_id/accept-rejection", 
 router.post("/me/bookings/:booking_id/revisions/:revision_id/clarifications", authenticate, requireRole("USER"), requestClarificationAfterRejection);
 router.post("/me/bookings/:booking_id/revisions/:revision_id/clarifications/:clarification_id/respond", authenticate, requireRole("USER"), respondToRevisionClarification);
 router.post("/me/bookings/:booking_id/revisions/:revision_id/assistance", authenticate, requireRole("USER"), requestRevisionAssistance);
+router.get("/me/bookings/:booking_id/additional-revision-requests", authenticate, requireRole("USER"), listCustomerAdditionalRevisionRequests);
+router.post("/me/bookings/:booking_id/additional-revision-requests", authenticate, requireRole("USER"), createAdditionalRevisionRequest);
+router.post("/me/bookings/:booking_id/additional-revision-requests/:request_id/withdraw", authenticate, requireRole("USER"), withdrawAdditionalRevisionRequest);
+router.post("/me/bookings/:booking_id/additional-revision-requests/:request_id/clarifications/respond", authenticate, requireRole("USER"), respondToAdditionalRevisionClarification);
+router.post("/me/bookings/:booking_id/additional-revision-requests/:request_id/offers/:offer_id/accept", authenticate, requireRole("USER"), acceptAdditionalRevisionOffer);
 router.get("/seller/bookings", authenticate, requireApprovedSeller, listSellerBookings);
 router.get("/seller/bookings/:booking_id", authenticate, requireApprovedSeller, getSellerBooking);
 router.get("/seller/bookings/:booking_id/revisions", authenticate, requireApprovedSeller, listSellerRevisions);
+router.get("/seller/bookings/:booking_id/additional-revision-requests", authenticate, requireApprovedSeller, listSellerAdditionalRevisionRequests);
+router.post("/seller/bookings/:booking_id/additional-revision-requests/:request_id/clarifications", authenticate, requireApprovedSeller, requestAdditionalRevisionClarification);
+router.post("/seller/bookings/:booking_id/additional-revision-requests/:request_id/reject", authenticate, requireApprovedSeller, rejectAdditionalRevisionRequest);
+router.post("/seller/bookings/:booking_id/additional-revision-requests/:request_id/offers", authenticate, requireApprovedSeller, createAdditionalRevisionOffer);
 router.post("/seller/bookings/:booking_id/revisions/:revision_id/respond", authenticate, requireApprovedSeller, respondToRevision);
 router.post("/seller/bookings/:booking_id/revisions/:revision_id/deliver", authenticate, requireApprovedSeller, deliverRevisedWork);
 router.post("/seller/bookings/:booking_id/revisions/:revision_id/assistance", authenticate, requireApprovedSeller, requestRevisionAssistance);

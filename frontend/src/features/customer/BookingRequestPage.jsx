@@ -90,7 +90,9 @@ export default function BookingRequestPage() {
             <dl>
               <dt>Service</dt><dd>{service.title}</dd>
               <dt>Seller</dt><dd>{creator?.name || service.creator?.name || "Creator"}</dd>
-              <dt>Estimated price</dt><dd>{money(validation.estimated_price)}</dd>
+              <dt>Seller price</dt><dd>{money(validation.seller_price)}</dd>
+              <dt>Digarsa administration fee (5%)</dt><dd>{money(validation.admin_fee)}</dd>
+              <dt>Buyer total</dt><dd>{money(validation.buyer_total)}</dd>
               <dt>Delivery</dt><dd>{validation.delivery_mode === "onsite" ? "On-site" : "Remote"}</dd>
               <dt>Requested date</dt><dd>{draft.requestedDate || "Flexible"}</dd>
               {draft.location && <><dt>Location</dt><dd>{draft.location}</dd></>}
@@ -103,7 +105,7 @@ export default function BookingRequestPage() {
               <p>{validation.revision_policy.free_revision_count} included revisions · request window {validation.revision_policy.request_window_duration} elapsed hours after server-recorded delivery.</p>
               <label><input type="checkbox" checked={policyAcknowledged} onChange={(event) => setPolicyAcknowledged(event.target.checked)} /> I have read and agree to this revision policy.</label>
             </section>
-            <p>Submitting creates a <strong>Requested</strong> booking. It does not charge you or confirm payment.</p>
+            <p>Submitting creates a <strong>Requested</strong> booking with this price snapshot. It does not charge you or confirm payment; checkout is not connected.</p>
             {uncertain && <p className="customer-warning" role="alert">The server may have received your request. Check <Link to="/orders">your booking list</Link> before trying again.</p>}
             <div className="customer-confirm-actions">
               <button type="button" className="button button--secondary" disabled={pending} onClick={() => { setDraft(null); setValidation(null); setError(""); setUncertain(false); }}>Edit request</button>

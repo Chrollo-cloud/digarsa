@@ -90,3 +90,20 @@ test("seller revision routes use the approved-seller authorization gate", () => 
   assert.equal(target.stack[1]?.handle, requireApprovedSeller);
 });
 
+test("demo payment routes require customer authentication and seller work requires approved seller", async () => {
+  const availability = route("get", "/payments/demo/availability");
+  const bookingPayment = route("post", "/me/bookings/:booking_id/demo-payment");
+  const additionalPayment = route("post", "/me/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-payment");
+  const sellerStart = route("post", "/seller/bookings/:booking_id/additional-revision-agreements/:agreement_id/demo-start");
+  for (const target of [availability, bookingPayment, additionalPayment]) {
+    assert.equal(target.stack[0]?.handle, authenticate);
+    const wrongRole = response({ auth: { userId: "route-test", role: "ADMIN", tokenVersion: 0 } });
+    let advanced = false;
+    await target.stack[1]!.handle({}, wrongRole.res, () => { advanced = true; });
+    assert.equal(wrongRole.statusCode, 403);
+    assert.equal(advanced, false);
+  }
+  assert.equal(sellerStart.stack[0]?.handle, authenticate);
+  assert.equal(sellerStart.stack[1]?.handle, requireApprovedSeller);
+});
+

@@ -8,6 +8,7 @@ import { enqueueInAppNotices } from "./notification-outbox.js";
 import { createHash } from "node:crypto";
 import { revisionPolicyDto, revisionPolicyHash, REVISION_WINDOW_ANCHOR, REVISION_WINDOW_UNIT } from "./revision-policy.js";
 import { expireUnusedRevisionQuota } from "./revision-ledger.js";
+import { priceBuyerTotal } from "../payments/pricing-policy.js";
 import {
   bookingDraftSchema,
   bookingListQuerySchema,
@@ -17,7 +18,7 @@ import {
 } from "./booking.schema.js";
 
 const bookingInclude = {
-  payment: { select: { status: true, payoutStatus: true, amount: true, paidAt: true } },
+  payment: { select: { status: true, payoutStatus: true, amount: true, paidAt: true, provenance: true, simulatedAt: true } },
   deliveryCycles: { where: { active: true }, select: { id: true, sequence: true, status: true, deliveryAt: true, deadlineAt: true, pausedAt: true, remainingMs: true, version: true } },
 } satisfies Prisma.BookingInclude;
 
@@ -27,6 +28,19 @@ function currentUserId(res: Response) {
 
 function validationError(error: { issues: { path: PropertyKey[]; message: string }[] }): never {
   throw new HttpError(422, "VALIDATION_FAILED", "Data booking tidak valid.", error.issues.map((issue) => ({ field: issue.path.join("."), message: issue.message })));
+}
+
+function checkedBookingPrice(sellerPrice: number) {
+  try {
+    return priceBuyerTotal(sellerPrice);
+  } catch (error) {
+    if (error instanceof RangeError) {
+      throw new HttpError(422, "VALIDATION_FAILED", "Harga layanan dan biaya administrasi melebihi batas nilai yang didukung.", [
+        { field: "seller_price", message: "Seller price plus the 5% administration fee must fit PostgreSQL INT columns." },
+      ]);
+    }
+    throw error;
+  }
 }
 
 function parse<T>(schema: { safeParse: (value: unknown) => any }, value: unknown): T {
@@ -52,6 +66,10 @@ function toDto(booking: Prisma.BookingGetPayload<{ include: typeof bookingInclud
     service_title: booking.serviceTitle ?? "",
     seller_name: booking.sellerName ?? "",
     estimated_price: booking.price,
+    seller_price: booking.price,
+    admin_fee: booking.fee,
+    buyer_total: booking.total,
+    pricing_policy_version: booking.pricingPolicyVersion,
     delivery_mode: (booking.deliveryMode ?? "Remote").toLowerCase(),
     requested_date: booking.scheduledDate?.toISOString().slice(0, 10) ?? null,
     location: booking.location,
@@ -88,6 +106,8 @@ function toDto(booking: Prisma.BookingGetPayload<{ include: typeof bookingInclud
       payout_status: booking.payment.payoutStatus,
       amount: booking.payment.amount,
       paid_at: booking.payment.paidAt?.toISOString() ?? null,
+      provenance: booking.payment.provenance,
+      simulated_at: booking.payment.simulatedAt?.toISOString() ?? null,
     } : null,
   };
 }
@@ -138,11 +158,16 @@ export async function validateBooking(req: Request, res: Response) {
   if (!serviceId) throw new HttpError(404, "SERVICE_NOT_BOOKABLE", "Layanan tidak tersedia untuk menerima pesanan.");
   const input = parse<ReturnType<typeof bookingDraftSchema.parse>>(bookingDraftSchema, req.body);
   const service = await validateBookableService(serviceId, userId);
+  const price = checkedBookingPrice(service.price);
   validateModeBrief(service.delivery, input);
   res.status(200).json({ data: {
     valid: true,
     service_id: service.id,
     estimated_price: service.price,
+    seller_price: service.price,
+    admin_fee: price.adminFee,
+    buyer_total: price.buyerTotal,
+    pricing_policy_version: price.pricingPolicyVersion,
     delivery_mode: service.delivery.toLowerCase(),
     revision_policy: revisionPolicyDto(service),
   } });
@@ -152,6 +177,8 @@ export async function createBooking(req: Request, res: Response) {
   const userId = currentUserId(res);
   const input = parse<ReturnType<typeof createBookingSchema.parse>>(createBookingSchema, req.body);
   const service = await validateBookableService(input.service_id, userId);
+  // Reject impossible PostgreSQL INT totals before opening the booking write transaction.
+  checkedBookingPrice(service.price);
   const privateLocation = validateModeBrief(service.delivery, input);
   const requestedDate = input.requested_date ? new Date(`${input.requested_date}T00:00:00.000Z`) : null;
 
@@ -176,6 +203,7 @@ export async function createBooking(req: Request, res: Response) {
     if (!currentService || currentService.seller.userId === userId || currentService.delivery !== service.delivery) {
       throw new HttpError(409, "SERVICE_NOT_BOOKABLE", "Layanan berubah dan tidak dapat menerima pesanan.");
     }
+    const priceSnapshot = checkedBookingPrice(currentService.price);
     const currentPolicy = revisionPolicyDto(currentService);
     const currentPolicyHash = revisionPolicyHash(currentService);
     if (!currentPolicy || !currentPolicyHash) throw new HttpError(409, "REVISION_POLICY_NOT_CONFIGURED", "Seller belum mengatur ketentuan revisi untuk layanan ini.");
@@ -195,9 +223,10 @@ export async function createBooking(req: Request, res: Response) {
         location: privateLocation,
         scheduledDate: requestedDate,
         status: "REQUESTED",
-        price: currentService.price,
-        fee: 0,
-        total: currentService.price,
+        price: priceSnapshot.sellerPrice,
+        fee: priceSnapshot.adminFee,
+        total: priceSnapshot.buyerTotal,
+        pricingPolicyVersion: priceSnapshot.pricingPolicyVersion,
         revisionPolicyVersion: currentService.revisionPolicyVersion,
         revisionPolicyHash: currentPolicyHash,
         revisionFreeCount: currentService.revisionFreeCount,
@@ -306,7 +335,9 @@ async function sellerTransition(req: Request, res: Response, action: "accept" | 
     const activeDispute = await tx.dispute.findFirst({ where: { bookingId: id, status: { not: "DECIDED" } }, select: { id: true } });
     if (activeDispute) throw new HttpError(409, "ACTIVE_DISPUTE_BLOCKS_BOOKING", "Tindakan pesanan ditahan selama sengketa masih aktif.");
     if (existing.status !== validExpected) throw new HttpError(409, "BOOKING_STATE_CONFLICT", "Status pesanan sudah berubah atau tindakan ini tidak tersedia.");
-    if (action === "deliver" && existing.payment?.status !== "PAID") {
+    const demoPaid = process.env.NODE_ENV !== "production" && process.env.PAYMENT_DEMO_MODE === "true"
+      && existing.payment?.status === "DEMO_PAID" && existing.payment.provenance === "DEMO_SIMULATION";
+    if (action === "deliver" && existing.payment?.status !== "PAID" && !demoPaid) {
       throw new HttpError(409, "PAYMENT_NOT_CONFIRMED", "Pesanan belum memiliki konfirmasi pembayaran tepercaya.");
     }
     const transitionAt = new Date();

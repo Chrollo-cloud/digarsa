@@ -15,6 +15,10 @@ export function mapBooking(row) {
     serviceTitle: typeof row.service_title === "string" ? row.service_title : "Service",
     creatorName: typeof row.seller_name === "string" ? row.seller_name : "Creator",
     estimatedPrice: amount,
+    sellerPrice: Number.isSafeInteger(row.seller_price) && row.seller_price >= 0 ? row.seller_price : amount,
+    adminFee: Number.isSafeInteger(row.admin_fee) && row.admin_fee >= 0 ? row.admin_fee : null,
+    buyerTotal: Number.isSafeInteger(row.buyer_total) && row.buyer_total >= 0 ? row.buyer_total : null,
+    pricingPolicyVersion: typeof row.pricing_policy_version === "string" ? row.pricing_policy_version : null,
     deliveryMode: row.delivery_mode === "onsite" ? "onsite" : row.delivery_mode === "remote" ? "remote" : "unknown",
     requestedDate: typeof row.requested_date === "string" ? row.requested_date : null,
     location: typeof row.location === "string" ? row.location : null,
@@ -33,6 +37,8 @@ export function mapBooking(row) {
       payoutStatus: typeof row.payment.payout_status === "string" ? row.payment.payout_status : null,
       amount: Number.isSafeInteger(row.payment.amount) && row.payment.amount >= 0 ? row.payment.amount : null,
       paidAt: typeof row.payment.paid_at === "string" ? row.payment.paid_at : null,
+      provenance: typeof row.payment.provenance === "string" ? row.payment.provenance : null,
+      simulatedAt: typeof row.payment.simulated_at === "string" ? row.payment.simulated_at : null,
     } : null,
   };
 }
@@ -87,6 +93,9 @@ export async function validateBooking(serviceId, draft, options = {}) {
   if (data?.valid !== true || data.service_id !== serviceId || !data.revision_policy || typeof data.revision_policy.hash !== "string") {
     throw new Error("The booking validation response has an invalid shape.");
   }
+  if (![data.seller_price, data.admin_fee, data.buyer_total].every((amount) => Number.isSafeInteger(amount) && amount >= 0)) {
+    throw new Error("The booking price response has an invalid shape.");
+  }
   return data;
 }
 
@@ -112,6 +121,13 @@ export async function sellerDecision(booking, action, reason = "") {
   const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(booking.id)}/${action}`, {
     method: "POST",
     body: { expected_status: "Requested", ...(action === "decline" && reason.trim() ? { reason: reason.trim() } : {}) },
+  });
+  return mapBooking(payload?.data);
+}
+
+export async function deliverBooking(bookingId) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/deliver`, {
+    method: "POST", body: { expected_status: "Paid" },
   });
   return mapBooking(payload?.data);
 }
@@ -167,6 +183,89 @@ export async function respondToRevisionClarification(bookingId, revisionId, clar
     method: "POST", body: { response_text: responseText },
   });
   if (!payload?.data || typeof payload.data.id !== "string") throw new Error("The clarification response has an invalid shape.");
+  return payload.data;
+}
+
+export async function listAdditionalRevisionRequests(role, bookingId) {
+  if (!(role === "customer" || role === "seller")) throw new Error("Unsupported additional revision list.");
+  const prefix = role === "customer" ? `${root}/me/bookings` : `${root}/seller/bookings`;
+  const payload = await apiRequest(`${prefix}/${encodeURIComponent(bookingId)}/additional-revision-requests`);
+  if (!Array.isArray(payload?.data)) throw new Error("The additional revision response has an invalid shape.");
+  return payload.data;
+}
+
+export async function createAdditionalRevisionRequest(bookingId, description) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests`, { method: "POST", body: { description } });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision response has an invalid shape.");
+  return payload.data;
+}
+
+export async function withdrawAdditionalRevisionRequest(bookingId, requestId) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/withdraw`, { method: "POST", body: {} });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision response has an invalid shape.");
+  return payload.data;
+}
+
+export async function respondToAdditionalRevisionClarification(bookingId, requestId, message) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/clarifications/respond`, { method: "POST", body: { message } });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision response has an invalid shape.");
+  return payload.data;
+}
+
+export async function acceptAdditionalRevisionOffer(bookingId, requestId, offerId) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST", body: {} });
+  if (typeof payload?.data?.id !== "string" || payload.data.status !== "AWAITING_PAYMENT") throw new Error("The agreement response has an invalid shape.");
+  return payload.data;
+}
+
+export async function createAdditionalRevisionOffer(bookingId, requestId, input) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/offers`, { method: "POST", body: input });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision offer response has an invalid shape.");
+  return payload.data;
+}
+
+export async function getDemoPaymentAvailability() {
+  const payload = await apiRequest(`${root}/payments/demo/availability`);
+  if (typeof payload?.data?.enabled !== "boolean") throw new Error("The demo payment availability response has an invalid shape.");
+  return payload.data;
+}
+
+export async function payBookingDemo(bookingId, amount) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/demo-payment`, { method: "POST", body: { amount, currency: "IDR" } });
+  if (payload?.data?.provenance !== "DEMO_SIMULATION" || payload.data.status !== "DEMO_PAID") throw new Error("The demo payment response has an invalid shape.");
+  return payload.data;
+}
+
+export async function payAdditionalRevisionDemo(bookingId, agreementId, amount) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-agreements/${encodeURIComponent(agreementId)}/demo-payment`, { method: "POST", body: { amount, currency: "IDR" } });
+  if (payload?.data?.provenance !== "DEMO_SIMULATION" || payload.data.status !== "DEMO_PAID") throw new Error("The demo payment response has an invalid shape.");
+  return payload.data;
+}
+
+export async function startDemoAdditionalWork(bookingId, agreementId) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/additional-revision-agreements/${encodeURIComponent(agreementId)}/demo-start`, { method: "POST", body: {} });
+  return payload?.data;
+}
+
+export async function deliverDemoAdditionalWork(bookingId, agreementId, deliveryNote) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/additional-revision-agreements/${encodeURIComponent(agreementId)}/demo-deliver`, { method: "POST", body: { delivery_note: deliveryNote } });
+  return payload?.data;
+}
+
+export async function completeDemoAdditionalWork(bookingId, agreementId) {
+  const payload = await apiRequest(`${root}/me/bookings/${encodeURIComponent(bookingId)}/additional-revision-agreements/${encodeURIComponent(agreementId)}/demo-complete`, { method: "POST", body: {} });
+  return payload?.data;
+}
+
+export async function requestAdditionalRevisionClarification(bookingId, requestId, message) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/clarifications`, { method: "POST", body: { message } });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision response has an invalid shape.");
+  return payload.data;
+}
+
+export async function rejectAdditionalRevisionRequest(bookingId, requestId, message) {
+  const payload = await apiRequest(`${root}/seller/bookings/${encodeURIComponent(bookingId)}/additional-revision-requests/${encodeURIComponent(requestId)}/reject`, { method: "POST", body: { message } });
+  if (typeof payload?.data?.id !== "string") throw new Error("The additional revision response has an invalid shape.");
   return payload.data;
 }
 

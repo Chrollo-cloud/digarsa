@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../account/authContext.js";
 import ContactCreator from "../messaging/ContactCreator";
-import { bookingErrorMessage, completeBooking, createRevision, listRevisions, requestCancellation, respondToRevisionClarification } from "../bookings/bookingApi.js";
+import { acceptAdditionalRevisionOffer, bookingErrorMessage, completeBooking, completeDemoAdditionalWork, createAdditionalRevisionRequest, createRevision, getDemoPaymentAvailability, listAdditionalRevisionRequests, listRevisions, payAdditionalRevisionDemo, payBookingDemo, requestCancellation, respondToAdditionalRevisionClarification, respondToRevisionClarification, withdrawAdditionalRevisionRequest } from "../bookings/bookingApi.js";
 import { useBookingDetail } from "../bookings/useBookingList.js";
 import { money } from "../../utils/money.js";
 import CustomerFrame from "./CustomerFrame";
@@ -28,8 +28,39 @@ export default function BookingDetailsPage() {
   const [revisions, setRevisions] = useState([]);
   const [clarificationText, setClarificationText] = useState({});
   const [revisionError, setRevisionError] = useState("");
+  const [additionalDescription, setAdditionalDescription] = useState("");
+  const [additionalRequests, setAdditionalRequests] = useState([]);
+  const [additionalError, setAdditionalError] = useState("");
+  const [additionalLoadedFor, setAdditionalLoadedFor] = useState("");
+  const [demoPaymentEnabled, setDemoPaymentEnabled] = useState(false);
   const actionLock = useRef(false);
   const revisionBookingId = booking?.status === "Delivered" ? booking.id : "";
+  const additionalBookingId = booking?.id && ["PAID", "DEMO_PAID"].includes(booking.payment?.status) && ["Paid", "Delivered", "Completed"].includes(booking.status) ? booking.id : "";
+  const additionalLoading = Boolean(additionalBookingId && additionalLoadedFor !== additionalBookingId);
+
+  useEffect(() => {
+    let active = true;
+    getDemoPaymentAvailability().then((result) => { if (active) setDemoPaymentEnabled(result.enabled); }).catch(() => { if (active) setDemoPaymentEnabled(false); });
+    return () => { active = false; };
+  }, []);
+
+  const refreshAdditional = useCallback(async () => {
+    if (!additionalBookingId) return;
+    setAdditionalLoadedFor("");
+    try { setAdditionalRequests(await listAdditionalRevisionRequests("customer", additionalBookingId)); setAdditionalError(""); }
+    catch (error) { if (error?.status === 401) logout(); setAdditionalError(bookingErrorMessage(error)); }
+    finally { setAdditionalLoadedFor(additionalBookingId); }
+  }, [additionalBookingId, logout]);
+
+  useEffect(() => {
+    if (!additionalBookingId) return undefined;
+    let active = true;
+    listAdditionalRevisionRequests("customer", additionalBookingId).then((rows) => { if (active) setAdditionalRequests(rows); }).catch((error) => {
+      if (active) setAdditionalError(bookingErrorMessage(error));
+      if (active && error?.status === 401) logout();
+    }).finally(() => { if (active) setAdditionalLoadedFor(additionalBookingId); });
+    return () => { active = false; };
+  }, [additionalBookingId, logout]);
 
   const refreshRevisions = useCallback(async () => {
     if (!booking || booking.status !== "Delivered") return;
@@ -59,6 +90,7 @@ export default function BookingDetailsPage() {
       else setActionMessage("Your request was recorded by the server.");
       resource.refresh();
       await refreshRevisions();
+      await refreshAdditional();
     } catch (error) {
       if (error?.status === 401) logout();
       setActionError(bookingErrorMessage(error));
@@ -93,7 +125,9 @@ export default function BookingDetailsPage() {
         </header>
         <p className="customer-info">{bookingStatusDescription(booking.status)}</p>
         <dl className="customer-tracking-facts">
-          <div><dt>Starting estimate</dt><dd>{booking.estimatedPrice === null ? "Unavailable" : money(booking.estimatedPrice)}</dd></div>
+          <div><dt>Seller price</dt><dd>{booking.sellerPrice === null ? "Unavailable" : money(booking.sellerPrice)}</dd></div>
+          {booking.adminFee !== null && <div><dt>Digarsa administration fee</dt><dd>{money(booking.adminFee)}</dd></div>}
+          {booking.buyerTotal !== null && <div><dt>Buyer total</dt><dd>{money(booking.buyerTotal)}</dd></div>}
           <div><dt>Payment status (server)</dt><dd>{booking.payment?.status || "No payment record"}</dd></div>
           <div><dt>Work mode</dt><dd>{booking.deliveryMode === "onsite" ? "On-site" : booking.deliveryMode === "remote" ? "Remote" : "Unavailable"}</dd></div>
           <div><dt>Requested date</dt><dd>{bookingDate(booking.requestedDate)}</dd></div>
@@ -106,8 +140,8 @@ export default function BookingDetailsPage() {
         <h3>Project requirements</h3><p className="customer-preline">{booking.requirements}</p>
         <h3>Project description</h3><p className="customer-preline">{booking.description}</p>
 
-        {booking.status === "Accepted" && <p className="customer-warning" role="status">Payment is not available in this integration. Do not treat this booking as paid.</p>}
-        {booking.status === "Paid" && <p className="customer-info" role="status">The server reports this booking as paid. This screen cannot change payment status.</p>}
+        {booking.status === "Accepted" && <div className="customer-warning" role="status">{demoPaymentEnabled ? <><p>DEMO PAYMENT — NO REAL TRANSACTION</p><button className="button button--primary" type="button" disabled={pending || !Number.isSafeInteger(booking.buyerTotal)} onClick={() => void runAction(() => payBookingDemo(booking.id, booking.buyerTotal))}>{pending ? "Recording demo payment…" : `Record demo payment · ${money(booking.buyerTotal)}`}</button></> : "Payment is not available in this environment."}</div>}
+        {booking.status === "Paid" && <p className="customer-info" role="status">{booking.payment?.provenance === "DEMO_SIMULATION" || booking.payment?.status === "DEMO_PAID" ? "DEMO PAYMENT — NO REAL TRANSACTION. This booking payment is simulated and creates no seller payout." : "The server reports this booking as paid. This screen cannot change payment status."}</p>}
         {booking.status === "Delivered" && <section className="customer-delivery">
           <h3>Seller marked the work as delivered</h3>
           <p>The backend does not provide delivery files or notes in this booking contract.</p>
@@ -126,6 +160,32 @@ export default function BookingDetailsPage() {
             <label className="field">Your response<textarea className="field__control" minLength={5} maxLength={1000} required value={clarificationText[item.id] || ""} onChange={(event) => setClarificationText((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
             <button className="button button--secondary" type="submit" disabled={pending || (clarificationText[item.id] || "").trim().length < 5}>{pending ? "Sending…" : "Send response"}</button>
           </form>))}
+        </section>}
+
+        {additionalBookingId && <section className="customer-section" aria-labelledby="additional-revision-title">
+          <h3 id="additional-revision-title">Additional work</h3>
+          <p>This is separate from the included free revision. The seller sets the price; Digarsa’s 5% administration fee is added at the server.</p>
+          {additionalLoading && <p className="customer-empty" role="status">Loading additional-work history…</p>}
+          {additionalError && <p className="customer-warning" role="alert">{additionalError}<button type="button" className="market-reset" onClick={() => void refreshAdditional()}>Try again</button></p>}
+          {additionalRequests.map((request) => <article className="customer-delivery" key={request.id}>
+            <strong>{request.status}</strong><p className="customer-preline">{request.description}</p>
+            {request.history?.map((event, index) => <p key={`${event.occurred_at}-${index}`}><small>{event.event_type.replaceAll("_", " ")}: {new Date(event.occurred_at).toLocaleString()}</small>{typeof event.payload?.message === "string" ? <span className="customer-preline">{event.payload.message}</span> : null}</p>)}
+            {request.status === "CLARIFICATION_REQUIRED" && <form className="customer-form" onSubmit={(event) => { event.preventDefault(); void runAction(async () => { const updated = await respondToAdditionalRevisionClarification(booking.id, request.id, additionalDescription); setAdditionalDescription(""); return updated; }); }}>
+              <label className="field">Reply to seller<textarea className="field__control" minLength={5} maxLength={2000} value={additionalDescription} onChange={(event) => setAdditionalDescription(event.target.value)} required /></label>
+              <button className="button button--secondary" type="submit" disabled={pending || additionalDescription.trim().length < 5}>{pending ? "Sending…" : "Send clarification"}</button>
+            </form>}
+            {request.status === "OPEN" && <button type="button" className="button button--secondary" disabled={pending} onClick={() => void runAction(() => withdrawAdditionalRevisionRequest(booking.id, request.id))}>Withdraw request</button>}
+            {request.offers?.filter((offer) => offer.status === "ACTIVE").map((offer) => <div className="customer-form" key={offer.id}>
+              <h4>Seller offer · version {offer.version}</h4><p className="customer-preline">{offer.scope}</p><p className="customer-preline">{offer.terms}</p>
+              <dl className="customer-tracking-facts"><div><dt>Seller price</dt><dd>{money(offer.seller_price)}</dd></div><div><dt>Digarsa administration fee (5%)</dt><dd>{money(offer.admin_fee)}</dd></div><div><dt>Total</dt><dd>{money(offer.buyer_total)}</dd></div><div><dt>Offer expires</dt><dd>{new Date(offer.expires_at).toLocaleString()}</dd></div></dl>
+              <button className="button button--primary" type="button" disabled={pending || new Date(offer.expires_at).getTime() <= Date.now()} onClick={() => void runAction(() => acceptAdditionalRevisionOffer(booking.id, request.id, offer.id))}>Accept exact offer</button>
+            </div>)}
+            {request.agreement && <div role="status" className="customer-warning"><p>Agreement status: {request.agreement.status}.</p>{request.agreement.status === "AWAITING_PAYMENT" && demoPaymentEnabled && <><p>DEMO PAYMENT — NO REAL TRANSACTION</p><button className="button button--primary" type="button" disabled={pending} onClick={() => void runAction(() => payAdditionalRevisionDemo(booking.id, request.agreement.id, request.agreement.buyer_total))}>Record demo payment · {money(request.agreement.buyer_total)}</button></>}{request.agreement.status === "DEMO_IN_REVIEW" && <><p>{request.agreement.delivery_note}</p><p>Review by {request.agreement.review_deadline_at ? new Date(request.agreement.review_deadline_at).toLocaleString() : "not available"}.</p><button className="button button--primary" type="button" disabled={pending || !demoPaymentEnabled || !request.agreement.review_deadline_at || new Date(request.agreement.review_deadline_at) <= new Date()} onClick={() => void runAction(() => completeDemoAdditionalWork(booking.id, request.agreement.id))}>Approve demo delivery</button></>}{request.agreement.status.startsWith("DEMO_") && <small>Simulation only. No seller entitlement, refund, or payout is created.</small>}</div>}
+          </article>)}
+          {!additionalLoading && !additionalError && !additionalRequests.some((item) => ["OPEN", "CLARIFICATION_REQUIRED", "OFFERED"].includes(item.status) || ["AWAITING_PAYMENT", "FUNDED", "IN_PROGRESS", "DELIVERED", "IN_REVIEW", "DISPUTED", "CANCELLATION_PENDING", "DEMO_FUNDED", "DEMO_IN_PROGRESS", "DEMO_IN_REVIEW"].includes(item.agreement?.status)) && <form className="customer-form" onSubmit={(event) => { event.preventDefault(); void runAction(async () => { const result = await createAdditionalRevisionRequest(booking.id, additionalDescription); setAdditionalDescription(""); return result; }); }}>
+            <label className="field">Describe the additional work<textarea className="field__control" minLength={10} maxLength={2000} value={additionalDescription} onChange={(event) => setAdditionalDescription(event.target.value)} required /></label>
+            <button className="button button--secondary" type="submit" disabled={pending || additionalDescription.trim().length < 10}>{pending ? "Sending…" : "Ask for an additional-work offer"}</button>
+          </form>}
         </section>}
 
         {canCancel.has(booking.status) && <section className="customer-section">

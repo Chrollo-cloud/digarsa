@@ -59,6 +59,7 @@ enum BookingStatus {
 enum PaymentStatus {
   PENDING
   PAID
+  DEMO_PAID
   FAILED
   EXPIRED
   REFUND_PENDING
@@ -70,6 +71,63 @@ enum PayoutStatus {
   HELD
   ELIGIBLE
   RELEASED
+}
+
+enum AdditionalRevisionRequestStatus {
+  OPEN
+  CLARIFICATION_REQUIRED
+  OFFERED
+  REJECTED
+  WITHDRAWN
+  AGREED
+  CLOSED
+}
+
+enum AdditionalRevisionOfferStatus {
+  ACTIVE
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+enum AdditionalRevisionAgreementStatus {
+  AWAITING_PAYMENT
+  FUNDED
+  IN_PROGRESS
+  DELIVERED
+  IN_REVIEW
+  COMPLETED
+  DISPUTED
+  CANCELLATION_PENDING
+  CANCELLED
+  DEMO_FUNDED
+  DEMO_IN_PROGRESS
+  DEMO_IN_REVIEW
+  DEMO_COMPLETED
+}
+
+enum PaymentProvenance {
+  REAL_PROVIDER
+  DEMO_SIMULATION
+}
+
+enum PaymentRefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REVERSED
+}
+
+enum SellerPayoutStatus {
+  HELD
+  ELIGIBLE
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  REVERSED
+  COMPLIANCE_HOLD
 }
 
 enum FlagSeverity {
@@ -184,6 +242,9 @@ model User {
   updatedAt         DateTime      @updatedAt
 
   sellerProfile SellerProfile?
+  additionalRevisionRequests AdditionalRevisionRequest[] @relation("AdditionalRevisionCustomer")
+  additionalRevisionAgreements AdditionalRevisionAgreement[] @relation("AdditionalRevisionAgreementCustomer")
+  additionalRevisionEvents AdditionalRevisionEvent[] @relation("AdditionalRevisionEventActor")
 
   // relasi balik
   passwordResets               PasswordReset[]
@@ -251,6 +312,8 @@ model SellerProfile {
   id                 String             @id @default(uuid())
   userId             String             @unique
   user               User               @relation(fields: [userId], references: [id])
+  additionalRevisionRequests AdditionalRevisionRequest[] @relation("AdditionalRevisionSeller")
+  additionalRevisionAgreements AdditionalRevisionAgreement[] @relation("AdditionalRevisionAgreementSeller")
   displayName        String // = store_name di frontend
   category           String             @default("Branding")
   city               String             @default("")
@@ -491,6 +554,7 @@ model Booking {
   price         Int
   fee           Int
   total         Int
+  pricingPolicyVersion String? @db.VarChar(64)
   deliveredAt   DateTime?
   completedAt   DateTime?
   revisionPolicyVersion Int?
@@ -518,9 +582,221 @@ model Booking {
   revisionAssistanceRequests RevisionEscalationRequest[]
   revisionQuotaLedger RevisionQuotaLedger[]
   disputes             Dispute[]
+  additionalRevisionRequests AdditionalRevisionRequest[]
+  additionalRevisionAgreements AdditionalRevisionAgreement[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([customerId])
   @@index([sellerId, status])
+}
+
+model AdditionalRevisionRequest {
+  id             String @id @default(uuid())
+  bookingId      String
+  booking        Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  customerId     String
+  customer       User @relation("AdditionalRevisionCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  sellerProfileId String
+  sellerProfile  SellerProfile @relation("AdditionalRevisionSeller", fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  description    String @db.VarChar(2000)
+  status         AdditionalRevisionRequestStatus @default(OPEN)
+  version        Int @default(1)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  offers         AdditionalRevisionOfferVersion[]
+  agreement      AdditionalRevisionAgreement?
+  events         AdditionalRevisionEvent[]
+
+  @@index([bookingId, createdAt, id])
+  @@index([customerId, createdAt])
+  @@index([sellerProfileId, createdAt])
+}
+
+model AdditionalRevisionOfferVersion {
+  id                    String @id @default(uuid())
+  requestId             String
+  request               AdditionalRevisionRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  version               Int
+  scope                 String @db.VarChar(4000)
+  terms                 String @db.VarChar(4000)
+  sellerPrice           Int
+  adminFee              Int
+  buyerTotal            Int
+  pricingPolicyVersion  String @db.VarChar(64)
+  estimatedDurationHours Int
+  status                AdditionalRevisionOfferStatus @default(ACTIVE)
+  expiresAt             DateTime @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  agreement             AdditionalRevisionAgreement?
+
+  @@unique([requestId, version])
+  @@index([requestId, status, expiresAt])
+}
+
+model AdditionalRevisionAgreement {
+  id                  String @id @default(uuid())
+  bookingId           String
+  booking             Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  requestId           String @unique
+  request             AdditionalRevisionRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  offerVersionId      String @unique
+  offerVersion        AdditionalRevisionOfferVersion @relation(fields: [offerVersionId], references: [id], onDelete: Restrict)
+  customerId          String
+  customer            User @relation("AdditionalRevisionAgreementCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  sellerProfileId     String
+  sellerProfile       SellerProfile @relation("AdditionalRevisionAgreementSeller", fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  scopeSnapshot       String @db.VarChar(4000)
+  termsSnapshot       String @db.VarChar(4000)
+  sellerPrice         Int
+  adminFee            Int
+  buyerTotal          Int
+  pricingPolicyVersion String @db.VarChar(64)
+  estimatedDurationHours Int
+  status              AdditionalRevisionAgreementStatus @default(AWAITING_PAYMENT)
+  acceptedAt          DateTime @default(now()) @db.Timestamptz(3)
+  fundedAt            DateTime? @db.Timestamptz(3)
+  startedAt           DateTime? @db.Timestamptz(3)
+  deliveredAt         DateTime? @db.Timestamptz(3)
+  reviewDeadlineAt    DateTime? @db.Timestamptz(3)
+  completedAt         DateTime? @db.Timestamptz(3)
+  deliveryNote        String? @db.VarChar(4000)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  events              AdditionalRevisionEvent[]
+  payments            PaymentTransaction[]
+  ledgerEntries       FinancialLedgerEntry[]
+  payouts             SellerPayout[]
+
+  @@index([bookingId, status])
+  @@index([customerId, createdAt])
+  @@index([sellerProfileId, createdAt])
+}
+
+model PaymentTransaction {
+  id                    String @id @default(uuid())
+  bookingId             String?
+  booking               Booking? @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  orderReference        String @unique
+  provider              String? @db.VarChar(32)
+  providerReference     String? @unique
+  idempotencyKey        String @unique
+  currency              String @default("IDR") @db.VarChar(3)
+  sellerPrice           Int
+  adminFee              Int
+  amount                Int
+  status                PaymentStatus @default(PENDING)
+  provenance            PaymentProvenance @default(REAL_PROVIDER)
+  simulatedAt           DateTime? @db.Timestamptz(3)
+  expiresAt             DateTime? @db.Timestamptz(3)
+  capturedAt            DateTime? @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  events                ProviderEventInbox[]
+  ledgerEntries         FinancialLedgerEntry[]
+  refunds               PaymentRefund[]
+  payouts               SellerPayout[]
+
+  @@index([bookingId, status])
+  @@index([additionalAgreementId, status])
+}
+
+model ProviderEventInbox {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String?
+  paymentTransaction    PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  provider              String @db.VarChar(32)
+  providerEventId       String @db.VarChar(255)
+  eventType             String @db.VarChar(100)
+  verified              Boolean @default(false)
+  processingStatus      String @default("RECEIVED") @db.VarChar(32)
+  receivedAt            DateTime @default(now()) @db.Timestamptz(3)
+  processedAt           DateTime? @db.Timestamptz(3)
+  safePayload           Json? @db.JsonB
+
+  @@unique([provider, providerEventId])
+  @@index([processingStatus, receivedAt])
+}
+
+model PaymentRefund {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String
+  paymentTransaction    PaymentTransaction @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  decisionReference     String @unique
+  idempotencyKey        String @unique
+  sellerPriceRefund     Int
+  adminFeeRefund        Int
+  amount                Int
+  status                PaymentRefundStatus @default(PENDING)
+  providerReference     String? @unique
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  ledgerEntries         FinancialLedgerEntry[]
+
+  @@index([paymentTransactionId, status])
+}
+
+model SellerPayout {
+  id                    String @id @default(uuid())
+  paymentTransactionId  String
+  paymentTransaction    PaymentTransaction @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  idempotencyKey        String @unique
+  amount                Int
+  currency              String @default("IDR") @db.VarChar(3)
+  status                SellerPayoutStatus @default(HELD)
+  providerReference     String? @unique
+  submittedAt           DateTime? @db.Timestamptz(3)
+  confirmedAt           DateTime? @db.Timestamptz(3)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  ledgerEntries         FinancialLedgerEntry[]
+
+  @@index([paymentTransactionId, status])
+  @@index([additionalAgreementId, status])
+}
+
+model FinancialLedgerEntry {
+  id                    String @id @default(uuid())
+  sourceType            String @db.VarChar(32)
+  sourceId              String @db.VarChar(255)
+  entryType             String @db.VarChar(48)
+  amount                Int
+  currency              String @default("IDR") @db.VarChar(3)
+  paymentTransactionId  String?
+  paymentTransaction    PaymentTransaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: Restrict)
+  refundId              String?
+  refund                PaymentRefund? @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  additionalAgreementId String?
+  additionalAgreement   AdditionalRevisionAgreement? @relation(fields: [additionalAgreementId], references: [id], onDelete: Restrict)
+  payoutId              String?
+  payout                SellerPayout? @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([sourceType, sourceId, entryType])
+  @@index([additionalAgreementId, createdAt])
+  @@index([paymentTransactionId, createdAt])
+}
+
+model AdditionalRevisionEvent {
+  id                    String @id @default(uuid())
+  requestId             String?
+  request               AdditionalRevisionRequest? @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  agreementId           String?
+  agreement             AdditionalRevisionAgreement? @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  actorUserId           String?
+  actor                 User? @relation("AdditionalRevisionEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  eventType             String @db.VarChar(64)
+  fromStatus            String? @db.VarChar(40)
+  toStatus              String? @db.VarChar(40)
+  payload               Json @db.JsonB
+  occurredAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([requestId, occurredAt, id])
+  @@index([agreementId, occurredAt, id])
 }
 
 model BookingStatusEvent {
@@ -1265,6 +1541,9 @@ model Payment {
   paidAt          DateTime?
   rawNotification Json?
   createdAt       DateTime      @default(now())
+  provenance      PaymentProvenance @default(REAL_PROVIDER)
+  simulatedAt     DateTime? @db.Timestamptz(3)
+  demoReference   String? @unique
 }
 
 model Review {
