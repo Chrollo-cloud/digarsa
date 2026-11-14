@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { customerMessaging } from "./customerMessagingClient";
-import { messageSafety } from "./customerMessaging";
+import { messageSafetyForMessage } from "./contracts";
 import { useMessaging } from "./useMessaging";
 import MessagingState from "./MessagingState";
 
@@ -199,7 +199,7 @@ export default function ConversationThread({ id }) {
         )}
         {messages.map((message, index) => {
           const mine = message.sender_user_id === user.id;
-          const safety = messageSafety(message.content);
+          const safety = messageSafetyForMessage(message);
           const newDay =
             index === 0 ||
             dayKey(message.created_at) !==
@@ -218,8 +218,10 @@ export default function ConversationThread({ id }) {
                 aria-label={`Pesan of ${mine ? "kamu" : conversation.seller_name}`}
               >
                 <p>{message.content}</p>
-                {safety.off_platform_payment_suspected && (
-                  <aside className="messaging-safety">{safety.advisory}</aside>
+                {safety.warning && (
+                  <aside className="messaging-safety" role="note" aria-label="Digarsa message safety notice">
+                    {safety.advisory}
+                  </aside>
                 )}
                 <footer>
                   <time

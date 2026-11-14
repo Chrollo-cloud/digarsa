@@ -30,7 +30,7 @@ Standard revision requests, clarifications, seller responses/delivery, quota eve
 
 ## Disputes, appeals, reviews, and conversations
 
-Disputes are created/read by booking parties and reviewed/decided by admins. Clarification/evidence and appeal records are part of the backend workflow. Admin decisions do not imply automatic financial state changes. Review creation is constrained by booking eligibility and ownership. Conversation/message handlers enforce participant ownership. Backend route/model presence does not mean complete frontend integration; formal dispute/appeal/admin-assistance UI is unavailable in the current feature matrix, and messaging/reviews have local/demo frontend components.
+Disputes are created/read by booking parties and reviewed/decided by admins. Clarification/evidence and appeal records are part of the backend workflow. Admin decisions do not imply automatic financial state changes. Review creation is constrained by booking eligibility and ownership. Conversation/message handlers enforce participant ownership. New messages receive deterministic, local rule-based safety metadata; this is not an AI model and does not automatically block, delete, or report a message. Authorized conversation participants may see the moderation flag, reasons, and severity with the message. Backend route/model presence does not mean complete frontend integration; formal dispute/appeal/admin-assistance UI is unavailable in the current feature matrix, and messaging/reviews have local/demo frontend components.
 
 ## Payment and moderation
 

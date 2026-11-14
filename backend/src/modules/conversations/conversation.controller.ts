@@ -3,6 +3,8 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../lib/http.js";
 import { visibleCatalogWhere } from "../catalog/catalog.service.js";
 import { conversationMessagePageSchema, createMessageSchema } from "./conversation.schema.js";
+import { classifyMessage, safeModerationMetadata } from "./message-moderation.js";
+import { moderateMessageOnce, moderateMessageWithGemini, type ModerationOutcome } from "./gemini-message-moderation.js";
 
 function currentUserId(res: Response) {
   return (res.locals.auth as { userId: string }).userId;
@@ -115,77 +117,138 @@ export async function listMyConversations(_req: Request, res: Response) {
   })) });
 }
 
-async function getParticipantConversation(id: string, userId: string) {
-  const conversation = await prisma.conversation.findFirst({
-    where: { id, OR: [{ customerId: userId }, { seller: { is: { userId } } }] },
-    select: { id: true },
-  });
-  if (!conversation) throw new HttpError(404, "CONVERSATION_NOT_FOUND", "Percakapan tidak ditemukan.");
-  return conversation;
+type ConversationMessageDatabase = typeof prisma;
+
+type MessageModerationResultLike = ReturnType<typeof classifyMessage>;
+
+function moderationDto(result: MessageModerationResultLike, source: "GEMINI" | "RULE_BASED") {
+  return {
+    ...safeModerationMetadata(result),
+    source: source === "GEMINI" ? "gemini" : "rule_based",
+    status: source === "GEMINI" ? "AI_COMPLETED" : "RULE_BASED_FALLBACK",
+  };
 }
 
-export async function listConversationMessages(req: Request, res: Response) {
-  const id = conversationId(req);
-  await getParticipantConversation(id, currentUserId(res));
-  const query = parseMessagePage(req.query);
-  const cursor = decodeMessageCursor(query.cursor);
-  const messages = await prisma.message.findMany({
-    where: {
-      conversationId: id,
-      ...(cursor ? { OR: [
-        { createdAt: { lt: cursor.createdAt } },
-        { createdAt: cursor.createdAt, id: { lt: cursor.id } },
-      ] } : {}),
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: query.limit + 1,
-    select: { id: true, senderId: true, body: true, createdAt: true },
-  });
-  const hasMore = messages.length > query.limit;
-  const pageMessages = hasMore ? messages.slice(0, query.limit) : messages;
-  const oldest = pageMessages.at(-1);
-  const nextCursor = hasMore && oldest ? encodeMessageCursor(oldest.createdAt, oldest.id) : null;
-  res.status(200).json({ data: pageMessages.reverse().map((message) => ({
-    id: message.id,
-    sender_id: message.senderId,
-    body: message.body,
-    created_at: message.createdAt.toISOString(),
-  })), page: { next_cursor: nextCursor, has_more: hasMore, limit: query.limit } });
-}
-
-export async function sendConversationMessage(req: Request, res: Response) {
-  const id = conversationId(req);
-  const senderId = currentUserId(res);
-  const input = parseMessage(req.body);
-  const message = await prisma.$transaction(async (tx) => {
-    const conversation = await tx.conversation.findFirst({
-      where: { id, OR: [{ customerId: senderId }, { seller: { is: { userId: senderId } } }] },
-      select: { id: true, customerId: true, seller: { select: { userId: true } } },
+/** Injectable handler factory keeps endpoint behavior testable without a live database. */
+export function createConversationMessageHandlers(
+  database: ConversationMessageDatabase = prisma,
+  moderate: (body: string) => Promise<ModerationOutcome> = moderateMessageWithGemini,
+) {
+  async function getParticipantConversation(id: string, userId: string) {
+    const conversation = await database.conversation.findFirst({
+      where: { id, OR: [{ customerId: userId }, { seller: { is: { userId } } }] },
+      select: { id: true },
     });
     if (!conversation) throw new HttpError(404, "CONVERSATION_NOT_FOUND", "Percakapan tidak ditemukan.");
+    return conversation;
+  }
 
-    const created = await tx.message.create({
-      data: { conversationId: id, senderId, body: input.body },
-      select: { id: true, senderId: true, body: true, createdAt: true },
+  async function listConversationMessages(req: Request, res: Response) {
+    const id = conversationId(req);
+    await getParticipantConversation(id, currentUserId(res));
+    const query = parseMessagePage(req.query);
+    const cursor = decodeMessageCursor(query.cursor);
+    const messages = await database.message.findMany({
+      where: {
+        conversationId: id,
+        ...(cursor ? { OR: [
+          { createdAt: { lt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+        ] } : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: query.limit + 1,
+      select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true, moderationSource: true },
     });
-    const recipientId = senderId === conversation.customerId ? conversation.seller.userId : conversation.customerId;
-    if (recipientId !== senderId) {
-      await tx.notification.create({
-        data: {
-          userId: recipientId,
-          type: "NEW_MESSAGE",
-          title: "Pesan baru",
-          body: "Anda menerima pesan baru.",
-          refId: conversation.id,
-        },
-      });
+    const hasMore = messages.length > query.limit;
+    const pageMessages = hasMore ? messages.slice(0, query.limit) : messages;
+    const oldest = pageMessages.at(-1);
+    const nextCursor = hasMore && oldest ? encodeMessageCursor(oldest.createdAt, oldest.id) : null;
+    res.status(200).json({ data: pageMessages.reverse().map((message) => ({
+      id: message.id,
+      sender_id: message.senderId,
+      body: message.body,
+      created_at: message.createdAt.toISOString(),
+      moderation: moderationDto({
+        flagged: message.isFlagged,
+        reasons: message.flagReasons as ReturnType<typeof classifyMessage>["reasons"],
+        severity: message.flagSeverity,
+      }, message.moderationSource === "GEMINI" ? "GEMINI" : "RULE_BASED"),
+    })), page: { next_cursor: nextCursor, has_more: hasMore, limit: query.limit } });
+  }
+
+  async function sendConversationMessage(req: Request, res: Response) {
+    const id = conversationId(req);
+    const senderId = currentUserId(res);
+    const input = parseMessage(req.body);
+    const authorizedConversation = await database.conversation.findFirst({
+      where: { id, OR: [{ customerId: senderId }, { seller: { is: { userId: senderId } } }] },
+      select: { id: true },
+    });
+    if (!authorizedConversation) throw new HttpError(404, "CONVERSATION_NOT_FOUND", "Percakapan tidak ditemukan.");
+
+    // Keep the provider call outside the transaction. It always falls back to
+    // deterministic classification so a valid message can still be stored.
+    let moderation: ModerationOutcome;
+    try {
+      moderation = await moderateMessageOnce([id, senderId], input.body, moderate);
+    } catch {
+      moderation = {
+        result: classifyMessage(input.body),
+        source: "RULE_BASED",
+        status: "RULE_BASED_FALLBACK",
+        fallbackReason: "PROVIDER_ERROR",
+      };
     }
-    return created;
-  });
-  res.status(201).json({ data: {
-    id: message.id,
-    sender_id: message.senderId,
-    body: message.body,
-    created_at: message.createdAt.toISOString(),
-  } });
+    const message = await database.$transaction(async (tx) => {
+      const conversation = await tx.conversation.findFirst({
+        where: { id, OR: [{ customerId: senderId }, { seller: { is: { userId: senderId } } }] },
+        select: { id: true, customerId: true, seller: { select: { userId: true } } },
+      });
+      if (!conversation) throw new HttpError(404, "CONVERSATION_NOT_FOUND", "Percakapan tidak ditemukan.");
+
+      const created = await tx.message.create({
+        data: {
+          conversationId: id,
+          senderId,
+          body: input.body,
+          isFlagged: moderation.result.flagged,
+          flagReasons: moderation.result.reasons,
+          flagSeverity: moderation.result.severity,
+          moderationSource: moderation.source,
+        },
+        select: { id: true, senderId: true, body: true, createdAt: true, isFlagged: true, flagReasons: true, flagSeverity: true, moderationSource: true },
+      });
+      const recipientId = senderId === conversation.customerId ? conversation.seller.userId : conversation.customerId;
+      if (recipientId !== senderId) {
+        await tx.notification.create({
+          data: {
+            userId: recipientId,
+            type: "NEW_MESSAGE",
+            title: "Pesan baru",
+            body: "Anda menerima pesan baru.",
+            refId: conversation.id,
+          },
+        });
+      }
+      return created;
+    });
+    res.status(201).json({ data: {
+      id: message.id,
+      sender_id: message.senderId,
+      body: message.body,
+      created_at: message.createdAt.toISOString(),
+      moderation: moderationDto({
+        flagged: message.isFlagged,
+        reasons: message.flagReasons as ReturnType<typeof classifyMessage>["reasons"],
+        severity: message.flagSeverity,
+      }, message.moderationSource === "GEMINI" ? "GEMINI" : "RULE_BASED"),
+    } });
+  }
+
+  return { listConversationMessages, sendConversationMessage };
 }
+
+const messageHandlers = createConversationMessageHandlers();
+export const listConversationMessages = messageHandlers.listConversationMessages;
+export const sendConversationMessage = messageHandlers.sendConversationMessage;

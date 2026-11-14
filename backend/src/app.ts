@@ -12,6 +12,7 @@ import conversationRoutes from "./modules/conversations/conversation.routes.js";
 import notificationRoutes from "./modules/notifications/notification.routes.js";
 import reviewRoutes from "./modules/reviews/review.routes.js";
 import reportRoutes from "./modules/reports/report.routes.js";
+import recommendationRoutes from "./modules/recommendations/recommendation.routes.js";
 import { errorHandler, notFoundHandler } from "./lib/http.js";
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/v1", conversationRoutes);
 app.use("/api/v1", notificationRoutes);
 app.use("/api/v1", reviewRoutes);
 app.use("/api/v1", reportRoutes);
+app.use("/api/v1", recommendationRoutes);
 app.use("/api/v1", catalogRoutes);
 
 app.get("/", (_req, res) => {

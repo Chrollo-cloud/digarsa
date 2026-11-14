@@ -136,6 +136,11 @@ enum FlagSeverity {
   HIGH
 }
 
+enum MessageModerationSource {
+  RULE_BASED
+  GEMINI
+}
+
 enum NotificationType {
   BOOKING_UPDATE
   NEW_MESSAGE
@@ -1593,6 +1598,7 @@ model Message {
   isFlagged      Boolean       @default(false)
   flagReasons    String[]
   flagSeverity   FlagSeverity?
+  moderationSource MessageModerationSource @default(RULE_BASED)
   createdAt      DateTime      @default(now())
   disputeEvidenceLinks DisputeMessageEvidence[]
 
